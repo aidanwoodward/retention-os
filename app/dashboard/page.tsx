@@ -1,27 +1,22 @@
-// app/dashboard/page.tsx
+// Force dynamic rendering in production
 export const dynamic = "force-dynamic";
-// …rest of your dashboard code
-
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import Link from "next/link";
-import dynamicImport from "next/dynamic";
-
-const StatusBadge = dynamicImport(() => import("../components/StatusBadge"), { ssr: false });
+import StatusBadge from "../components/StatusBadge"; // <-- plain import
 
 export default async function DashboardPage() {
-  const supabase = createServerComponentClient({ cookies });
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const supabase = createServerComponentClient({
+    cookies,
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  });
 
-  if (!session) {
-    redirect("/login");
-  }
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) redirect("/login");
 
-  // Placeholder connection states (wire to DB later)
   const shopifyConnected = false;
   const klaviyoConnected = false;
 

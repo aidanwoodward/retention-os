@@ -1,5 +1,7 @@
-// Force dynamic rendering in production so cookies/session are read per-request
+// app/dashboard/page.tsx
 export const dynamic = "force-dynamic";
+// …rest of your dashboard code
+
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";

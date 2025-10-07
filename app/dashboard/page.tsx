@@ -1,22 +1,46 @@
-// Force dynamic rendering in production
+// app/dashboard/page.tsx
 export const dynamic = "force-dynamic";
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@supabase/ssr";
 import Link from "next/link";
-import StatusBadge from "../components/StatusBadge"; // <-- plain import
+import StatusBadge from "../components/StatusBadge";
 
 export default async function DashboardPage() {
-  const supabase = createServerComponentClient({
-    cookies,
-    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  });
+  const cookieStore = await cookies();
+  
+  // Pass the cookies methods so the client can read auth cookies
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // The `setAll` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        },
+      },
+    }
+  );
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
   if (!session) redirect("/login");
 
+  // ✅ define these BEFORE using them in JSX
   const shopifyConnected = false;
   const klaviyoConnected = false;
 

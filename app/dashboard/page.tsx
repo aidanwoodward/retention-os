@@ -17,12 +17,13 @@ export default async function DashboardPage() {
         getAll() {
           return cookieStore.getAll();
         },
-        // Server Components can’t mutate headers; provide a no-op setter.
+        // Server Components can't mutate headers; provide a no-op setter.
         setAll() {},
       },
     }
   );
 
+  // Refresh session if expired - required for Server Components
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) redirect("/login");
 

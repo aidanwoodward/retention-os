@@ -1,16 +1,14 @@
-// app/dashboard/page.tsx
 export const dynamic = "force-dynamic";
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
-import Link from "next/link";
 import StatusBadge from "../components/StatusBadge";
+import Link from "next/link";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
-  
-  // Pass the cookies methods so the client can read auth cookies
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -19,28 +17,15 @@ export default async function DashboardPage() {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // The `setAll` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
+        // Server Components can’t mutate headers; provide a no-op setter.
+        setAll() {},
       },
     }
   );
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
+  const { data: { session } } = await supabase.auth.getSession();
   if (!session) redirect("/login");
 
-  // ✅ define these BEFORE using them in JSX
   const shopifyConnected = false;
   const klaviyoConnected = false;
 

@@ -121,7 +121,7 @@ function calculateRetentionMetrics(customers: ShopifyCustomer[], orders: Shopify
   const retentionRate = customers.length > 0 ? (repeatCustomers.length / customers.length) * 100 : 0;
 
   // Calculate Customer Lifetime Value (CLV)
-  const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.total_price || 0), 0);
+  const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(String(order.total_price || "0")), 0);
   const averageOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
   const averageOrdersPerCustomer = customers.length > 0 ? orders.length / customers.length : 0;
   const customerLifetimeValue = averageOrderValue * averageOrdersPerCustomer;

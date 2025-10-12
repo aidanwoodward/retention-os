@@ -1,6 +1,7 @@
 /**
  * Shopify API client for making authenticated requests to Shopify stores
  */
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 interface ShopifyConfig {
   shopDomain: string;
@@ -147,7 +148,7 @@ export class ShopifyClient {
 /**
  * Create a Shopify client from stored connection data
  */
-export async function createShopifyClient(userId: string, supabase: any) {
+export async function createShopifyClient(userId: string, supabase: SupabaseClient) {
   const { data, error } = await supabase
     .from('shopify_connections')
     .select('*')

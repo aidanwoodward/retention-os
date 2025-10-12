@@ -18,7 +18,7 @@ export default function VerifyClient() {
     setStatus("verifying");
     setMessage("");
 
-    const { error } = await supabase.auth.verifyOtp({
+    const { data, error } = await supabase.auth.verifyOtp({
       email,
       token: code,
       type: "email",
@@ -27,8 +27,11 @@ export default function VerifyClient() {
     if (error) {
       setStatus("error");
       setMessage(error.message);
+      console.error("OTP verification error:", error);
       return;
     }
+
+    console.log("OTP verified successfully:", data);
     router.replace("/dashboard");
   }
 

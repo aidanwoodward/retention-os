@@ -49,20 +49,23 @@ export default function LoginClient() {
     setStatus("sending_code");
     setMessage("");
 
-    // Use signInWithOtp with type: 'email' to get a 6-digit code
-    const { error } = await supabase.auth.signInWithOtp({
+    // Use signInWithOtp to get a 6-digit code (no emailRedirectTo = code mode)
+    const { data, error } = await supabase.auth.signInWithOtp({
       email,
       options: { 
         shouldCreateUser: true,
-        // Don't include emailRedirectTo to get a code instead of magic link
+        // Don't include emailRedirectTo to force code mode instead of magic link
       },
     });
 
     if (error) {
       setStatus("error");
       setMessage(error.message);
+      console.error("OTP send error:", error);
       return;
     }
+
+    console.log("OTP sent successfully:", data);
 
     setStatus("sent");
     setMessage("6-digit code sent. Check your email.");

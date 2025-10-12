@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 export default function ShopifyConnectClient() {
   const [isConnected, setIsConnected] = useState(false);
   const [shopDomain, setShopDomain] = useState("");
+  const [inputShopDomain, setInputShopDomain] = useState("");
   const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
 
@@ -24,6 +25,11 @@ export default function ShopifyConnectClient() {
     
     if (error) {
       console.error("Shopify OAuth error:", error);
+      if (error === "no_shop_domain") {
+        alert("Please enter your Shopify store domain");
+      } else if (error === "invalid_shop_domain") {
+        alert("Please enter a valid Shopify store domain");
+      }
     }
   }, [searchParams]);
 
@@ -51,8 +57,13 @@ export default function ShopifyConnectClient() {
   };
 
   const handleConnect = () => {
-    // Redirect to Shopify OAuth
-    window.location.href = "/api/shopify/auth";
+    if (!inputShopDomain.trim()) {
+      alert("Please enter your Shopify store domain");
+      return;
+    }
+    
+    // Redirect to Shopify OAuth with shop domain
+    window.location.href = `/api/shopify/auth?shop=${encodeURIComponent(inputShopDomain.trim())}`;
   };
 
   const handleDisconnect = async () => {
@@ -124,6 +135,30 @@ export default function ShopifyConnectClient() {
               Connect your Shopify store to sync orders, customers, and analytics data.
             </p>
             
+            <div className="space-y-3">
+              <div>
+                <label htmlFor="shop-domain" className="block text-sm font-medium text-gray-700 mb-1">
+                  Shopify Store Domain
+                </label>
+                <div className="flex">
+                  <input
+                    id="shop-domain"
+                    type="text"
+                    placeholder="your-store"
+                    value={inputShopDomain}
+                    onChange={(e) => setInputShopDomain(e.target.value)}
+                    className="flex-1 rounded-l-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                  />
+                  <span className="inline-flex items-center px-3 rounded-r-lg border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
+                    .myshopify.com
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Enter your store name (e.g., "your-store" for your-store.myshopify.com)
+                </p>
+              </div>
+            </div>
+            
             <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
               <h3 className="text-sm font-medium text-blue-800 mb-2">What you&apos;ll get:</h3>
               <ul className="text-sm text-blue-700 space-y-1">
@@ -136,7 +171,8 @@ export default function ShopifyConnectClient() {
             
             <button
               onClick={handleConnect}
-              className="w-full rounded-xl bg-black px-4 py-3 text-white hover:opacity-90 font-medium"
+              disabled={!inputShopDomain.trim()}
+              className="w-full rounded-xl bg-black px-4 py-3 text-white hover:opacity-90 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Connect Shopify Store
             </button>

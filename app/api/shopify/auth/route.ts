@@ -7,6 +7,18 @@ import { createServerClient } from "@supabase/ssr";
  * Redirects user to Shopify's authorization page
  */
 export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const shop = searchParams.get("shop");
+  
+  if (!shop) {
+    return NextResponse.redirect(new URL("/connect/shopify?error=no_shop_domain", request.url));
+  }
+
+  // Validate shop domain format
+  if (!shop.includes(".myshopify.com") && !shop.includes(".")) {
+    return NextResponse.redirect(new URL("/connect/shopify?error=invalid_shop_domain", request.url));
+  }
+
   const cookieStore = await cookies();
   
   // Get the current user's session to associate the Shopify connection
@@ -57,8 +69,11 @@ export async function GET(request: NextRequest) {
     maxAge: 600, // 10 minutes
   });
 
+  // Normalize shop domain
+  const shopDomain = shop.includes(".myshopify.com") ? shop : `${shop}.myshopify.com`;
+
   // Build Shopify OAuth URL
-  const shopifyAuthUrl = new URL("https://YOUR_SHOP_DOMAIN.myshopify.com/admin/oauth/authorize");
+  const shopifyAuthUrl = new URL(`https://${shopDomain}/admin/oauth/authorize`);
   shopifyAuthUrl.searchParams.set("client_id", shopifyApiKey);
   shopifyAuthUrl.searchParams.set("scope", shopifyScopes);
   shopifyAuthUrl.searchParams.set("redirect_uri", redirectUri);

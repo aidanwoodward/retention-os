@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
 import StatusBadge from "@/app/components/StatusBadge";
 import Link from "next/link";
+import DashboardClient from "./DashboardClient";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -27,9 +28,48 @@ export default async function DashboardPage() {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) redirect("/login");
 
-  const shopifyConnected = false;
-  const klaviyoConnected = false;
+  // Check for Shopify connection
+  const { data: shopifyConnections } = await supabase
+    .from("shopify_connections")
+    .select("*")
+    .eq("user_id", session.user.id)
+    .eq("is_active", true)
+    .limit(1);
 
+  const shopifyConnected = shopifyConnections && shopifyConnections.length > 0;
+  const klaviyoConnected = false; // TODO: Implement Klaviyo connection check
+
+  // If Shopify is connected, show the retention dashboard
+  if (shopifyConnected && shopifyConnections) {
+    return (
+      <div className="p-6">
+        <div className="mx-auto max-w-6xl space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Retention Dashboard</h1>
+              <p className="text-gray-600">
+                Connected to {shopifyConnections[0].shop_domain}
+              </p>
+            </div>
+            <div className="flex space-x-3">
+              <Link
+                href="/connect/shopify"
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Manage Connections
+              </Link>
+            </div>
+          </div>
+
+          {/* Dashboard with Real Data */}
+          <DashboardClient />
+        </div>
+      </div>
+    );
+  }
+
+  // If no connections, show setup screen
   return (
     <div className="p-6">
       <div className="mx-auto max-w-5xl space-y-6">
@@ -67,7 +107,7 @@ export default async function DashboardPage() {
                 <StatusBadge ok={klaviyoConnected} />
               </div>
               <p className="mt-2 text-sm text-gray-600">
-                Push “At-Risk” segment and measure holdout lift.
+                Push "At-Risk" segment and measure holdout lift.
               </p>
               <Link
                 href="/connect/klaviyo"

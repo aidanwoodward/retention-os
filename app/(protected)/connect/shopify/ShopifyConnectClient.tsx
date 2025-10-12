@@ -154,7 +154,7 @@ export default function ShopifyConnectClient() {
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Enter your store name (e.g., "your-store" for your-store.myshopify.com)
+                  Enter your store name (e.g., &quot;your-store&quot; for your-store.myshopify.com)
                 </p>
               </div>
             </div>

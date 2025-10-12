@@ -25,7 +25,12 @@ export async function GET(request: NextRequest) {
   const storedState = cookieStore.get("shopify_oauth_state")?.value;
   const userId = cookieStore.get("shopify_oauth_user_id")?.value;
   
+  console.log("Stored state:", storedState);
+  console.log("Received state:", state);
+  console.log("User ID from cookie:", userId);
+  
   if (!storedState || state !== storedState || !userId) {
+    console.log("State or user ID validation failed");
     return NextResponse.redirect(new URL("/connect/shopify?error=invalid_state", request.url));
   }
 

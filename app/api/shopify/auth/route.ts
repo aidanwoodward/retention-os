@@ -54,15 +54,14 @@ export async function GET(request: NextRequest) {
   // Generate a random state parameter for security
   const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   
-  // Store state in cookie for verification
+  // Store state and user ID in cookie for verification
   cookieStore.set("shopify_oauth_state", state, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: 600, // 10 minutes
   });
-
-  // Store user ID for association
+  
   cookieStore.set("shopify_oauth_user_id", session.user.id, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -81,7 +80,7 @@ export async function GET(request: NextRequest) {
   shopifyAuthUrl.searchParams.set("state", state);
 
   console.log("Redirecting to Shopify OAuth:", shopifyAuthUrl.toString());
-  console.log("User ID:", userId);
+  console.log("User ID:", session.user.id);
   console.log("Shop domain:", shopDomain);
 
   return NextResponse.redirect(shopifyAuthUrl.toString());

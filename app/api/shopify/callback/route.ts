@@ -81,6 +81,8 @@ export async function GET(request: NextRequest) {
         access_token: access_token, // In production, encrypt this
         connected_at: new Date().toISOString(),
         is_active: true,
+      }, {
+        onConflict: 'user_id,shop_domain'
       });
 
     if (insertError) {

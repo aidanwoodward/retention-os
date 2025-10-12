@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
-import StatusBadge from "../components/StatusBadge";
+import StatusBadge from "@/app/components/StatusBadge";
 import Link from "next/link";
 
 export default async function DashboardPage() {
@@ -31,13 +31,8 @@ export default async function DashboardPage() {
   const klaviyoConnected = false;
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6">
+    <div className="p-6">
       <div className="mx-auto max-w-5xl space-y-6">
-        <header className="flex items-center justify-between">
-          <h1 className="text-3xl font-semibold">Retention OS</h1>
-          <StatusBadge ok={false} />
-        </header>
-
         <section className="rounded-2xl bg-white p-6 shadow">
           <p className="text-lg font-medium">
             Hello Retention OS – connect your store to get started.
@@ -84,6 +79,6 @@ export default async function DashboardPage() {
           </div>
         </section>
       </div>
-    </main>
+    </div>
   );
 }

@@ -1,36 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Retention OS
+
+A Next.js 15 application for e-commerce retention analytics, built with Supabase authentication and designed to integrate with Shopify and Klaviyo.
+
+## Tech Stack
+
+- **Framework**: Next.js 15 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Authentication**: Supabase with SSR cookies
+- **Deployment**: Vercel
+- **Database**: Supabase (PostgreSQL)
+
+## Features
+
+- 🔐 **Authentication**: Magic link and 6-digit OTP via Supabase
+- 🛡️ **Protected Routes**: Middleware-based route protection
+- 📊 **Dashboard**: Analytics overview for retention metrics
+- 🔌 **Integrations**: Shopify and Klaviyo connection placeholders
+- 🎨 **Modern UI**: Clean, responsive design with loading states
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+ 
+- Supabase account and project
+- Vercel account (for deployment)
+
+### Environment Variables
+
+Create a `.env.local` file in the root directory:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Local Development
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd retention-os
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. Install dependencies:
+```bash
+npm install
+```
 
-## Learn More
+3. Run the development server:
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Authentication Flow
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The app uses Supabase for authentication with the following flow:
 
-## Deploy on Vercel
+### Login Options
+- **Magic Link**: Click the link in your email to sign in
+- **6-Digit Code**: Enter the code sent to your email on the verify page
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Protected Routes
+- `/dashboard` - Main analytics dashboard
+- `/connect/shopify` - Shopify integration setup
+- `/connect/klaviyo` - Klaviyo integration setup
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Auth Components
+- **Header**: Shows user email and logout button (only on protected pages)
+- **Middleware**: Automatically redirects unauthenticated users to login
+- **Server-side logout**: POST to `/auth/signout` clears SSR cookies
+
+## Project Structure
+
+```
+app/
+├── (protected)/           # Protected route group with header
+│   ├── layout.tsx        # Protected layout with Header component
+│   ├── dashboard/        # Analytics dashboard
+│   └── connect/          # Integration setup pages
+├── auth/
+│   ├── callback/         # OAuth callback handler
+│   └── signout/          # Server-side logout route
+├── components/           # Reusable UI components
+├── login/               # Login page with dual auth options
+├── verify/              # 6-digit code verification
+└── globals.css          # Global styles
+```
+
+## Deployment
+
+The app is deployed on Vercel and automatically builds from the `main` branch:
+
+**Live URL**: https://retention-os-nine.vercel.app
+
+### Supabase Configuration
+
+Ensure your Supabase project has:
+- Auth redirect URL set to: `https://your-domain.vercel.app/auth/callback`
+- Email templates configured for magic links and OTP codes
+
+## Development Notes
+
+- Uses `@supabase/ssr` for proper server-side rendering with cookies
+- Protected routes are wrapped in a route group `(protected)` for shared layout
+- All auth state changes are handled client-side with real-time updates
+- Middleware protects routes without breaking SSR performance

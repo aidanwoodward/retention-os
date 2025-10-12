@@ -11,7 +11,7 @@ export default function ConnectKlaviyoPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6">
+    <div className="p-6">
       <div className="mx-auto max-w-2xl rounded-2xl bg-white p-6 shadow">
         <h1 className="text-2xl font-semibold">Connect Klaviyo</h1>
         <p className="mt-2 text-sm text-gray-600">
@@ -34,6 +34,6 @@ export default function ConnectKlaviyoPage() {
           </button>
         </form>
       </div>
-    </main>
+    </div>
   );
 }

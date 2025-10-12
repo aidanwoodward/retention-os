@@ -49,10 +49,13 @@ export default function LoginClient() {
     setStatus("sending_code");
     setMessage("");
 
-    // No emailRedirectTo -> Supabase sends a 6-digit code
+    // Use signInWithOtp with type: 'email' to get a 6-digit code
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: true },
+      options: { 
+        shouldCreateUser: true,
+        // Don't include emailRedirectTo to get a code instead of magic link
+      },
     });
 
     if (error) {
@@ -61,6 +64,8 @@ export default function LoginClient() {
       return;
     }
 
+    setStatus("sent");
+    setMessage("6-digit code sent. Check your email.");
     router.push(`/verify?email=${encodeURIComponent(email)}`);
   }
 

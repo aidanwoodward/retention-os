@@ -41,19 +41,26 @@ export async function GET() {
     const shopifyConnection = shopifyConnections[0];
     
     // Create Shopify client
+    console.log("Creating Shopify client for user:", session.user.id);
     const shopify = await createShopifyClient(session.user.id, supabase);
     if (!shopify) {
+      console.error("Failed to create Shopify client");
       return NextResponse.json({ error: "Failed to create Shopify client" }, { status: 500 });
     }
+    console.log("Shopify client created successfully");
 
     // Fetch Shopify data
+    console.log("Fetching Shopify data...");
     const [customers, orders] = await Promise.all([
       shopify.getCustomers(250), // Get customers
       shopify.getOrders(250) // Get orders
     ]);
+    
+    console.log("Fetched data:", { customersCount: customers.length, ordersCount: orders.length });
 
     // Filter orders to only include paid orders
     const paidOrders = orders.filter(order => order.financial_status === "paid");
+    console.log("Paid orders:", paidOrders.length);
 
     // Calculate retention metrics
     const metrics = calculateRetentionMetrics(customers, paidOrders);

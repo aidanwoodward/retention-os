@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createShopifyClient } from "@/lib/shopifyClient";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const cookieStore = await cookies();
     
@@ -75,14 +75,37 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function calculateRetentionMetrics(customers: any[], orders: any[]) {
+interface ShopifyCustomer {
+  id: number;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ShopifyOrder {
+  id: number;
+  order_number: number;
+  email?: string;
+  created_at: string;
+  total_price: string;
+  financial_status: string;
+  customer?: {
+    id: number;
+    email?: string;
+    first_name?: string;
+    last_name?: string;
+  };
+}
+
+function calculateRetentionMetrics(customers: ShopifyCustomer[], orders: ShopifyOrder[]) {
   const now = new Date();
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
   const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
   // Group orders by customer
-  const customerOrders: { [key: string]: any[] } = {};
+  const customerOrders: { [key: string]: ShopifyOrder[] } = {};
   orders.forEach(order => {
     if (order.customer && order.customer.id) {
       const customerId = order.customer.id.toString();
@@ -104,14 +127,14 @@ function calculateRetentionMetrics(customers: any[], orders: any[]) {
   const customerLifetimeValue = averageOrderValue * averageOrdersPerCustomer;
 
   // At-risk customers (no purchase in 60+ days)
-  const atRiskCustomers = Object.entries(customerOrders).filter(([customerId, customerOrders]) => {
+  const atRiskCustomers = Object.entries(customerOrders).filter(([, customerOrders]) => {
     const lastOrder = customerOrders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
     if (!lastOrder) return false;
     return new Date(lastOrder.created_at) < sixtyDaysAgo;
   });
 
   // Dormant customers (no purchase in 90+ days)
-  const dormantCustomers = Object.entries(customerOrders).filter(([customerId, customerOrders]) => {
+  const dormantCustomers = Object.entries(customerOrders).filter(([, customerOrders]) => {
     const lastOrder = customerOrders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
     if (!lastOrder) return false;
     return new Date(lastOrder.created_at) < ninetyDaysAgo;

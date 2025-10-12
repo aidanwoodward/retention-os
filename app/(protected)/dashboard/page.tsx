@@ -107,7 +107,7 @@ export default async function DashboardPage() {
                 <StatusBadge ok={klaviyoConnected} />
               </div>
               <p className="mt-2 text-sm text-gray-600">
-                Push "At-Risk" segment and measure holdout lift.
+                Push &quot;At-Risk&quot; segment and measure holdout lift.
               </p>
               <Link
                 href="/connect/klaviyo"

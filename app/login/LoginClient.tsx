@@ -49,12 +49,11 @@ export default function LoginClient() {
     setStatus("sending_code");
     setMessage("");
 
-    // Use signInWithOtp to get a 6-digit code (no emailRedirectTo = code mode)
+    // Use signInWithOtp without emailRedirectTo to get OTP code
     const { data, error } = await supabase.auth.signInWithOtp({
       email,
       options: { 
         shouldCreateUser: true,
-        // Don't include emailRedirectTo to force code mode instead of magic link
       },
     });
 

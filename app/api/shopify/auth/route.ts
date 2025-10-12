@@ -14,8 +14,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/connect/shopify?error=no_shop_domain", request.url));
   }
 
-  // Validate shop domain format
-  if (!shop.includes(".myshopify.com") && !shop.includes(".")) {
+  // Validate shop domain format - allow store names without .myshopify.com
+  const cleanShop = shop.replace(".myshopify.com", "").toLowerCase();
+  if (!cleanShop || cleanShop.length < 3) {
     return NextResponse.redirect(new URL("/connect/shopify?error=invalid_shop_domain", request.url));
   }
 
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest) {
   });
 
   // Normalize shop domain
-  const shopDomain = shop.includes(".myshopify.com") ? shop : `${shop}.myshopify.com`;
+  const shopDomain = `${cleanShop}.myshopify.com`;
 
   // Build Shopify OAuth URL
   const shopifyAuthUrl = new URL(`https://${shopDomain}/admin/oauth/authorize`);

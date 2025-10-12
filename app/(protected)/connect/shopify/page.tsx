@@ -1,29 +1,21 @@
+import { Suspense } from "react";
+import ShopifyConnectClient from "./ShopifyConnectClient";
+
 export default function ConnectShopifyPage() {
-    return (
+  return (
+    <Suspense fallback={
       <div className="p-6">
         <div className="mx-auto max-w-2xl rounded-2xl bg-white p-6 shadow">
-          <h1 className="text-2xl font-semibold">Connect Shopify</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            This is a placeholder. Next we’ll add OAuth to your Shopify Dev Store.
-          </p>
-  
-          <div className="mt-6 space-y-3">
-            <ol className="list-decimal pl-5 text-sm text-gray-700 space-y-1">
-              <li>Create a Shopify <em>Custom App</em> in your dev store.</li>
-              <li>Whitelist callback: <code className="bg-gray-100 px-2 py-1 rounded">https://YOUR_DOMAIN/api/shopify/callback</code></li>
-              <li>Copy API Key and Secret into your Retention OS settings.</li>
-            </ol>
-  
-            <button
-              className="rounded-xl bg-black px-4 py-2 text-white hover:opacity-90"
-              disabled
-              title="Coming soon"
-            >
-              Start OAuth (Coming soon)
-            </button>
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded mb-6"></div>
+            <div className="h-12 bg-gray-200 rounded"></div>
           </div>
         </div>
       </div>
-    );
-  }
+    }>
+      <ShopifyConnectClient />
+    </Suspense>
+  );
+}
   

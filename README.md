@@ -32,8 +32,19 @@ A Next.js 15 application for e-commerce retention analytics, built with Supabase
 Create a `.env.local` file in the root directory:
 
 ```bash
+# Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Site Configuration
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+# Shopify Configuration (for OAuth)
+SHOPIFY_API_KEY=your_shopify_app_api_key
+SHOPIFY_API_SECRET=your_shopify_app_api_secret
+
+# Klaviyo Configuration (for API integration)
+KLAVIYO_API_KEY=your_klaviyo_private_api_key
 ```
 
 ### Local Development
@@ -102,6 +113,24 @@ The app is deployed on Vercel and automatically builds from the `main` branch:
 Ensure your Supabase project has:
 - Auth redirect URL set to: `https://your-domain.vercel.app/auth/callback`
 - Email templates configured for magic links and OTP codes
+- Run the database migration: `supabase/migrations/001_create_shopify_connections.sql`
+
+### Shopify App Setup
+
+To enable Shopify integration:
+
+1. **Create a Shopify App**:
+   - Go to [Shopify Partners Dashboard](https://partners.shopify.com/)
+   - Create a new app and note your API key and secret
+   - Set the redirect URL to: `https://your-domain.vercel.app/api/shopify/callback`
+
+2. **Configure Environment Variables**:
+   - Add `SHOPIFY_API_KEY` and `SHOPIFY_API_SECRET` to your `.env.local`
+   - Add the same variables to your Vercel deployment settings
+
+3. **Install the App**:
+   - Users can now connect their Shopify stores via `/connect/shopify`
+   - The app will have access to read products, orders, and customers
 
 ## Development Notes
 

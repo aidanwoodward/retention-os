@@ -7,10 +7,13 @@ import { createServerClient } from "@supabase/ssr";
  * Exchanges authorization code for access token and stores connection data
  */
 export async function GET(request: NextRequest) {
+  console.log("Shopify callback received:", request.url);
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const state = searchParams.get("state");
   const shop = searchParams.get("shop");
+  
+  console.log("Callback params:", { code: !!code, state, shop });
   
   if (!code || !state || !shop) {
     return NextResponse.redirect(new URL("/connect/shopify?error=invalid_callback", request.url));

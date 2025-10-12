@@ -80,5 +80,9 @@ export async function GET(request: NextRequest) {
   shopifyAuthUrl.searchParams.set("redirect_uri", redirectUri);
   shopifyAuthUrl.searchParams.set("state", state);
 
+  console.log("Redirecting to Shopify OAuth:", shopifyAuthUrl.toString());
+  console.log("User ID:", userId);
+  console.log("Shop domain:", shopDomain);
+
   return NextResponse.redirect(shopifyAuthUrl.toString());
 }

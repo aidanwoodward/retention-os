@@ -36,7 +36,7 @@ export default async function DashboardPage() {
     .eq("is_active", true)
     .limit(1);
 
-  const shopifyConnected = shopifyConnections && shopifyConnections.length > 0;
+  const shopifyConnected = Boolean(shopifyConnections && shopifyConnections.length > 0);
   const klaviyoConnected = false; // TODO: Implement Klaviyo connection check
 
   // If Shopify is connected, show the retention dashboard

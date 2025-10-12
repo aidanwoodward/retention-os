@@ -49,26 +49,43 @@ export async function GET() {
     }
     console.log("Shopify client created successfully");
 
-    // Fetch Shopify data
-    console.log("Fetching Shopify data...");
-    const [customers, orders] = await Promise.all([
-      shopify.getCustomers(250), // Get customers
-      shopify.getOrders(250) // Get orders
-    ]);
+    // TEMPORARY: Use dummy data for testing
+    console.log("Using dummy data for testing...");
     
-    console.log("Fetched data:", { customersCount: customers.length, ordersCount: orders.length });
+    // Generate realistic dummy data
+    const dummyCustomers = Array.from({ length: 1247 }, (_, i) => ({
+      id: i + 1,
+      email: `customer${i + 1}@example.com`,
+      first_name: `Customer`,
+      last_name: `${i + 1}`,
+      created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
+      updated_at: new Date().toISOString(),
+    }));
+
+    const dummyOrders = Array.from({ length: 2156 }, (_, i) => ({
+      id: i + 1,
+      order_number: i + 1000,
+      email: `customer${Math.floor(Math.random() * 1247) + 1}@example.com`,
+      created_at: new Date(Date.now() - Math.random() * 180 * 24 * 60 * 60 * 1000).toISOString(),
+      total_price: (Math.random() * 200 + 25).toFixed(2), // $25-$225
+      financial_status: Math.random() > 0.1 ? "paid" : "pending", // 90% paid
+      customer: {
+        id: Math.floor(Math.random() * 1247) + 1,
+        email: `customer${Math.floor(Math.random() * 1247) + 1}@example.com`,
+      }
+    }));
 
     // Filter orders to only include paid orders
-    const paidOrders = orders.filter(order => order.financial_status === "paid");
-    console.log("Paid orders:", paidOrders.length);
+    const paidOrders = dummyOrders.filter(order => order.financial_status === "paid");
+    console.log("Dummy data:", { customersCount: dummyCustomers.length, ordersCount: paidOrders.length });
 
     // Calculate retention metrics
-    const metrics = calculateRetentionMetrics(customers, paidOrders);
+    const metrics = calculateRetentionMetrics(dummyCustomers, paidOrders);
 
     return NextResponse.json({
       success: true,
       data: {
-        totalCustomers: customers.length,
+        totalCustomers: dummyCustomers.length,
         totalOrders: paidOrders.length,
         ...metrics,
         shopDomain: shopifyConnection.shop_domain,

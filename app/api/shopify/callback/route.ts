@@ -77,6 +77,8 @@ export async function GET(request: NextRequest) {
 
     if (insertError) {
       console.error("Failed to store Shopify connection:", insertError);
+      console.error("User ID:", userId);
+      console.error("Shop domain:", shop);
       return NextResponse.redirect(new URL("/connect/shopify?error=database_error", request.url));
     }
 

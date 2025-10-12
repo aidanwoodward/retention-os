@@ -47,22 +47,22 @@ export async function GET() {
     }
 
     // Fetch Shopify data
-    const [customersResponse, ordersResponse] = await Promise.all([
-      shopify.customers.list({ limit: 250 }), // Get customers
-      shopify.orders.list({ limit: 250, financial_status: "paid" }) // Get paid orders
+    const [customers, orders] = await Promise.all([
+      shopify.getCustomers(250), // Get customers
+      shopify.getOrders(250) // Get orders
     ]);
 
-    const customers = customersResponse.customers || [];
-    const orders = ordersResponse.orders || [];
+    // Filter orders to only include paid orders
+    const paidOrders = orders.filter(order => order.financial_status === "paid");
 
     // Calculate retention metrics
-    const metrics = calculateRetentionMetrics(customers, orders);
+    const metrics = calculateRetentionMetrics(customers, paidOrders);
 
     return NextResponse.json({
       success: true,
       data: {
         totalCustomers: customers.length,
-        totalOrders: orders.length,
+        totalOrders: paidOrders.length,
         ...metrics,
         shopDomain: shopifyConnection.shop_domain,
         lastSync: shopifyConnection.connected_at

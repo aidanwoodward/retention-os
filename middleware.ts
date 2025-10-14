@@ -25,7 +25,11 @@ export async function middleware(req: NextRequest) {
   // Refresh session if expired - required for Server Components
   const { data: { session } } = await supabase.auth.getSession();
 
-  if (req.nextUrl.pathname.startsWith("/dashboard") && !session) {
+  // Protect all routes under (protected) group
+  const protectedPaths = ["/dashboard", "/sync", "/connect"];
+  const isProtectedPath = protectedPaths.some(path => req.nextUrl.pathname.startsWith(path));
+
+  if (isProtectedPath && !session) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("redirectedFrom", req.nextUrl.pathname);
@@ -35,4 +39,10 @@ export async function middleware(req: NextRequest) {
   return res;
 }
 
-export const config = { matcher: ["/dashboard/:path*"] };
+export const config = { 
+  matcher: [
+    "/dashboard/:path*",
+    "/sync/:path*", 
+    "/connect/:path*"
+  ] 
+};

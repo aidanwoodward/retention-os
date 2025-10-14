@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createShopifyClient } from "@/lib/shopifyClient";
+import { getAccountId } from "@/lib/database";
 
 export async function GET() {
   try {
@@ -49,43 +50,36 @@ export async function GET() {
     }
     console.log("Shopify client created successfully");
 
-    // TEMPORARY: Use dummy data for testing
-    console.log("Using dummy data for testing...");
+    // Get account ID for the user
+    const accountId = await getAccountId(session.user.id);
+
+    // Fetch real data from our canonical schema
+    console.log("Fetching real data from canonical schema...");
     
-    // Generate realistic dummy data
-    const dummyCustomers = Array.from({ length: 1247 }, (_, i) => ({
-      id: i + 1,
-      email: `customer${i + 1}@example.com`,
-      first_name: `Customer`,
-      last_name: `${i + 1}`,
-      created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
-      updated_at: new Date().toISOString(),
-    }));
+    const [customersResult, ordersResult] = await Promise.all([
+      supabase
+        .from('customers')
+        .select('*')
+        .eq('account_id', accountId),
+      supabase
+        .from('orders')
+        .select('*')
+        .eq('account_id', accountId)
+        .eq('financial_status', 'paid')
+    ]);
 
-    const dummyOrders = Array.from({ length: 2156 }, (_, i) => ({
-      id: i + 1,
-      order_number: i + 1000,
-      email: `customer${Math.floor(Math.random() * 1247) + 1}@example.com`,
-      created_at: new Date(Date.now() - Math.random() * 180 * 24 * 60 * 60 * 1000).toISOString(),
-      total_price: (Math.random() * 200 + 25).toFixed(2), // $25-$225
-      financial_status: Math.random() > 0.1 ? "paid" : "pending", // 90% paid
-      customer: {
-        id: Math.floor(Math.random() * 1247) + 1,
-        email: `customer${Math.floor(Math.random() * 1247) + 1}@example.com`,
-      }
-    }));
+    const customers = customersResult.data || [];
+    const paidOrders = ordersResult.data || [];
 
-    // Filter orders to only include paid orders
-    const paidOrders = dummyOrders.filter(order => order.financial_status === "paid");
-    console.log("Dummy data:", { customersCount: dummyCustomers.length, ordersCount: paidOrders.length });
+    console.log("Real data:", { customersCount: customers.length, ordersCount: paidOrders.length });
 
     // Calculate retention metrics
-    const metrics = calculateRetentionMetrics(dummyCustomers, paidOrders);
+    const metrics = calculateRetentionMetrics(customers, paidOrders);
 
     return NextResponse.json({
       success: true,
       data: {
-        totalCustomers: dummyCustomers.length,
+        totalCustomers: customers.length,
         totalOrders: paidOrders.length,
         ...metrics,
         shopDomain: shopifyConnection.shop_domain,

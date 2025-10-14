@@ -61,7 +61,7 @@ SELECT
   'test@example.com' as email,
   hash_email('test@example.com') as hash_result;
 
--- Test email verification
+-- Test email verification function
 WITH test_hash AS (
   SELECT hash_email('test@example.com') as hash_data
 )

@@ -281,20 +281,20 @@ CREATE TRIGGER update_sync_metadata_updated_at
 -- UTILITY FUNCTIONS
 -- =============================================================================
 
--- Function to hash email with salt
+-- Function to hash email with salt (returns composite type)
 CREATE OR REPLACE FUNCTION hash_email(email TEXT)
-RETURNS TEXT AS $$
+RETURNS TABLE(hash TEXT, salt TEXT) AS $$
 DECLARE
-  salt TEXT;
-  hash TEXT;
+  random_salt TEXT;
+  email_hash TEXT;
 BEGIN
   -- Generate random salt
-  salt := encode(gen_random_bytes(16), 'hex');
+  random_salt := encode(gen_random_bytes(16), 'hex');
   
   -- Hash email + salt
-  hash := encode(digest(email || salt, 'sha256'), 'hex');
+  email_hash := encode(digest(email || random_salt, 'sha256'), 'hex');
   
-  RETURN hash;
+  RETURN QUERY SELECT email_hash, random_salt;
 END;
 $$ LANGUAGE plpgsql;
 

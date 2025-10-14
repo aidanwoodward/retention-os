@@ -57,16 +57,16 @@ END $$;
 DO $$
 DECLARE
   customer_count INTEGER;
-  account_id UUID;
+  target_account_id UUID;
 BEGIN
   -- Check if we have any customers
   SELECT COUNT(*) INTO customer_count FROM customers;
   
   -- If no customers exist, create sample data for the first account
   IF customer_count = 0 THEN
-    SELECT id INTO account_id FROM accounts LIMIT 1;
+    SELECT id INTO target_account_id FROM accounts LIMIT 1;
     
-    IF account_id IS NOT NULL THEN
+    IF target_account_id IS NOT NULL THEN
       -- Insert sample customers
       INSERT INTO customers (
         account_id, source_id, source_created_at, source_updated_at,
@@ -75,19 +75,19 @@ BEGIN
         customer_lifetime_value
       ) VALUES 
       (
-        account_id, 1001, NOW() - INTERVAL '365 days', NOW() - INTERVAL '30 days',
+        target_account_id, 1001, NOW() - INTERVAL '365 days', NOW() - INTERVAL '30 days',
         'sample_hash_1', 'sample_salt_1', 'John', 'Doe',
         450.00, 3, NOW() - INTERVAL '365 days', NOW() - INTERVAL '30 days',
         450.00
       ),
       (
-        account_id, 1002, NOW() - INTERVAL '200 days', NOW() - INTERVAL '15 days',
+        target_account_id, 1002, NOW() - INTERVAL '200 days', NOW() - INTERVAL '15 days',
         'sample_hash_2', 'sample_salt_2', 'Jane', 'Smith',
         275.50, 2, NOW() - INTERVAL '200 days', NOW() - INTERVAL '15 days',
         275.50
       ),
       (
-        account_id, 1003, NOW() - INTERVAL '90 days', NOW() - INTERVAL '7 days',
+        target_account_id, 1003, NOW() - INTERVAL '90 days', NOW() - INTERVAL '7 days',
         'sample_hash_3', 'sample_salt_3', 'Mike', 'Johnson',
         125.00, 1, NOW() - INTERVAL '90 days', NOW() - INTERVAL '7 days',
         125.00
@@ -106,9 +106,9 @@ BEGIN
         c.first_order_at, c.last_order_at, 'paid',
         c.total_spent * 0.9, c.total_spent, c.total_spent * 0.1, 'USD'
       FROM customers c
-      WHERE c.account_id = account_id;
+      WHERE c.account_id = target_account_id;
       
-      RAISE NOTICE 'Sample data created for account %', account_id;
+      RAISE NOTICE 'Sample data created for account %', target_account_id;
     END IF;
   END IF;
 END $$;

@@ -1,10 +1,59 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createShopifyClient } from "@/lib/shopifyClient";
 import { hashEmail, getAccountId } from "@/lib/database";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-export async function POST(request: NextRequest) {
+interface ShopifyCustomer {
+  id: number;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  accepts_marketing?: boolean;
+  total_spent?: string;
+  orders_count?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ShopifyOrder {
+  id: number;
+  order_number?: string;
+  name?: string;
+  email?: string;
+  created_at: string;
+  updated_at: string;
+  financial_status?: string;
+  fulfillment_status?: string;
+  subtotal_price?: string;
+  total_price?: string;
+  total_tax?: string;
+  currency?: string;
+  customer?: {
+    id: number;
+  };
+}
+
+interface ShopifyResponse<T> {
+  customers?: T[];
+  orders?: T[];
+  pageInfo?: {
+    hasNextPage?: boolean;
+    endCursor?: string;
+  };
+}
+
+interface SyncResult {
+  ingested: number;
+  updated: number;
+  skipped: number;
+  shopifyCount: number;
+  localCount: number;
+}
+
+export async function POST() {
   try {
     const cookieStore = await cookies();
     
@@ -96,7 +145,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function updateSyncStatus(supabase: any, syncId: string, status: string, errorMessage?: string) {
+async function updateSyncStatus(supabase: SupabaseClient, syncId: string, status: string, errorMessage?: string) {
   await supabase
     .from('sync_metadata')
     .update({
@@ -107,19 +156,19 @@ async function updateSyncStatus(supabase: any, syncId: string, status: string, e
     .eq('id', syncId);
 }
 
-async function syncCustomers(supabase: any, shopify: any, accountId: string) {
+async function syncCustomers(supabase: SupabaseClient, shopify: any, accountId: string): Promise<SyncResult> {
   console.log("Syncing customers...");
   
-  let allCustomers: any[] = [];
+  const allCustomers: ShopifyCustomer[] = [];
   let hasNext = true;
-  let cursor = null;
+  let cursor: string | null = null;
 
   // Fetch all customers with pagination
   while (hasNext) {
-    const params: any = { limit: 250 };
+    const params: { limit: number; after?: string } = { limit: 250 };
     if (cursor) params.after = cursor;
 
-    const response = await shopify.customers.list(params);
+    const response: ShopifyResponse<ShopifyCustomer> = await shopify.customers.list(params);
     const customers = response.customers || [];
     
     allCustomers.push(...customers);
@@ -139,7 +188,7 @@ async function syncCustomers(supabase: any, shopify: any, accountId: string) {
   for (const customer of allCustomers) {
     try {
       // Hash email for PII protection
-      const { hash: emailHash, salt: emailSalt } = hashEmail(customer.email || '');
+      const { hash: emailHash, salt: emailSalt } = await hashEmail(customer.email || '');
 
       // Check if customer exists
       const { data: existingCustomer } = await supabase
@@ -207,22 +256,22 @@ async function syncCustomers(supabase: any, shopify: any, accountId: string) {
   };
 }
 
-async function syncOrders(supabase: any, shopify: any, accountId: string) {
+async function syncOrders(supabase: SupabaseClient, shopify: any, accountId: string): Promise<SyncResult> {
   console.log("Syncing orders...");
   
-  let allOrders: any[] = [];
+  const allOrders: ShopifyOrder[] = [];
   let hasNext = true;
-  let cursor = null;
+  let cursor: string | null = null;
 
   // Fetch all orders with pagination
   while (hasNext) {
-    const params: any = { 
+    const params: { limit: number; status: string; after?: string } = { 
       limit: 250,
       status: 'any' // Get all orders regardless of status
     };
     if (cursor) params.after = cursor;
 
-    const response = await shopify.orders.list(params);
+    const response: ShopifyResponse<ShopifyOrder> = await shopify.orders.list(params);
     const orders = response.orders || [];
     
     allOrders.push(...orders);
@@ -274,7 +323,7 @@ async function syncOrders(supabase: any, shopify: any, accountId: string) {
         total_price: parseFloat(order.total_price || '0'),
         total_tax: parseFloat(order.total_tax || '0'),
         currency: order.currency || 'USD',
-        customer_email_hash: order.email ? hashEmail(order.email).hash : null,
+        customer_email_hash: order.email ? (await hashEmail(order.email)).hash : null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };

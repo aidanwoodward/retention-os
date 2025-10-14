@@ -41,7 +41,10 @@ export default function SyncPage() {
 
       const data = await response.json();
 
-      if (data.success) {
+      if (!response.ok) {
+        setError(data.error || 'Sync failed');
+        console.error('Sync API error:', data);
+      } else if (data.success) {
         setResult(data.data);
       } else {
         setError(data.error || 'Sync failed');
@@ -111,6 +114,9 @@ export default function SyncPage() {
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-red-800">Sync Failed</h3>
                 <p className="text-sm text-red-700 mt-1">{error}</p>
+                <p className="text-xs text-red-600 mt-2">
+                  Check the browser console for more details.
+                </p>
               </div>
             </div>
           </div>

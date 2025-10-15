@@ -63,7 +63,7 @@ export async function POST() {
 
     // Clear existing data first
     console.log("Clearing existing data...");
-    await serviceSupabase.from('order_items').delete().eq('order_id', 'like', '%');
+    await serviceSupabase.from('order_items').delete().like('order_id', '%');
     await serviceSupabase.from('orders').delete().eq('account_id', accountId);
     await serviceSupabase.from('customers').delete().eq('account_id', accountId);
 
@@ -125,7 +125,7 @@ export async function POST() {
       };
     });
 
-    const { data: insertedOrders, error: orderError } = await serviceSupabase
+    const { error: orderError } = await serviceSupabase
       .from('orders')
       .insert(orderInserts)
       .select();

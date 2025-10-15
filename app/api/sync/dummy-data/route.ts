@@ -68,8 +68,12 @@ export async function POST() {
     await serviceSupabase.from('customers').delete().eq('account_id', accountId);
 
     // Generate realistic dummy data
+    console.log("Starting dummy data generation...");
     const customers = generateDummyCustomers();
+    console.log(`Generated ${customers.length} customers`);
+    
     const orders = generateDummyOrders(customers);
+    console.log(`Generated ${orders.length} orders`);
 
     console.log(`Generating ${customers.length} customers and ${orders.length} orders over 4 years...`);
 
@@ -195,9 +199,21 @@ function generateDummyCustomers(): DummyCustomer[] {
     const daysAgo = Math.floor(Math.random() * (4 * 365 - 180)); // 4 years minus 6 months
     const firstOrderDate = new Date(fourYearsAgo.getTime() + (daysAgo * 24 * 60 * 60 * 1000));
     
+    // Ensure first order date is valid
+    if (isNaN(firstOrderDate.getTime())) {
+      console.error(`Invalid first order date for customer ${i}:`, firstOrderDate);
+      continue;
+    }
+    
     // Last order between first order and now (but not too recent for some customers)
     const daysSinceFirst = Math.floor(Math.random() * (4 * 365 - daysAgo));
     const lastOrderDate = new Date(firstOrderDate.getTime() + (daysSinceFirst * 24 * 60 * 60 * 1000));
+    
+    // Ensure last order date is valid
+    if (isNaN(lastOrderDate.getTime())) {
+      console.error(`Invalid last order date for customer ${i}:`, lastOrderDate);
+      continue;
+    }
     
     // More realistic order patterns
     const orderCount = Math.floor(Math.random() * 20) + 1; // 1-20 orders
@@ -206,9 +222,16 @@ function generateDummyCustomers(): DummyCustomer[] {
     
     // Some customers are dormant (last order > 90 days ago)
     const isDormant = Math.random() > 0.7; // 30% chance of being dormant
-    const finalLastOrder = isDormant && lastOrderDate > new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000))
+    const ninetyDaysAgo = new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000));
+    const finalLastOrder = isDormant && lastOrderDate > ninetyDaysAgo
       ? new Date(now.getTime() - (Math.random() * 365 * 24 * 60 * 60 * 1000)) // Random day in last year
       : lastOrderDate;
+    
+    // Final validation
+    if (isNaN(finalLastOrder.getTime())) {
+      console.error(`Invalid final last order date for customer ${i}:`, finalLastOrder);
+      continue;
+    }
     
     customers.push({
       id: (1000 + i).toString(),
@@ -248,6 +271,12 @@ function generateDummyOrders(customers: DummyCustomer[]): DummyOrder[] {
         firstOrderDate.getTime() + 
         adjustedProgress * (lastOrderDate.getTime() - firstOrderDate.getTime())
       );
+      
+      // Ensure order date is valid
+      if (isNaN(orderDate.getTime())) {
+        console.error(`Invalid order date for customer ${customer.id}, order ${i}:`, orderDate);
+        continue;
+      }
       
       // Seasonal and customer value variations
       const month = orderDate.getMonth();

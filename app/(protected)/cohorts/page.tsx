@@ -175,7 +175,7 @@ export default function CohortsPage() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Max Retention</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {cohorts.length > 0 ? Math.max(...cohorts.flatMap(c => c.periods.map(p => p.retention_rate_percent))).toFixed(0)}%
+                  {cohorts.length > 0 ? Math.max(...cohorts.flatMap(c => c.periods.map(p => p.retention_rate_percent))).toFixed(0) : 0}%
                 </p>
               </div>
             </div>

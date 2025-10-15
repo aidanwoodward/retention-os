@@ -53,7 +53,8 @@ export async function GET(request: Request) {
     // Get account ID for the user
     const accountId = await getAccountId(session.user.id);
 
-    // Build query
+    // Fetch cohorts from materialized view
+    console.log("Fetching cohorts from materialized view...");
     let query = supabase
       .from('mv_cohorts')
       .select('*')
@@ -67,15 +68,7 @@ export async function GET(request: Request) {
       query = query.eq('cohort_month', cohortMonth);
     }
 
-    // Fetch cohorts from materialized view
-    console.log("Fetching cohorts from materialized view...");
-    const { data: cohortsData, error } = await supabase
-      .from('mv_cohorts')
-      .select('*')
-      .eq('account_id', accountId)
-      .order('cohort_month', { ascending: false })
-      .order('period_number', { ascending: true })
-      .limit(limit);
+    const { data: cohortsData, error } = await query;
 
     if (error) {
       console.error("Error fetching cohorts:", error);
@@ -96,6 +89,19 @@ export async function GET(request: Request) {
     }));
 
     // Group by cohort for easier frontend consumption
+    interface CohortGroup {
+      cohort_month: string;
+      cohort_size: number;
+      periods: Array<{
+        period_number: number;
+        order_month: string;
+        active_customers: number;
+        total_orders: number;
+        total_revenue: number;
+        retention_rate_percent: number;
+      }>;
+    }
+
     const cohortsByMonth = cohorts.reduce((acc, cohort) => {
       if (!acc[cohort.cohort_month]) {
         acc[cohort.cohort_month] = {
@@ -113,7 +119,7 @@ export async function GET(request: Request) {
         retention_rate_percent: cohort.retention_rate_percent
       });
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, CohortGroup>);
 
     console.log(`Cohorts fetched successfully: ${cohorts.length} records`);
 

@@ -266,7 +266,7 @@ export default function SegmentsPage() {
                 <button
                   key={tab.key}
                   onClick={() => {
-                    setActiveTab(tab.key as any);
+                    setActiveTab(tab.key as 'value' | 'activity' | 'frequency' | 'aov');
                     setSelectedSegment(null);
                   }}
                   className={`${

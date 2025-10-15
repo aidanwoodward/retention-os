@@ -23,6 +23,7 @@ interface CohortsResponse {
     total_records: number;
     latest_calculated_at: string;
   };
+  error?: string;
 }
 
 export default function CohortsPage() {

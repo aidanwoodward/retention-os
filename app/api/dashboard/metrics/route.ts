@@ -96,37 +96,32 @@ export async function GET() {
   }
 }
 
-interface ShopifyCustomer {
-  id: number;
-  email?: string;
-  first_name?: string;
-  last_name?: string;
-  created_at: string;
-  updated_at: string;
+interface Customer {
+  id: string;
+  customer_id?: string;
+  source_created_at: string;
+  source_updated_at: string;
+  total_spent: number;
+  orders_count: number;
+  first_order_at: string;
+  last_order_at: string;
 }
 
-interface ShopifyOrder {
-  id: number;
-  order_number: number;
-  email?: string;
-  created_at: string;
-  total_price: string;
+interface Order {
+  id: string;
+  customer_id?: string;
+  source_created_at: string;
+  total_price: number;
   financial_status: string;
-  customer?: {
-    id: number;
-    email?: string;
-    first_name?: string;
-    last_name?: string;
-  };
 }
 
-function calculateRetentionMetrics(customers: any[], orders: any[]) {
+function calculateRetentionMetrics(customers: Customer[], orders: Order[]) {
   const now = new Date();
   const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
   const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
   // Group orders by customer using customer_id field
-  const customerOrders: { [key: string]: any[] } = {};
+  const customerOrders: { [key: string]: Order[] } = {};
   orders.forEach(order => {
     if (order.customer_id) {
       const customerId = order.customer_id.toString();

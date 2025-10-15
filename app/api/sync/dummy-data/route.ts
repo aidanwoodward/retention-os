@@ -253,7 +253,6 @@ function generateDummyCustomers(): DummyCustomer[] {
 
 function generateDummyOrders(customers: DummyCustomer[]): DummyOrder[] {
   const orders: DummyOrder[] = [];
-  const now = new Date();
   
   customers.forEach(customer => {
     const orderCount = customer.orders_count;

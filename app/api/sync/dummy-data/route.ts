@@ -71,7 +71,7 @@ export async function POST() {
     const customers = generateDummyCustomers();
     const orders = generateDummyOrders(customers);
 
-    console.log(`Generating ${customers.length} customers and ${orders.length} orders...`);
+    console.log(`Generating ${customers.length} customers and ${orders.length} orders over 4 years...`);
 
     // Insert customers
     const customerInserts = customers.map(customer => {
@@ -187,16 +187,28 @@ export async function POST() {
 function generateDummyCustomers(): DummyCustomer[] {
   const customers: DummyCustomer[] = [];
   const now = new Date();
+  const fourYearsAgo = new Date(now.getTime() - (4 * 365 * 24 * 60 * 60 * 1000));
   
-  // Generate 50 customers with realistic patterns
-  for (let i = 1; i <= 50; i++) {
-    const daysAgo = Math.floor(Math.random() * 365); // Random day in last year
-    const firstOrderDate = new Date(now.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
-    const lastOrderDate = new Date(firstOrderDate.getTime() + (Math.random() * 30 * 24 * 60 * 60 * 1000)); // Within 30 days of first order
+  // Generate 500 customers with realistic patterns over 4 years
+  for (let i = 1; i <= 500; i++) {
+    // First order between 4 years ago and 6 months ago
+    const daysAgo = Math.floor(Math.random() * (4 * 365 - 180)); // 4 years minus 6 months
+    const firstOrderDate = new Date(fourYearsAgo.getTime() + (daysAgo * 24 * 60 * 60 * 1000));
     
-    const orderCount = Math.floor(Math.random() * 5) + 1; // 1-5 orders
-    const avgOrderValue = 50 + Math.random() * 200; // $50-$250
+    // Last order between first order and now (but not too recent for some customers)
+    const daysSinceFirst = Math.floor(Math.random() * (4 * 365 - daysAgo));
+    const lastOrderDate = new Date(firstOrderDate.getTime() + (daysSinceFirst * 24 * 60 * 60 * 1000));
+    
+    // More realistic order patterns
+    const orderCount = Math.floor(Math.random() * 20) + 1; // 1-20 orders
+    const avgOrderValue = 30 + Math.random() * 300; // $30-$330
     const totalSpent = orderCount * avgOrderValue;
+    
+    // Some customers are dormant (last order > 90 days ago)
+    const isDormant = Math.random() > 0.7; // 30% chance of being dormant
+    const finalLastOrder = isDormant && lastOrderDate > new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000))
+      ? new Date(now.getTime() - (Math.random() * 365 * 24 * 60 * 60 * 1000)) // Random day in last year
+      : lastOrderDate;
     
     customers.push({
       id: (1000 + i).toString(),
@@ -208,8 +220,8 @@ function generateDummyCustomers(): DummyCustomer[] {
       total_spent: totalSpent,
       orders_count: orderCount,
       first_order_at: firstOrderDate.toISOString(),
-      last_order_at: lastOrderDate.toISOString(),
-      customer_lifetime_value: totalSpent * 1.2 // 20% higher than total spent
+      last_order_at: finalLastOrder.toISOString(),
+      customer_lifetime_value: totalSpent * (1.1 + Math.random() * 0.3) // 10-40% higher than total spent
     });
   }
   
@@ -218,21 +230,41 @@ function generateDummyCustomers(): DummyCustomer[] {
 
 function generateDummyOrders(customers: DummyCustomer[]): DummyOrder[] {
   const orders: DummyOrder[] = [];
+  const now = new Date();
   
   customers.forEach(customer => {
     const orderCount = customer.orders_count;
     const firstOrderDate = new Date(customer.first_order_at);
     const lastOrderDate = new Date(customer.last_order_at);
     
+    // Generate orders with realistic patterns
     for (let i = 0; i < orderCount; i++) {
+      // More realistic order distribution (not linear)
+      const progress = i / (orderCount - 1);
+      const jitter = (Math.random() - 0.5) * 0.3; // Add some randomness
+      const adjustedProgress = Math.max(0, Math.min(1, progress + jitter));
+      
       const orderDate = new Date(
         firstOrderDate.getTime() + 
-        (i / (orderCount - 1)) * (lastOrderDate.getTime() - firstOrderDate.getTime())
+        adjustedProgress * (lastOrderDate.getTime() - firstOrderDate.getTime())
       );
       
-      const subtotal = 30 + Math.random() * 200; // $30-$230
-      const tax = subtotal * 0.08; // 8% tax
-      const total = subtotal + tax;
+      // Seasonal and customer value variations
+      const month = orderDate.getMonth();
+      const isHolidaySeason = month >= 10 || month <= 1; // Nov-Feb
+      const isSummer = month >= 5 && month <= 8; // Jun-Sep
+      
+      // Base order value with seasonal adjustments
+      let baseValue = 40 + Math.random() * 250; // $40-$290
+      if (isHolidaySeason) baseValue *= 1.3; // 30% higher during holidays
+      if (isSummer) baseValue *= 1.1; // 10% higher in summer
+      
+      // Customer loyalty discount (repeat customers get better deals)
+      if (i > 0) baseValue *= (0.85 + Math.random() * 0.15); // 0-15% discount for repeat
+      
+      const subtotal = Math.round(baseValue * 100) / 100;
+      const tax = Math.round(subtotal * 0.08 * 100) / 100; // 8% tax
+      const total = Math.round((subtotal + tax) * 100) / 100;
       
       orders.push({
         id: (2000 + orders.length + 1).toString(),
@@ -249,6 +281,9 @@ function generateDummyOrders(customers: DummyCustomer[]): DummyOrder[] {
       });
     }
   });
+  
+  // Sort orders by date for better realism
+  orders.sort((a, b) => new Date(a.source_created_at).getTime() - new Date(b.source_created_at).getTime());
   
   return orders;
 }

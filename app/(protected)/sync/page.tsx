@@ -23,6 +23,7 @@ interface SyncResult {
 
 export default function SyncPage() {
   const [loading, setLoading] = useState(false);
+  const [dummyLoading, setDummyLoading] = useState(false);
   const [result, setResult] = useState<SyncResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,6 +58,37 @@ export default function SyncPage() {
     }
   };
 
+  const handleDummyData = async () => {
+    setDummyLoading(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      const response = await fetch('/api/sync/dummy-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Dummy data generation failed');
+        console.error('Dummy data API error:', data);
+      } else if (data.success) {
+        setResult(data.data);
+      } else {
+        setError(data.error || 'Dummy data generation failed');
+      }
+    } catch (err) {
+      setError('Network error occurred');
+      console.error('Dummy data error:', err);
+    } finally {
+      setDummyLoading(false);
+    }
+  };
+
   return (
     <div className="p-6">
       <div className="mx-auto max-w-4xl space-y-6">
@@ -80,24 +112,41 @@ export default function SyncPage() {
         <div className="rounded-xl bg-white p-6 shadow">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Shopify Sync</h2>
-            <button
-              onClick={handleSync}
-              disabled={loading}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Syncing...
-                </div>
-              ) : (
-                'Start Sync'
-              )}
-            </button>
+            <div className="flex space-x-3">
+              <button
+                onClick={handleDummyData}
+                disabled={dummyLoading || loading}
+                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {dummyLoading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Generating...
+                  </div>
+                ) : (
+                  'Use Dummy Data'
+                )}
+              </button>
+              <button
+                onClick={handleSync}
+                disabled={loading || dummyLoading}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Syncing...
+                  </div>
+                ) : (
+                  'Start Sync'
+                )}
+              </button>
+            </div>
           </div>
 
           <div className="text-sm text-gray-600 space-y-2">
-            <p>• Syncs customers and orders from your Shopify store</p>
+            <p>• <strong>Use Dummy Data:</strong> Generate realistic sample data for testing and visualization</p>
+            <p>• <strong>Start Sync:</strong> Syncs customers and orders from your Shopify store</p>
             <p>• Uses incremental updates (only changed data)</p>
             <p>• Protects customer privacy with email hashing</p>
             <p>• Tracks sync health and reconciliation</p>

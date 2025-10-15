@@ -72,9 +72,12 @@ export async function GET() {
     const paidOrders = ordersResult.data || [];
 
     console.log("Real data:", { customersCount: customers.length, ordersCount: paidOrders.length });
+    console.log("Sample customer:", customers[0]);
+    console.log("Sample order:", paidOrders[0]);
 
     // Calculate retention metrics
     const metrics = calculateRetentionMetrics(customers, paidOrders);
+    console.log("Calculated metrics:", metrics);
 
     return NextResponse.json({
       success: true,
@@ -117,16 +120,16 @@ interface ShopifyOrder {
   };
 }
 
-function calculateRetentionMetrics(customers: ShopifyCustomer[], orders: ShopifyOrder[]) {
+function calculateRetentionMetrics(customers: any[], orders: any[]) {
   const now = new Date();
   const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
   const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
-  // Group orders by customer
-  const customerOrders: { [key: string]: ShopifyOrder[] } = {};
+  // Group orders by customer using customer_id field
+  const customerOrders: { [key: string]: any[] } = {};
   orders.forEach(order => {
-    if (order.customer && order.customer.id) {
-      const customerId = order.customer.id.toString();
+    if (order.customer_id) {
+      const customerId = order.customer_id.toString();
       if (!customerOrders[customerId]) {
         customerOrders[customerId] = [];
       }
@@ -146,16 +149,16 @@ function calculateRetentionMetrics(customers: ShopifyCustomer[], orders: Shopify
 
   // At-risk customers (no purchase in 60+ days)
   const atRiskCustomers = Object.entries(customerOrders).filter(([, customerOrders]) => {
-    const lastOrder = customerOrders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+    const lastOrder = customerOrders.sort((a, b) => new Date(b.source_created_at).getTime() - new Date(a.source_created_at).getTime())[0];
     if (!lastOrder) return false;
-    return new Date(lastOrder.created_at) < sixtyDaysAgo;
+    return new Date(lastOrder.source_created_at) < sixtyDaysAgo;
   });
 
   // Dormant customers (no purchase in 90+ days)
   const dormantCustomers = Object.entries(customerOrders).filter(([, customerOrders]) => {
-    const lastOrder = customerOrders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+    const lastOrder = customerOrders.sort((a, b) => new Date(b.source_created_at).getTime() - new Date(a.source_created_at).getTime())[0];
     if (!lastOrder) return false;
-    return new Date(lastOrder.created_at) < ninetyDaysAgo;
+    return new Date(lastOrder.source_created_at) < ninetyDaysAgo;
   });
 
   // One-time buyers

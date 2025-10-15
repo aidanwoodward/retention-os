@@ -40,6 +40,7 @@ interface SegmentsResponse {
     total_customers: number;
     latest_calculated_at: string;
   };
+  error?: string;
 }
 
 export default function SegmentsPage() {

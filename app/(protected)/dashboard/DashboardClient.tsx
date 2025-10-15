@@ -29,11 +29,26 @@ export default function DashboardClient() {
   const fetchMetrics = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/dashboard/metrics");
+      // Use the new materialized view KPIs API for better performance
+      const response = await fetch("/api/metrics/kpis");
       const data = await response.json();
 
       if (data.success) {
-        setMetrics(data.data);
+        // Transform the KPIs API response to match the expected format
+        setMetrics({
+          totalCustomers: data.data.total_customers,
+          totalOrders: data.data.total_orders,
+          retentionRate: data.data.retention_rate_percent,
+          customerLifetimeValue: data.data.customer_lifetime_value,
+          atRiskCustomers: data.data.at_risk_customers,
+          dormantCustomers: data.data.dormant_customers,
+          oneTimeBuyers: data.data.one_time_buyers,
+          totalRevenue: data.data.total_revenue,
+          averageOrderValue: data.data.average_order_value,
+          repeatCustomers: data.data.repeat_customers,
+          shopDomain: "retention-os-test.myshopify.com", // TODO: Get from API
+          lastSync: data.data.calculated_at
+        });
       } else {
         setError(data.error || "Failed to fetch metrics");
       }
@@ -146,6 +161,60 @@ export default function DashboardClient() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Navigation Links */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <a
+          href="/cohorts"
+          className="rounded-xl bg-white p-6 shadow hover:shadow-lg transition-shadow border border-gray-200 hover:border-blue-300"
+        >
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="h-8 w-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                <span className="text-sm font-medium text-white">📊</span>
+              </div>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-900">Cohort Analysis</p>
+              <p className="text-sm text-gray-500">View retention by acquisition month</p>
+            </div>
+          </div>
+        </a>
+
+        <a
+          href="/segments"
+          className="rounded-xl bg-white p-6 shadow hover:shadow-lg transition-shadow border border-gray-200 hover:border-purple-300"
+        >
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="h-8 w-8 rounded-lg bg-purple-500 flex items-center justify-center">
+                <span className="text-sm font-medium text-white">🎯</span>
+              </div>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-900">Customer Segments</p>
+              <p className="text-sm text-gray-500">Analyze customer segments and behavior</p>
+            </div>
+          </div>
+        </a>
+
+        <a
+          href="/sync"
+          className="rounded-xl bg-white p-6 shadow hover:shadow-lg transition-shadow border border-gray-200 hover:border-green-300"
+        >
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="h-8 w-8 rounded-lg bg-green-500 flex items-center justify-center">
+                <span className="text-sm font-medium text-white">🔄</span>
+              </div>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-900">Data Sync</p>
+              <p className="text-sm text-gray-500">Sync data and manage connections</p>
+            </div>
+          </div>
+        </a>
       </div>
 
       {/* Additional Metrics */}

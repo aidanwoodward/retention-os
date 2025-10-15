@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createShopifyClient, ShopifyClient } from "@/lib/shopifyClient";
-import { hashEmail, getAccountId } from "@/lib/database";
+import { hashEmail, getAccountId, createServiceDatabaseClient } from "@/lib/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 interface ShopifyCustomer {
@@ -68,8 +68,11 @@ export async function POST() {
     // Get account ID for the user
     const accountId = await getAccountId(session.user.id);
 
+    // Create service client for database operations (bypasses RLS)
+    const serviceSupabase = createServiceDatabaseClient();
+
     // Start sync metadata record
-    const { data: syncRecord } = await supabase
+    const { data: syncRecord } = await serviceSupabase
       .from('sync_metadata')
       .insert({
         account_id: accountId,
@@ -89,20 +92,20 @@ export async function POST() {
     // Create Shopify client
     const shopify = await createShopifyClient(session.user.id, supabase);
     if (!shopify) {
-      await updateSyncStatus(supabase, syncRecord.id, 'failed', 'Failed to create Shopify client');
+      await updateSyncStatus(serviceSupabase, syncRecord.id, 'failed', 'Failed to create Shopify client');
       return NextResponse.json({ error: "Failed to create Shopify client" }, { status: 500 });
     }
 
     // Sync customers
-    const customersResult = await syncCustomers(supabase, shopify, accountId);
+    const customersResult = await syncCustomers(serviceSupabase, shopify, accountId);
     console.log(`Customers sync: ${customersResult.ingested} ingested, ${customersResult.updated} updated, ${customersResult.skipped} skipped`);
 
     // Sync orders
-    const ordersResult = await syncOrders(supabase, shopify, accountId);
+    const ordersResult = await syncOrders(serviceSupabase, shopify, accountId);
     console.log(`Orders sync: ${ordersResult.ingested} ingested, ${ordersResult.updated} updated, ${ordersResult.skipped} skipped`);
 
     // Complete sync metadata
-    await supabase
+    await serviceSupabase
       .from('sync_metadata')
       .update({
         completed_at: new Date().toISOString(),

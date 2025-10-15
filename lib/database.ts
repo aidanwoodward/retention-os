@@ -126,6 +126,17 @@ export function createDatabaseClient() {
   return createClient(supabaseUrl, supabaseKey);
 }
 
+/**
+ * Create a database client with service role key (bypasses RLS)
+ * Use this for server-side operations that need to create accounts
+ */
+export function createServiceDatabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  
+  return createClient(supabaseUrl, supabaseServiceKey);
+}
+
 // =============================================================================
 // QUERY HELPERS
 // =============================================================================
@@ -134,7 +145,7 @@ export function createDatabaseClient() {
  * Get or create an account for a user
  */
 export async function getOrCreateAccount(userId: string, name?: string): Promise<Account> {
-  const supabase = createDatabaseClient();
+  const supabase = createServiceDatabaseClient();
   
   // Try to get existing account
   const { data: existingAccount } = await supabase

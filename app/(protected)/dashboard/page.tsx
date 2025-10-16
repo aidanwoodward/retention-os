@@ -123,7 +123,7 @@ export default async function DashboardPage() {
               <StatusBadge ok={klaviyoConnected} />
             </div>
             <p className="text-gray-600 mb-6 leading-relaxed">
-              Push "At-Risk" segments and measure campaign effectiveness with advanced retention analytics.
+              Push &quot;At-Risk&quot; segments and measure campaign effectiveness with advanced retention analytics.
             </p>
             <Link
               href="/connect/klaviyo"
@@ -136,7 +136,7 @@ export default async function DashboardPage() {
 
         {/* Features Preview */}
         <div className="mt-16 text-center">
-          <h3 className="text-2xl font-semibold text-gray-900 mb-8">What you'll get</h3>
+          <h3 className="text-2xl font-semibold text-gray-900 mb-8">What you&apos;ll get</h3>
           <div className="grid gap-6 sm:grid-cols-3 max-w-4xl mx-auto">
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">

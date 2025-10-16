@@ -1,5 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createServiceDatabaseClient } from "@/lib/database";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   try {

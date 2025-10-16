@@ -79,26 +79,26 @@ export function FilterDemo() {
             {!filters.length && "Filter"}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0">
+        <PopoverContent className="w-[200px] p-0 bg-white border border-gray-200 shadow-lg z-50">
           <AnimateChangeInHeight>
-            <Command>
+            <Command className="bg-white">
               <CommandInput
                 placeholder={selectedView ? selectedView : "Filter..."}
-                className="h-9"
+                className="h-9 bg-white border-b border-gray-100"
                 value={commandInput}
                 onInputCapture={(e) => {
                   setCommandInput(e.currentTarget.value);
                 }}
                 ref={commandInputRef}
               />
-              <CommandList>
+              <CommandList className="bg-white">
                 <CommandEmpty>No results found.</CommandEmpty>
                 {selectedView ? (
                   <CommandGroup>
                     {filterViewToFilterOptions[selectedView].map(
                       (filter: FilterOption) => (
                         <CommandItem
-                          className="group text-muted-foreground flex gap-2 items-center"
+                          className="group text-muted-foreground flex gap-2 items-center bg-white hover:bg-gray-50"
                           key={filter.name}
                           value={filter.name}
                           onSelect={(currentValue) => {
@@ -138,7 +138,7 @@ export function FilterDemo() {
                         <CommandGroup>
                           {group.map((filter: FilterOption) => (
                             <CommandItem
-                              className="group text-muted-foreground flex gap-2 items-center"
+                              className="group text-muted-foreground flex gap-2 items-center bg-white hover:bg-gray-50"
                               key={filter.name}
                               value={filter.name}
                               onSelect={(currentValue) => {

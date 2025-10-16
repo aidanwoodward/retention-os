@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { FilterDemo } from "@/components/ui/filter-demo";
 
 interface DashboardMetrics {
   totalCustomers: number;
@@ -172,6 +173,17 @@ export default function PremiumDashboard() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Retention Command Center</h1>
           <p className="text-gray-600">Monitor your customer retention health and discover growth opportunities</p>
+        </div>
+
+        {/* Filters */}
+        <div className="mb-8">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Filter Data</h3>
+              <span className="text-sm text-gray-500">Filter by date range, customer type, and more</span>
+            </div>
+            <FilterDemo />
+          </div>
         </div>
 
         {/* Health Score */}

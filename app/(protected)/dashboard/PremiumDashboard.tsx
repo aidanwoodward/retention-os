@@ -122,8 +122,7 @@ export default function PremiumDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header Skeleton */}
           <div className="mb-8">
             <div className="h-8 bg-white rounded-lg animate-pulse mb-2"></div>
@@ -140,13 +139,12 @@ export default function PremiumDashboard() {
             ))}
           </div>
         </div>
-      </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="bg-white rounded-2xl p-8 shadow-sm max-w-md text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl">⚠️</span>
@@ -169,8 +167,7 @@ export default function PremiumDashboard() {
   const insights = generateInsights(metrics);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Retention Command Center</h1>
@@ -338,7 +335,6 @@ export default function PremiumDashboard() {
             <div className="text-sm text-gray-500">Keep your data fresh and up-to-date</div>
           </Link>
         </div>
-      </div>
     </div>
   );
 }

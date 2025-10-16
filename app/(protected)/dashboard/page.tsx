@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
 import StatusBadge from "@/app/components/StatusBadge";
 import Link from "next/link";
-import DashboardClient from "./DashboardClient";
+import PremiumDashboard from "./PremiumDashboard";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -68,62 +68,99 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          {/* Dashboard with Real Data */}
-          <DashboardClient />
+          {/* Premium Dashboard */}
+          <PremiumDashboard />
         </div>
       </div>
     );
   }
 
-  // If no connections, show setup screen
+  // If no connections, show premium setup screen
   return (
-    <div className="p-6">
-      <div className="mx-auto max-w-5xl space-y-6">
-        <section className="rounded-2xl bg-white p-6 shadow">
-          <p className="text-lg font-medium">
-            Hello Retention OS – connect your store to get started.
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Welcome to RetentionOS</h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Connect your store to unlock powerful retention analytics and customer insights
           </p>
-          <p className="mt-2 text-sm text-gray-600">
-            Connect Shopify and Klaviyo so we can sync customers, score churn risk,
-            and push winback segments.
-          </p>
+        </div>
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            {/* Shopify card */}
-            <div className="rounded-xl border p-5">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Shopify</h2>
-                <StatusBadge ok={shopifyConnected} />
+        {/* Setup Cards */}
+        <div className="grid gap-8 sm:grid-cols-2 max-w-4xl mx-auto">
+          {/* Shopify Card */}
+          <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center">
+                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mr-4">
+                  <span className="text-2xl">🏪</span>
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900">Shopify Store</h2>
               </div>
-              <p className="mt-2 text-sm text-gray-600">
-                Sync orders, customers, and refunds daily.
-              </p>
-              <Link
-                href="/connect/shopify"
-                className="mt-4 inline-block rounded-lg bg-black px-4 py-2 text-white hover:opacity-90"
-              >
-                {shopifyConnected ? "Manage" : "Connect Shopify"}
-              </Link>
+              <StatusBadge ok={shopifyConnected} />
             </div>
+            <p className="text-gray-600 mb-6 leading-relaxed">
+              Sync orders, customers, and refunds to analyze retention patterns and identify growth opportunities.
+            </p>
+            <Link
+              href="/connect/shopify"
+              className="w-full bg-green-600 text-white py-3 px-6 rounded-xl hover:bg-green-700 transition-all duration-200 font-medium shadow-sm hover:shadow-md text-center block"
+            >
+              {shopifyConnected ? "Manage Connection" : "Connect Shopify"}
+            </Link>
+          </div>
 
-            {/* Klaviyo card */}
-            <div className="rounded-xl border p-5">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Klaviyo</h2>
-                <StatusBadge ok={klaviyoConnected} />
+          {/* Klaviyo Card */}
+          <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center">
+                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mr-4">
+                  <span className="text-2xl">📧</span>
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900">Klaviyo</h2>
               </div>
-              <p className="mt-2 text-sm text-gray-600">
-                Push &quot;At-Risk&quot; segment and measure holdout lift.
-              </p>
-              <Link
-                href="/connect/klaviyo"
-                className="mt-4 inline-block rounded-lg bg-black px-4 py-2 text-white hover:opacity-90"
-              >
-                {klaviyoConnected ? "Manage" : "Connect Klaviyo"}
-              </Link>
+              <StatusBadge ok={klaviyoConnected} />
+            </div>
+            <p className="text-gray-600 mb-6 leading-relaxed">
+              Push "At-Risk" segments and measure campaign effectiveness with advanced retention analytics.
+            </p>
+            <Link
+              href="/connect/klaviyo"
+              className="w-full bg-purple-600 text-white py-3 px-6 rounded-xl hover:bg-purple-700 transition-all duration-200 font-medium shadow-sm hover:shadow-md text-center block"
+            >
+              {klaviyoConnected ? "Manage Connection" : "Connect Klaviyo"}
+            </Link>
+          </div>
+        </div>
+
+        {/* Features Preview */}
+        <div className="mt-16 text-center">
+          <h3 className="text-2xl font-semibold text-gray-900 mb-8">What you'll get</h3>
+          <div className="grid gap-6 sm:grid-cols-3 max-w-4xl mx-auto">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">📊</span>
+              </div>
+              <h4 className="font-semibold text-gray-900 mb-2">Cohort Analysis</h4>
+              <p className="text-sm text-gray-600">Track retention by acquisition month</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-yellow-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">🎯</span>
+              </div>
+              <h4 className="font-semibold text-gray-900 mb-2">Customer Segments</h4>
+              <p className="text-sm text-gray-600">Identify high-value customer groups</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">💡</span>
+              </div>
+              <h4 className="font-semibold text-gray-900 mb-2">AI Insights</h4>
+              <p className="text-sm text-gray-600">Get actionable recommendations</p>
             </div>
           </div>
-        </section>
+        </div>
       </div>
     </div>
   );

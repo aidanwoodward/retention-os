@@ -5,7 +5,6 @@ import Link from "next/link";
 import { FilterDemo } from "@/components/ui/filter-demo";
 import {
   TrendingUp,
-  TrendingDown,
   Users,
   AlertTriangle,
   CheckCircle,
@@ -245,7 +244,7 @@ export default function RetentionPage() {
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id as 'curve' | 'churn' | 'reactivation')}
                 className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600'

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceDatabaseClient } from "@/lib/database";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const supabase = createServiceDatabaseClient();
+    // const supabase = createServiceDatabaseClient();
     
     // For now, return mock data since we don't have the reports system implemented yet
     // This will be replaced with real data once we implement the AI summary service

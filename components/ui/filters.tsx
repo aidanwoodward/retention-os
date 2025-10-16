@@ -29,14 +29,12 @@ import {
   CircleAlert,
   CircleCheck,
   CircleDashed,
-  CircleDotDashed,
   CircleEllipsis,
   CircleX,
   SignalHigh,
   SignalLow,
   SignalMedium,
   Tag,
-  UserCircle,
   X,
   TrendingUp,
   TrendingDown,
@@ -46,7 +44,6 @@ import {
   Star,
 } from "lucide-react";
 import { Dispatch, SetStateAction, useRef, useState, useEffect } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "motion/react";
 

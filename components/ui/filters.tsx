@@ -409,11 +409,12 @@ const FilterOperatorDropdown = ({
       <DropdownMenuTrigger className="bg-muted hover:bg-muted/50 px-1.5 py-1 text-muted-foreground hover:text-primary transition shrink-0">
         {operator}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-fit min-w-fit">
+      <DropdownMenuContent align="start" className="w-fit min-w-fit bg-white border border-gray-200 shadow-lg z-50">
         {operators.map((operator) => (
           <DropdownMenuItem
             key={operator}
             onClick={() => setOperator(operator)}
+            className="bg-white hover:bg-gray-50"
           >
             {operator}
           </DropdownMenuItem>
@@ -482,25 +483,25 @@ const FilterValueCombobox = ({
             : `${filterValues?.length} selected`}
         </div>
       </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0">
+      <PopoverContent className="w-[200px] p-0 bg-white border border-gray-200 shadow-lg z-50">
         <AnimateChangeInHeight>
-          <Command>
+          <Command className="bg-white">
             <CommandInput
               placeholder={filterType}
-              className="h-9"
+              className="h-9 bg-white border-b border-gray-100"
               value={commandInput}
               onInputCapture={(e) => {
                 setCommandInput(e.currentTarget.value);
               }}
               ref={commandInputRef}
             />
-            <CommandList>
+            <CommandList className="bg-white">
               <CommandEmpty>No results found.</CommandEmpty>
               <CommandGroup>
                 {filterValues.map((value) => (
                   <CommandItem
                     key={value}
-                    className="group flex gap-2 items-center"
+                    className="group flex gap-2 items-center bg-white hover:bg-gray-50"
                     onSelect={() => {
                       setFilterValues(filterValues.filter((v) => v !== value));
                       setTimeout(() => {
@@ -521,7 +522,7 @@ const FilterValueCombobox = ({
                   <CommandGroup>
                     {nonSelectedFilterValues.map((filter: FilterOption) => (
                       <CommandItem
-                        className="group flex gap-2 items-center"
+                        className="group flex gap-2 items-center bg-white hover:bg-gray-50"
                         key={filter.name}
                         value={filter.name}
                         onSelect={(currentValue: string) => {
@@ -588,25 +589,25 @@ const FilterValueDateCombobox = ({
       >
         {filterValues?.[0]}
       </PopoverTrigger>
-      <PopoverContent className="w-fit p-0">
+      <PopoverContent className="w-fit p-0 bg-white border border-gray-200 shadow-lg z-50">
         <AnimateChangeInHeight>
-          <Command>
+          <Command className="bg-white">
             <CommandInput
               placeholder={filterType}
-              className="h-9"
+              className="h-9 bg-white border-b border-gray-100"
               value={commandInput}
               onInputCapture={(e) => {
                 setCommandInput(e.currentTarget.value);
               }}
               ref={commandInputRef}
             />
-            <CommandList>
+            <CommandList className="bg-white">
               <CommandEmpty>No results found.</CommandEmpty>
               <CommandGroup>
                 {filterViewToFilterOptions[filterType].map(
                   (filter: FilterOption) => (
                     <CommandItem
-                      className="group flex gap-2 items-center"
+                      className="group flex gap-2 items-center bg-white hover:bg-gray-50"
                       key={filter.name}
                       value={filter.name}
                       onSelect={(currentValue: string) => {

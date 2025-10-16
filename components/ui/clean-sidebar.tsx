@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
-  Dashboard,
-  ChartBar,
+  LayoutDashboard,
+  BarChart3,
   Package,
   TrendingUp,
   FileText,
@@ -14,20 +14,20 @@ import {
   ChevronRight,
   Users,
   BookOpen,
-  Integration,
+  Plug,
 } from "lucide-react";
 
 // Navigation structure based on your specification
 const navigationItems = {
   top: [
-    { id: "dashboard", icon: Dashboard, label: "Home", path: "/dashboard", description: "Executive overview and retention score" },
-    { id: "cohorts", icon: ChartBar, label: "Cohorts", path: "/cohorts", description: "Behavioural and economic segmentation" },
+    { id: "dashboard", icon: LayoutDashboard, label: "Home", path: "/dashboard", description: "Executive overview and retention score" },
+    { id: "cohorts", icon: BarChart3, label: "Cohorts", path: "/cohorts", description: "Behavioural and economic segmentation" },
     { id: "products", icon: Package, label: "Products", path: "/products", description: "Product performance, replenishment, and cross-sell insights" },
     { id: "retention", icon: TrendingUp, label: "Retention", path: "/retention", description: "Customer health, loyalty, and churn insights" },
     { id: "reports", icon: FileText, label: "Reports", path: "/reports", description: "AI summaries and executive report builder" },
   ],
   bottom: [
-    { id: "integrations", icon: Integration, label: "Integrations", path: "/integrations", description: "Data source status and OAuth management" },
+    { id: "integrations", icon: Plug, label: "Integrations", path: "/integrations", description: "Data source status and OAuth management" },
     { id: "guides", icon: BookOpen, label: "Guides", path: "/guides", description: "Education and glossary for metrics and formulas" },
     { id: "settings", icon: SettingsIcon, label: "Settings", path: "/settings", description: "Account preferences, team roles, and RLS visibility" },
   ]

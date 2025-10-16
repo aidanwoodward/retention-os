@@ -24,6 +24,11 @@ import {
   Notification,
   Integration,
 } from "@carbon/icons-react";
+import {
+  Package,
+  TrendingUp,
+  FileText,
+} from "lucide-react";
 
 /** ======================= Local SVG paths (inline) ======================= */
 const svgPaths = {
@@ -458,8 +463,9 @@ function IconNavigation({
   const navItems = [
     { id: "dashboard", icon: <Dashboard size={16} />, label: "Dashboard", path: "/dashboard" },
     { id: "cohorts", icon: <ChartBar size={16} />, label: "Cohorts", path: "/cohorts" },
-    { id: "segments", icon: <UserMultiple size={16} />, label: "Segments", path: "/segments" },
-    { id: "analytics", icon: <Analytics size={16} />, label: "Analytics", path: "/analytics" },
+    { id: "products", icon: <Package size={16} />, label: "Products", path: "/products" },
+    { id: "retention", icon: <TrendingUp size={16} />, label: "Retention", path: "/retention" },
+    { id: "reports", icon: <FileText size={16} />, label: "Reports", path: "/reports" },
     { id: "sync", icon: <CloudUpload size={16} />, label: "Sync", path: "/sync" },
   ];
 
@@ -781,6 +787,9 @@ function TwoLevelSidebar() {
   React.useEffect(() => {
     if (pathname.includes("/dashboard")) setActiveSection("dashboard");
     else if (pathname.includes("/cohorts")) setActiveSection("cohorts");
+    else if (pathname.includes("/products")) setActiveSection("products");
+    else if (pathname.includes("/retention")) setActiveSection("retention");
+    else if (pathname.includes("/reports")) setActiveSection("reports");
     else if (pathname.includes("/segments")) setActiveSection("segments");
     else if (pathname.includes("/analytics")) setActiveSection("analytics");
     else if (pathname.includes("/sync")) setActiveSection("sync");

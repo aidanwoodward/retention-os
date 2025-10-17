@@ -5,18 +5,16 @@ import { FilterDemo } from "@/components/ui/filter-demo";
 import {
   DollarSign,
   TrendingUp,
-  TrendingDown,
   Users,
   Calendar,
   RefreshCw,
   Download,
   BarChart3,
-  PieChart,
 } from "lucide-react";
 
 export default function RevenueCohortsPage() {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
 
   useEffect(() => {
     // Simulate loading

@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
   BarChart3,
   Package,
   Users,
@@ -173,7 +172,18 @@ export function HierarchicalSidebar() {
 
   const currentSection = getCurrentSection();
 
-  const renderNavigationItem = (item: any, isSubItem = false) => {
+  const renderNavigationItem = (item: {
+    id: string;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    path: string;
+    description: string;
+    subPages?: Array<{
+      label: string;
+      path: string;
+      icon: React.ComponentType<{ className?: string }>;
+    }>;
+  }, isSubItem = false) => {
     const Icon = item.icon;
     const isActive = currentSection === item.id;
     const isExpanded = expandedItems.has(item.id);
@@ -224,7 +234,11 @@ export function HierarchicalSidebar() {
         {/* Sub-pages */}
         {isExpanded && hasSubPages && (
           <div className="bg-slate-800/50">
-            {item.subPages.map((subPage: any) => {
+            {item.subPages.map((subPage: {
+              label: string;
+              path: string;
+              icon: React.ComponentType<{ className?: string }>;
+            }) => {
               const SubIcon = subPage.icon;
               const isSubActive = pathname === subPage.path;
               

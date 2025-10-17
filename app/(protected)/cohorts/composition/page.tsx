@@ -5,7 +5,6 @@ import { FilterDemo } from "@/components/ui/filter-demo";
 import {
   Users,
   TrendingUp,
-  TrendingDown,
   PieChart,
   BarChart3,
   RefreshCw,
@@ -16,7 +15,7 @@ import {
 
 export default function CustomerCompositionPage() {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
 
   useEffect(() => {
     // Simulate loading

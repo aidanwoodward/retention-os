@@ -5,18 +5,16 @@ import { FilterDemo } from "@/components/ui/filter-demo";
 import {
   Target,
   TrendingUp,
-  TrendingDown,
   Package,
   BarChart3,
   RefreshCw,
   Download,
-  Calendar,
   ShoppingCart,
 } from "lucide-react";
 
 export default function CategoryCohortsPage() {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
 
   useEffect(() => {
     // Simulate loading

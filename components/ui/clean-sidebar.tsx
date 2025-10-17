@@ -8,11 +8,9 @@ import {
   Package,
   TrendingUp,
   FileText,
-  CloudUpload,
   Settings as SettingsIcon,
   User as UserIcon,
   ChevronRight,
-  Users,
   BookOpen,
   Plug,
 } from "lucide-react";

@@ -5,13 +5,9 @@ import { FilterDemo } from "@/components/ui/filter-demo";
 import {
   BookOpen,
   Search,
-  TrendingUp,
-  Users,
-  DollarSign,
   BarChart3,
   Calculator,
   Lightbulb,
-  ExternalLink,
   ChevronRight,
   Clock,
   Star,

@@ -117,7 +117,7 @@ export default function SegmentsPage() {
       ],
     },
   ];
-  // const [selectedSegment, setSelectedSegment] = useState<string | null>(null);
+  const [selectedSegment, setSelectedSegment] = useState<string | null>(null);
 
   const fetchSegments = useCallback(async () => {
     try {

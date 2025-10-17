@@ -4,34 +4,18 @@ import { useState, useEffect, useCallback } from "react";
 import EnhancedFilters, { FilterConfig, FilterState } from "@/components/ui/enhanced-filters";
 import {
   Target,
-  TrendingUp,
   BarChart3,
   RefreshCw,
   Download,
   ShoppingCart,
   Crown,
-  Zap,
-  TrendingDown,
   Activity,
   Star,
-  Award,
-  Gem,
-  Sparkles,
-  Brain,
   Filter,
-  Eye,
-  ArrowRight,
-  ChevronRight,
-  CheckCircle,
   AlertTriangle,
-  Clock,
-  UserCheck,
   Heart,
-  Shield,
   DollarSign,
-  Users,
   Package,
-  Calendar,
 } from "lucide-react";
 
 interface CrossSellData {
@@ -64,7 +48,7 @@ export default function CrossSellAnalysisPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<FilterState>({});
-  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  // const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
 
   // Define filter configuration
   const filterConfig: FilterConfig[] = [

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import EnhancedFilters, { FilterConfig, FilterState } from "@/components/ui/enhanced-filters";
 
@@ -87,7 +87,7 @@ export default function PremiumDashboard() {
     },
   ];
 
-  const fetchMetrics = async () => {
+  const fetchMetrics = useCallback(async () => {
     try {
       setLoading(true);
       // Build query string from filter state
@@ -132,18 +132,18 @@ export default function PremiumDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterState]);
 
   useEffect(() => {
     fetchMetrics();
-  }, []);
+  }, [fetchMetrics]);
 
   // Fetch metrics when filters change
   useEffect(() => {
     if (Object.keys(filterState).length > 0) {
       fetchMetrics();
     }
-  }, [filterState]);
+  }, [fetchMetrics]);
 
   // Generate AI-powered insights based on metrics
   const generateInsights = (metrics: DashboardMetrics): Insight[] => {

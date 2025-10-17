@@ -141,7 +141,7 @@ export function EnhancedFilters({
                   <Calendar className="mr-2 h-4 w-4" />
                   {currentValue ? (
                     typeof currentValue === 'string' ? currentValue : 
-                    `${(currentValue as any).from} - ${(currentValue as any).to}`
+                    `${(currentValue as { from: string; to: string }).from} - ${(currentValue as { from: string; to: string }).to}`
                   ) : (
                     filter.placeholder || "Select date range"
                   )}

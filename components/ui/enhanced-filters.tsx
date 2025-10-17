@@ -382,14 +382,14 @@ export function EnhancedFilters({
             const filter = filters.find(f => f.id === filterId);
             if (!filter) return null;
 
-            const getDisplayValue = () => {
+            const getDisplayValue = (): string => {
               if (Array.isArray(value)) {
                 return `${value.length} selected`;
               }
               if (typeof value === 'object' && value.from && value.to) {
                 return `${value.from} - ${value.to}`;
               }
-              return filter.options?.find(opt => opt.value === value)?.label || value;
+              return filter.options?.find(opt => opt.value === value)?.label || String(value);
             };
 
             return (

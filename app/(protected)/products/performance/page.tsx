@@ -4,34 +4,18 @@ import { useState, useEffect, useCallback } from "react";
 import EnhancedFilters, { FilterConfig, FilterState } from "@/components/ui/enhanced-filters";
 import {
   Package,
-  TrendingUp,
   BarChart3,
   Target,
   Crown,
-  Zap,
-  TrendingDown,
   Activity,
   Star,
-  Award,
-  Gem,
-  Sparkles,
-  Brain,
   Filter,
-  Eye,
-  ArrowRight,
-  ChevronRight,
-  CheckCircle,
   AlertTriangle,
-  Clock,
   ShoppingCart,
-  UserCheck,
   Heart,
-  Shield,
   DollarSign,
-  Users,
   RefreshCw,
   Download,
-  Calendar,
 } from "lucide-react";
 
 interface ProductPerformanceData {
@@ -66,7 +50,7 @@ export default function ProductPerformancePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<FilterState>({});
-  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  // const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
 
   // Define filter configuration
   const filterConfig: FilterConfig[] = [

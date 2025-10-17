@@ -4,39 +4,18 @@ import { useState, useEffect, useCallback } from "react";
 import EnhancedFilters, { FilterConfig, FilterState } from "@/components/ui/enhanced-filters";
 import {
   RefreshCw,
-  TrendingUp,
   BarChart3,
   Target,
   Crown,
-  Zap,
-  TrendingDown,
   Activity,
   Star,
-  Award,
-  Gem,
-  Sparkles,
-  Brain,
   Filter,
-  Eye,
-  ArrowRight,
-  ChevronRight,
-  CheckCircle,
   AlertTriangle,
   Clock,
-  ShoppingCart,
-  UserCheck,
-  Heart,
-  Shield,
-  DollarSign,
-  Users,
-  Package,
-  Calendar,
+  CheckCircle,
   Download,
   User,
-  LineChart,
-  Bell,
   Zap as ZapIcon,
-  Gift,
   Mail,
   Phone,
 } from "lucide-react";
@@ -76,7 +55,7 @@ export default function ReactivationPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<FilterState>({});
-  const [selectedReactivation, setSelectedReactivation] = useState<string | null>(null);
+  // const [selectedReactivation, setSelectedReactivation] = useState<string | null>(null);
 
   // Define filter configuration
   const filterConfig: FilterConfig[] = [
@@ -388,7 +367,7 @@ export default function ReactivationPage() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {reactivations.slice(0, 20).map((reactivation) => {
-                  const reactivationLevel = getReactivationLevel(reactivation);
+                  // const reactivationLevel = getReactivationLevel(reactivation);
                   const priority = getReactivationPriority(reactivation.reactivation_priority);
                   const PriorityIcon = priority.icon;
                   const CommunicationIcon = getCommunicationIcon(reactivation.preferred_communication);

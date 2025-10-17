@@ -7,33 +7,13 @@ import {
   BarChart3,
   Target,
   Crown,
-  Zap,
-  TrendingDown,
   Activity,
   Star,
-  Award,
-  Gem,
-  Sparkles,
-  Brain,
   Filter,
-  Eye,
-  ArrowRight,
-  ChevronRight,
-  CheckCircle,
   AlertTriangle,
-  Clock,
-  ShoppingCart,
-  UserCheck,
-  Heart,
-  Shield,
-  DollarSign,
-  Users,
-  Package,
-  Calendar,
   RefreshCw,
   Download,
   User,
-  LineChart,
 } from "lucide-react";
 
 interface RetentionCurveData {
@@ -64,7 +44,7 @@ export default function RetentionCurvePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<FilterState>({});
-  const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null);
+  // const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null);
 
   // Define filter configuration
   const filterConfig: FilterConfig[] = [

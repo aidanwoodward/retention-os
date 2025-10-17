@@ -16,22 +16,22 @@ import {
 
 interface CohortData {
   cohort_month: string;
-  customers: number;
-  total_revenue: number;
-  avg_ltv: number;
-  retention_rate: number;
-  repeat_customers: number;
-  avg_orders_per_customer: number;
+  cohort_size: number;
+  periods: Array<{
+    period_number: number;
+    order_month: string;
+    active_customers: number;
+    total_orders: number;
+    total_revenue: number;
+    retention_rate_percent: number;
+  }>;
 }
 
 interface RevenueCohortsResponse {
   success: boolean;
   data: {
     cohorts: CohortData[];
-    total_revenue: number;
-    avg_ltv: number;
-    best_cohort: string;
-    worst_cohort: string;
+    total_cohorts: number;
     calculated_at: string;
   };
   error?: string;
@@ -141,9 +141,12 @@ export default function RevenueCohortsPage() {
   };
 
   const getCohortPerformance = (cohort: CohortData) => {
-    if (cohort.avg_ltv > 500) return { level: 'excellent', color: 'text-green-600', bg: 'bg-green-50' };
-    if (cohort.avg_ltv > 200) return { level: 'good', color: 'text-blue-600', bg: 'bg-blue-50' };
-    if (cohort.avg_ltv > 100) return { level: 'average', color: 'text-yellow-600', bg: 'bg-yellow-50' };
+    const totalRevenue = cohort.periods.reduce((sum, period) => sum + period.total_revenue, 0);
+    const avgLtv = totalRevenue / cohort.cohort_size;
+    
+    if (avgLtv > 500) return { level: 'excellent', color: 'text-green-600', bg: 'bg-green-50' };
+    if (avgLtv > 200) return { level: 'good', color: 'text-blue-600', bg: 'bg-blue-50' };
+    if (avgLtv > 100) return { level: 'average', color: 'text-yellow-600', bg: 'bg-yellow-50' };
     return { level: 'poor', color: 'text-red-600', bg: 'bg-red-50' };
   };
 
@@ -233,7 +236,7 @@ export default function RevenueCohortsPage() {
             <div>
               <p className="text-green-600 text-sm font-medium">Total Revenue</p>
               <p className="text-3xl font-bold text-green-900">
-                {formatCurrency(cohorts.reduce((sum, c) => sum + c.total_revenue, 0))}
+                {formatCurrency(cohorts.reduce((sum, c) => sum + c.periods.reduce((pSum, p) => pSum + p.total_revenue, 0), 0))}
               </p>
             </div>
             <DollarSign className="w-8 h-8 text-green-600" />
@@ -245,7 +248,10 @@ export default function RevenueCohortsPage() {
             <div>
               <p className="text-blue-600 text-sm font-medium">Average LTV</p>
               <p className="text-3xl font-bold text-blue-900">
-                {formatCurrency(cohorts.reduce((sum, c) => sum + c.avg_ltv, 0) / cohorts.length || 0)}
+                {formatCurrency(cohorts.reduce((sum, c) => {
+                  const totalRevenue = c.periods.reduce((pSum, p) => pSum + p.total_revenue, 0);
+                  return sum + (totalRevenue / c.cohort_size);
+                }, 0) / cohorts.length || 0)}
               </p>
             </div>
             <TrendingUp className="w-8 h-8 text-blue-600" />
@@ -257,7 +263,7 @@ export default function RevenueCohortsPage() {
             <div>
               <p className="text-purple-600 text-sm font-medium">Total Customers</p>
               <p className="text-3xl font-bold text-purple-900">
-                {cohorts.reduce((sum, c) => sum + c.customers, 0).toLocaleString()}
+                {cohorts.reduce((sum, c) => sum + c.cohort_size, 0).toLocaleString()}
               </p>
             </div>
             <Users className="w-8 h-8 text-purple-600" />
@@ -269,7 +275,11 @@ export default function RevenueCohortsPage() {
             <div>
               <p className="text-orange-600 text-sm font-medium">Best Cohort</p>
               <p className="text-3xl font-bold text-orange-900">
-                {cohorts.length > 0 ? cohorts.reduce((best, c) => c.avg_ltv > best.avg_ltv ? c : best).cohort_month : 'N/A'}
+                {cohorts.length > 0 ? cohorts.reduce((best, c) => {
+                  const cLtv = c.periods.reduce((pSum, p) => pSum + p.total_revenue, 0) / c.cohort_size;
+                  const bestLtv = best.periods.reduce((pSum, p) => pSum + p.total_revenue, 0) / best.cohort_size;
+                  return cLtv > bestLtv ? c : best;
+                }).cohort_month : 'N/A'}
               </p>
             </div>
             <Crown className="w-8 h-8 text-orange-600" />
@@ -341,16 +351,16 @@ export default function RevenueCohortsPage() {
                         {cohort.cohort_month}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {cohort.customers.toLocaleString()}
+                        {cohort.cohort_size.toLocaleString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatCurrency(cohort.total_revenue)}
+                        {formatCurrency(cohort.periods.reduce((sum, p) => sum + p.total_revenue, 0))}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatCurrency(cohort.avg_ltv)}
+                        {formatCurrency(cohort.periods.reduce((sum, p) => sum + p.total_revenue, 0) / cohort.cohort_size)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {cohort.retention_rate.toFixed(1)}%
+                        {(cohort.periods.reduce((sum, p) => sum + p.retention_rate_percent, 0) / cohort.periods.length).toFixed(1)}%
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${performance.bg} ${performance.color}`}>

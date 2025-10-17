@@ -208,10 +208,8 @@ export function HierarchicalSidebar() {
           onMouseLeave={() => setHoveredItem(null)}
         >
           <Icon className="w-5 h-5 flex-shrink-0" />
-          {(isExpanded || hoveredItem === item.id) && (
-            <span className="ml-3 font-medium">{item.label}</span>
-          )}
-          {(isExpanded || hoveredItem === item.id) && hasSubPages && (
+          <span className="ml-3 font-medium">{item.label}</span>
+          {hasSubPages && (
             <div className="ml-auto">
               {isExpanded ? (
                 <ChevronDown className="w-4 h-4" />
@@ -222,14 +220,6 @@ export function HierarchicalSidebar() {
           )}
         </button>
         
-        {/* Hover Tooltip */}
-        {!isExpanded && hoveredItem === item.id && (
-          <div className="absolute left-16 top-0 z-50 bg-slate-800 text-white px-3 py-2 rounded-lg shadow-lg min-w-48">
-            <div className="font-medium">{item.label}</div>
-            <div className="text-xs text-slate-300 mt-1">{item.description}</div>
-            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-2 h-2 bg-slate-800 rotate-45"></div>
-          </div>
-        )}
 
         {/* Sub-pages */}
         {isExpanded && hasSubPages && item.subPages && (
@@ -268,7 +258,7 @@ export function HierarchicalSidebar() {
       {/* Main Sidebar */}
       <div 
         className={`bg-slate-900 transition-all duration-300 ease-in-out ${
-          isExpanded ? 'w-64' : 'w-16'
+          isExpanded ? 'w-64' : 'w-48'
         } h-full flex flex-col border-r border-slate-800`}
         onMouseEnter={() => setIsExpanded(true)}
         onMouseLeave={() => {
@@ -345,7 +335,7 @@ export function HierarchicalSidebarLayout({ children }: { children: React.ReactN
   return (
     <div className="flex min-h-screen bg-slate-50">
       <HierarchicalSidebar />
-      <main className="flex-1 ml-16 overflow-auto">
+      <main className="flex-1 ml-48 overflow-auto">
         {children}
       </main>
     </div>

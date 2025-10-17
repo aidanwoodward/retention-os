@@ -136,7 +136,7 @@ const navigationStructure = {
 export function HierarchicalSidebar() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  // const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 

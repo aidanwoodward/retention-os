@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
+// import Link from "next/link";
 import EnhancedFilters, { FilterConfig, FilterState } from "@/components/ui/enhanced-filters";
 import {
   Users,
@@ -9,30 +9,12 @@ import {
   DollarSign,
   Target,
   BarChart3,
-  PieChart,
   Download,
   RefreshCw,
-  Eye,
   Filter,
-  Calendar,
   Activity,
-  Star,
   AlertTriangle,
-  CheckCircle,
-  Clock,
-  ShoppingCart,
-  UserCheck,
-  Zap,
-  ArrowRight,
-  ChevronRight,
-  Sparkles,
-  Brain,
-  TrendingDown,
-  Award,
-  Shield,
-  Heart,
   Crown,
-  Gem,
 } from "lucide-react";
 
 interface CustomerSegment {
@@ -134,7 +116,7 @@ export default function SegmentsPage() {
       ],
     },
   ];
-  const [selectedSegment, setSelectedSegment] = useState<string | null>(null);
+  // const [selectedSegment, setSelectedSegment] = useState<string | null>(null);
 
   const fetchSegments = useCallback(async () => {
     try {

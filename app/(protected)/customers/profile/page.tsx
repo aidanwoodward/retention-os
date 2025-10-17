@@ -4,41 +4,16 @@ import { useState, useEffect, useCallback } from "react";
 import EnhancedFilters, { FilterConfig, FilterState } from "@/components/ui/enhanced-filters";
 import {
   User,
-  TrendingUp,
   BarChart3,
-  Target,
   Crown,
-  Zap,
-  TrendingDown,
-  Activity,
-  Star,
-  Award,
-  Gem,
-  Sparkles,
-  Brain,
   Filter,
-  Eye,
-  ArrowRight,
-  ChevronRight,
-  CheckCircle,
   AlertTriangle,
-  Clock,
-  ShoppingCart,
-  UserCheck,
-  Heart,
-  Shield,
   DollarSign,
-  Users,
-  Package,
-  Calendar,
   RefreshCw,
   Download,
   Mail,
   Phone,
   MapPin,
-  CreditCard,
-  Gift,
-  Award as AwardIcon,
 } from "lucide-react";
 
 interface CustomerProfileData {
@@ -95,7 +70,7 @@ export default function CustomerProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<FilterState>({});
-  const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
+  // const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
 
   // Define filter configuration
   const filterConfig: FilterConfig[] = [
@@ -105,10 +80,10 @@ export default function CustomerProfilePage() {
       type: 'select',
       placeholder: 'Select customer',
       options: [
-        { value: 'all', label: 'All Customers' },
-        { value: 'high-value', label: 'High Value' },
-        { value: 'at-risk', label: 'At Risk' },
-        { value: 'new', label: 'New Customers' },
+        { id: 'all', value: 'all', label: 'All Customers' },
+        { id: 'high-value', value: 'high-value', label: 'High Value' },
+        { id: 'at-risk', value: 'at-risk', label: 'At Risk' },
+        { id: 'new', value: 'new', label: 'New Customers' },
       ],
       autoRefresh: true,
     },

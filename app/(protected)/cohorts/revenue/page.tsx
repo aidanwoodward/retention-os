@@ -14,7 +14,7 @@ import {
 
 export default function RevenueCohortsPage() {
   const [loading, setLoading] = useState(true);
-  const [error] = useState<string | null>(null);
+  // const [error] = useState<string | null>(null);
 
   useEffect(() => {
     // Simulate loading

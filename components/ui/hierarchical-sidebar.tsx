@@ -232,7 +232,7 @@ export function HierarchicalSidebar() {
         )}
 
         {/* Sub-pages */}
-        {isExpanded && hasSubPages && (
+        {isExpanded && hasSubPages && item.subPages && (
           <div className="bg-slate-800/50">
             {item.subPages.map((subPage: {
               label: string;

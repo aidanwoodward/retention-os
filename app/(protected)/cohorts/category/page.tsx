@@ -14,7 +14,7 @@ import {
 
 export default function CategoryCohortsPage() {
   const [loading, setLoading] = useState(true);
-  const [error] = useState<string | null>(null);
+  // const [error] = useState<string | null>(null);
 
   useEffect(() => {
     // Simulate loading

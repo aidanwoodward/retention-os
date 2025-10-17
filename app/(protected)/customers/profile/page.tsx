@@ -367,7 +367,7 @@ export default function CustomerProfilePage() {
                   <p className="text-orange-600 text-sm font-medium">Lifetime Value</p>
                   <p className="text-3xl font-bold text-orange-900">{formatCurrency(profile.lifetime_value)}</p>
                 </div>
-                <AwardIcon className="w-8 h-8 text-orange-600" />
+                <Award className="w-8 h-8 text-orange-600" />
               </div>
             </div>
           </div>

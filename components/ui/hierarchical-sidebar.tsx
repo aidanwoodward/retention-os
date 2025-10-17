@@ -208,10 +208,10 @@ export function HierarchicalSidebar() {
           onMouseLeave={() => setHoveredItem(null)}
         >
           <Icon className="w-5 h-5 flex-shrink-0" />
-          {isExpanded && (
+          {(isExpanded || hoveredItem === item.id) && (
             <span className="ml-3 font-medium">{item.label}</span>
           )}
-          {isExpanded && hasSubPages && (
+          {(isExpanded || hoveredItem === item.id) && hasSubPages && (
             <div className="ml-auto">
               {isExpanded ? (
                 <ChevronDown className="w-4 h-4" />
@@ -271,7 +271,10 @@ export function HierarchicalSidebar() {
           isExpanded ? 'w-64' : 'w-16'
         } h-full flex flex-col border-r border-slate-800`}
         onMouseEnter={() => setIsExpanded(true)}
-        onMouseLeave={() => setIsExpanded(false)}
+        onMouseLeave={() => {
+          setIsExpanded(false);
+          setHoveredItem(null);
+        }}
       >
         {/* Logo/Brand */}
         <div className="p-4 border-b border-slate-800">

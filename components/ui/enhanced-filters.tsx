@@ -30,9 +30,6 @@ import {
   X,
   Clock,
   Users,
-  MapPin,
-  Package,
-  TrendingUp,
   Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -93,7 +90,7 @@ export function EnhancedFilters({
     }
   }, [filterState, autoRefreshEnabled, hasChanges, filters, onFiltersChange]);
 
-  const handleFilterChange = (filterId: string, value: any) => {
+  const handleFilterChange = (filterId: string, value: string | string[] | { from: string; to: string }) => {
     const newState = { ...filterState, [filterId]: value };
     setFilterState(newState);
     setHasChanges(true);
@@ -159,9 +156,9 @@ export function EnhancedFilters({
                     <label className="text-sm font-medium">From</label>
                     <input
                       type="date"
-                      value={typeof currentValue === 'object' && currentValue ? (currentValue as any).from : ''}
+                      value={typeof currentValue === 'object' && currentValue ? (currentValue as { from: string; to: string }).from : ''}
                       onChange={(e) => handleFilterChange(filter.id, {
-                        ...(typeof currentValue === 'object' ? currentValue : {}),
+                        ...(typeof currentValue === 'object' ? currentValue as { from: string; to: string } : { from: '', to: '' }),
                         from: e.target.value
                       })}
                       className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -171,9 +168,9 @@ export function EnhancedFilters({
                     <label className="text-sm font-medium">To</label>
                     <input
                       type="date"
-                      value={typeof currentValue === 'object' && currentValue ? (currentValue as any).to : ''}
+                      value={typeof currentValue === 'object' && currentValue ? (currentValue as { from: string; to: string }).to : ''}
                       onChange={(e) => handleFilterChange(filter.id, {
-                        ...(typeof currentValue === 'object' ? currentValue : {}),
+                        ...(typeof currentValue === 'object' ? currentValue as { from: string; to: string } : { from: '', to: '' }),
                         to: e.target.value
                       })}
                       className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"

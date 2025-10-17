@@ -87,17 +87,6 @@ export default function PremiumDashboard() {
     },
   ];
 
-  useEffect(() => {
-    fetchMetrics();
-  }, []);
-
-  // Fetch metrics when filters change
-  useEffect(() => {
-    if (Object.keys(filterState).length > 0) {
-      fetchMetrics();
-    }
-  }, [filterState]);
-
   const fetchMetrics = async () => {
     try {
       setLoading(true);
@@ -144,6 +133,17 @@ export default function PremiumDashboard() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchMetrics();
+  }, []);
+
+  // Fetch metrics when filters change
+  useEffect(() => {
+    if (Object.keys(filterState).length > 0) {
+      fetchMetrics();
+    }
+  }, [filterState]);
 
   // Generate AI-powered insights based on metrics
   const generateInsights = (metrics: DashboardMetrics): Insight[] => {

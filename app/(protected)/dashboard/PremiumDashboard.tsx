@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { FilterDemo } from "@/components/ui/filter-demo";
+import EnhancedFilters, { FilterConfig, FilterState } from "@/components/ui/enhanced-filters";
 
 interface DashboardMetrics {
   totalCustomers: number;
@@ -32,15 +32,91 @@ export default function PremiumDashboard() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filterState, setFilterState] = useState<FilterState>({});
+
+  // Define filter configuration
+  const filterConfig: FilterConfig[] = [
+    {
+      id: 'dateRange',
+      label: 'Date Range',
+      type: 'date',
+      placeholder: 'Select date range',
+      autoRefresh: true, // Auto-refresh for date changes
+    },
+    {
+      id: 'timePeriod',
+      label: 'Time Period',
+      type: 'select',
+      placeholder: 'Select time period',
+      autoRefresh: true, // Auto-refresh for time period changes
+      options: [
+        { id: '7d', label: 'Last 7 days', value: '7d' },
+        { id: '30d', label: 'Last 30 days', value: '30d' },
+        { id: '90d', label: 'Last 90 days', value: '90d' },
+        { id: '1y', label: 'Last year', value: '1y' },
+        { id: 'all', label: 'All time', value: 'all' },
+      ],
+    },
+    {
+      id: 'customerType',
+      label: 'Customer Type',
+      type: 'multiselect',
+      placeholder: 'Select customer types',
+      autoRefresh: false, // Manual refresh for complex filters
+      options: [
+        { id: 'new', label: 'New Customers', value: 'new' },
+        { id: 'returning', label: 'Returning Customers', value: 'returning' },
+        { id: 'at-risk', label: 'At-Risk Customers', value: 'at-risk' },
+        { id: 'high-value', label: 'High-Value Customers', value: 'high-value' },
+      ],
+    },
+    {
+      id: 'segment',
+      label: 'Customer Segment',
+      type: 'select',
+      placeholder: 'Select segment',
+      autoRefresh: false, // Manual refresh for complex filters
+      options: [
+        { id: 'all', label: 'All Segments', value: 'all' },
+        { id: 'champions', label: 'Champions', value: 'champions' },
+        { id: 'loyal', label: 'Loyal Customers', value: 'loyal' },
+        { id: 'potential', label: 'Potential Loyalists', value: 'potential' },
+        { id: 'new', label: 'New Customers', value: 'new' },
+        { id: 'at-risk', label: 'At-Risk', value: 'at-risk' },
+      ],
+    },
+  ];
 
   useEffect(() => {
     fetchMetrics();
   }, []);
 
+  // Fetch metrics when filters change
+  useEffect(() => {
+    if (Object.keys(filterState).length > 0) {
+      fetchMetrics();
+    }
+  }, [filterState]);
+
   const fetchMetrics = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/metrics/kpis");
+      // Build query string from filter state
+      const queryParams = new URLSearchParams();
+      Object.entries(filterState).forEach(([key, value]) => {
+        if (value !== undefined && value !== '') {
+          if (Array.isArray(value)) {
+            queryParams.append(key, value.join(','));
+          } else if (typeof value === 'object' && value.from && value.to) {
+            queryParams.append(`${key}_from`, value.from);
+            queryParams.append(`${key}_to`, value.to);
+          } else {
+            queryParams.append(key, String(value));
+          }
+        }
+      });
+      
+      const response = await fetch(`/api/metrics/kpis?${queryParams.toString()}`);
       const data = await response.json();
 
       if (data.success) {
@@ -175,14 +251,15 @@ export default function PremiumDashboard() {
           <p className="text-gray-600">Monitor your customer retention health and discover growth opportunities</p>
         </div>
 
-        {/* Filters */}
+        {/* Enhanced Filters */}
         <div className="mb-8">
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Filter Data</h3>
-              <span className="text-sm text-gray-500">Filter by date range, customer type, and more</span>
-            </div>
-            <FilterDemo />
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <EnhancedFilters
+              filters={filterConfig}
+              onFiltersChange={setFilterState}
+              onApplyFilters={fetchMetrics}
+              loading={loading}
+            />
           </div>
         </div>
 

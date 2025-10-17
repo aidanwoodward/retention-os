@@ -143,7 +143,7 @@ export default function PremiumDashboard() {
     if (Object.keys(filterState).length > 0) {
       fetchMetrics();
     }
-  }, [fetchMetrics]);
+  }, [filterState, fetchMetrics]);
 
   // Generate AI-powered insights based on metrics
   const generateInsights = (metrics: DashboardMetrics): Insight[] => {

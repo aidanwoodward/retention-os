@@ -196,8 +196,8 @@ export function EnhancedFilters({
                 <div className="flex items-center">
                   <Clock className="mr-2 h-4 w-4" />
                   {currentValue ? 
-                    filter.options?.find(opt => opt.value === currentValue)?.label || currentValue :
-                    filter.placeholder || "Select option"
+                    (filter.options?.find(opt => opt.value === currentValue)?.label || String(currentValue)) :
+                    (filter.placeholder || "Select option")
                   }
                 </div>
                 <ChevronDown className="h-4 w-4 opacity-50" />

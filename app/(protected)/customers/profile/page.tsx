@@ -16,6 +16,8 @@ import {
   MapPin,
   ShoppingCart,
   Award,
+  Star,
+  CheckCircle,
 } from "lucide-react";
 
 interface CustomerProfileData {

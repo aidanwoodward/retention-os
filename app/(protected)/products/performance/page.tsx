@@ -173,7 +173,7 @@ export default function ProductPerformancePage() {
   };
 
   const getCategoryIcon = (category: string) => {
-    const icons: Record<string, any> = {
+    const icons: Record<string, React.ComponentType<{ className?: string }>> = {
       'Electronics': Package,
       'Apparel': ShoppingCart,
       'Home Goods': Heart,

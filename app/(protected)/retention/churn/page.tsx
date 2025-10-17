@@ -179,7 +179,7 @@ export default function ChurnRiskPage() {
   };
 
   const getInterventionPriority = (priority: string) => {
-    const priorities: Record<string, { color: string; bg: string; icon: any }> = {
+    const priorities: Record<string, { color: string; bg: string; icon: React.ComponentType<{ className?: string }> }> = {
       'high': { color: 'text-red-600', bg: 'bg-red-50', icon: AlertTriangle },
       'medium': { color: 'text-yellow-600', bg: 'bg-yellow-50', icon: Clock },
       'low': { color: 'text-green-600', bg: 'bg-green-50', icon: CheckCircle },

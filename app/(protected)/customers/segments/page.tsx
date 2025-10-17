@@ -173,7 +173,7 @@ export default function CustomerSegmentsPage() {
   };
 
   const getSegmentIcon = (segmentType: string) => {
-    const icons: Record<string, any> = {
+    const icons: Record<string, React.ComponentType<{ className?: string }>> = {
       'value': DollarSign,
       'activity': Activity,
       'frequency': BarChart3,

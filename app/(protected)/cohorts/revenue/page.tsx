@@ -10,8 +10,8 @@ import {
   Download,
   BarChart3,
   Crown,
-  Activity,
   AlertTriangle,
+  Filter,
 } from "lucide-react";
 
 interface CohortData {

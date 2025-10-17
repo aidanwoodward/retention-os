@@ -9,9 +9,8 @@ import {
   RefreshCw,
   Download,
   Crown,
-  Activity,
   AlertTriangle,
-  DollarSign,
+  Filter,
 } from "lucide-react";
 
 interface CompositionData {

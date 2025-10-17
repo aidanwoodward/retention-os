@@ -78,7 +78,12 @@ interface CustomerProfileResponse {
   success: boolean;
   data: {
     profile: CustomerProfileData;
-    order_history: any[];
+    order_history: Array<{
+      order_id: string;
+      order_date: string;
+      total_amount: number;
+      status: string;
+    }>;
     product_recommendations: string[];
     calculated_at: string;
   };

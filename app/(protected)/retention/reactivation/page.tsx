@@ -182,7 +182,7 @@ export default function ReactivationPage() {
   };
 
   const getReactivationPriority = (priority: string) => {
-    const priorities: Record<string, { color: string; bg: string; icon: any }> = {
+    const priorities: Record<string, { color: string; bg: string; icon: React.ComponentType<{ className?: string }> }> = {
       'high': { color: 'text-red-600', bg: 'bg-red-50', icon: ZapIcon },
       'medium': { color: 'text-yellow-600', bg: 'bg-yellow-50', icon: Clock },
       'low': { color: 'text-green-600', bg: 'bg-green-50', icon: CheckCircle },
@@ -191,7 +191,7 @@ export default function ReactivationPage() {
   };
 
   const getCommunicationIcon = (communication: string) => {
-    const icons: Record<string, any> = {
+    const icons: Record<string, React.ComponentType<{ className?: string }>> = {
       'email': Mail,
       'phone': Phone,
       'sms': Bell,

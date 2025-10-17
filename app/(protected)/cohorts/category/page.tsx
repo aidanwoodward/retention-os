@@ -14,7 +14,7 @@ import {
   Activity,
   AlertTriangle,
   DollarSign,
-  Users,
+  Filter,
 } from "lucide-react";
 
 interface CategoryCohortData {

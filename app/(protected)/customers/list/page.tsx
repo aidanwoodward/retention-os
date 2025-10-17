@@ -8,11 +8,11 @@ import {
   Crown,
   Activity,
   AlertTriangle,
-  DollarSign,
   Users,
   RefreshCw,
   Download,
   User,
+  Filter,
 } from "lucide-react";
 
 interface CustomerData {

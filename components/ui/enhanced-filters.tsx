@@ -90,8 +90,13 @@ export function EnhancedFilters({
     }
   }, [filterState, autoRefreshEnabled, hasChanges, filters, onFiltersChange]);
 
-  const handleFilterChange = (filterId: string, value: string | string[] | { from: string; to: string }) => {
-    const newState = { ...filterState, [filterId]: value };
+  const handleFilterChange = (filterId: string, value: string | string[] | { from: string; to: string } | undefined) => {
+    const newState = { ...filterState };
+    if (value === undefined) {
+      delete newState[filterId];
+    } else {
+      newState[filterId] = value;
+    }
     setFilterState(newState);
     setHasChanges(true);
     

@@ -4,35 +4,17 @@ import { useState, useEffect, useCallback } from "react";
 import EnhancedFilters, { FilterConfig, FilterState } from "@/components/ui/enhanced-filters";
 import {
   RefreshCw,
-  TrendingUp,
   BarChart3,
   Target,
   Crown,
-  Zap,
-  TrendingDown,
   Activity,
   Star,
-  Award,
-  Gem,
-  Sparkles,
-  Brain,
   Filter,
-  Eye,
-  ArrowRight,
-  ChevronRight,
-  CheckCircle,
   AlertTriangle,
-  Clock,
   ShoppingCart,
-  UserCheck,
   Heart,
-  Shield,
   DollarSign,
-  Users,
   Package,
-  Calendar,
-  Truck,
-  Box,
   Download,
 } from "lucide-react";
 
@@ -69,7 +51,7 @@ export default function ReplenishmentMetricsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<FilterState>({});
-  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  // const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
 
   // Define filter configuration
   const filterConfig: FilterConfig[] = [
@@ -160,7 +142,7 @@ export default function ReplenishmentMetricsPage() {
     fetchReplenishments();
   }, [fetchReplenishments]);
 
-  const formatCurrency = (amount: number) => {
+  // const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',

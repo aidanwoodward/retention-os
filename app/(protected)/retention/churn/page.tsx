@@ -4,37 +4,17 @@ import { useState, useEffect, useCallback } from "react";
 import EnhancedFilters, { FilterConfig, FilterState } from "@/components/ui/enhanced-filters";
 import {
   AlertTriangle,
-  TrendingUp,
   BarChart3,
   Target,
   Crown,
-  Zap,
-  TrendingDown,
   Activity,
   Star,
-  Award,
-  Gem,
-  Sparkles,
-  Brain,
   Filter,
-  Eye,
-  ArrowRight,
-  ChevronRight,
   CheckCircle,
   Clock,
-  ShoppingCart,
-  UserCheck,
-  Heart,
-  Shield,
-  DollarSign,
-  Users,
-  Package,
-  Calendar,
   RefreshCw,
   Download,
   User,
-  LineChart,
-  Bell,
   Zap as ZapIcon,
 } from "lucide-react";
 
@@ -73,7 +53,7 @@ export default function ChurnRiskPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<FilterState>({});
-  const [selectedRisk, setSelectedRisk] = useState<string | null>(null);
+  // const [selectedRisk, setSelectedRisk] = useState<string | null>(null);
 
   // Define filter configuration
   const filterConfig: FilterConfig[] = [

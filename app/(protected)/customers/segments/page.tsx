@@ -8,31 +8,11 @@ import {
   BarChart3,
   Target,
   Crown,
-  Zap,
-  TrendingDown,
-  Star,
-  Award,
-  Gem,
-  Sparkles,
-  Brain,
   Filter,
-  Eye,
-  ArrowRight,
-  ChevronRight,
-  CheckCircle,
   AlertTriangle,
-  Clock,
-  ShoppingCart,
-  UserCheck,
-  Heart,
-  Shield,
   DollarSign,
-  Users,
-  Package,
-  Calendar,
   RefreshCw,
   Download,
-  User,
 } from "lucide-react";
 
 interface CustomerSegmentData {
@@ -67,7 +47,7 @@ export default function CustomerSegmentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<FilterState>({});
-  const [selectedSegment, setSelectedSegment] = useState<string | null>(null);
+  // const [selectedSegment, setSelectedSegment] = useState<string | null>(null);
 
   // Define filter configuration
   const filterConfig: FilterConfig[] = [

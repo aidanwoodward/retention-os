@@ -15,6 +15,7 @@ import {
   Activity,
   AlertTriangle,
   Crown,
+  Brain,
 } from "lucide-react";
 
 interface CustomerSegment {

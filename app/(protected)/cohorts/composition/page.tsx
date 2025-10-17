@@ -6,31 +6,11 @@ import {
   Users,
   TrendingUp,
   PieChart,
-  BarChart3,
   RefreshCw,
   Download,
-  Calendar,
-  Target,
   Crown,
-  Zap,
-  TrendingDown,
   Activity,
-  Star,
-  Award,
-  Gem,
-  Sparkles,
-  Brain,
-  Filter,
-  Eye,
-  ArrowRight,
-  ChevronRight,
-  CheckCircle,
   AlertTriangle,
-  Clock,
-  ShoppingCart,
-  UserCheck,
-  Heart,
-  Shield,
   DollarSign,
 } from "lucide-react";
 
@@ -61,7 +41,7 @@ export default function CustomerCompositionPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<FilterState>({});
-  const [selectedSegment, setSelectedSegment] = useState<string | null>(null);
+  // const [selectedSegment, setSelectedSegment] = useState<string | null>(null);
 
   // Define filter configuration
   const filterConfig: FilterConfig[] = [

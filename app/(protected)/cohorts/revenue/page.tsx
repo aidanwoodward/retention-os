@@ -6,31 +6,12 @@ import {
   DollarSign,
   TrendingUp,
   Users,
-  Calendar,
   RefreshCw,
   Download,
   BarChart3,
-  Target,
   Crown,
-  Zap,
-  TrendingDown,
   Activity,
-  Star,
-  Award,
-  Gem,
-  Sparkles,
-  Brain,
-  Filter,
-  Eye,
-  ArrowRight,
-  ChevronRight,
-  CheckCircle,
   AlertTriangle,
-  Clock,
-  ShoppingCart,
-  UserCheck,
-  Heart,
-  Shield,
 } from "lucide-react";
 
 interface CohortData {
@@ -61,7 +42,7 @@ export default function RevenueCohortsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<FilterState>({});
-  const [selectedCohort, setSelectedCohort] = useState<string | null>(null);
+  // const [selectedCohort, setSelectedCohort] = useState<string | null>(null);
 
   // Define filter configuration
   const filterConfig: FilterConfig[] = [

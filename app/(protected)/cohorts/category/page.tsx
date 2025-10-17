@@ -11,24 +11,8 @@ import {
   Download,
   ShoppingCart,
   Crown,
-  Zap,
-  TrendingDown,
   Activity,
-  Star,
-  Award,
-  Gem,
-  Sparkles,
-  Brain,
-  Filter,
-  Eye,
-  ArrowRight,
-  ChevronRight,
-  CheckCircle,
   AlertTriangle,
-  Clock,
-  UserCheck,
-  Heart,
-  Shield,
   DollarSign,
   Users,
 } from "lucide-react";
@@ -61,7 +45,7 @@ export default function CategoryCohortsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<FilterState>({});
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  // const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   // Define filter configuration
   const filterConfig: FilterConfig[] = [
@@ -168,7 +152,7 @@ export default function CategoryCohortsPage() {
   };
 
   const getCategoryIcon = (category: string) => {
-    const icons: Record<string, any> = {
+    const icons: Record<string, React.ComponentType<{ className?: string }>> = {
       'Electronics': Package,
       'Apparel': ShoppingCart,
       'Home Goods': Heart,

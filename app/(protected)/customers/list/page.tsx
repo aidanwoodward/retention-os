@@ -4,32 +4,12 @@ import { useState, useEffect, useCallback } from "react";
 import EnhancedFilters, { FilterConfig, FilterState } from "@/components/ui/enhanced-filters";
 import {
   UserCheck,
-  TrendingUp,
   BarChart3,
-  Target,
   Crown,
-  Zap,
-  TrendingDown,
   Activity,
-  Star,
-  Award,
-  Gem,
-  Sparkles,
-  Brain,
-  Filter,
-  Eye,
-  ArrowRight,
-  ChevronRight,
-  CheckCircle,
   AlertTriangle,
-  Clock,
-  ShoppingCart,
-  Users,
-  Heart,
-  Shield,
   DollarSign,
-  Package,
-  Calendar,
+  Users,
   RefreshCw,
   Download,
   User,
@@ -71,7 +51,7 @@ export default function CustomerListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<FilterState>({});
-  const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
+  // const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
 
   // Define filter configuration
   const filterConfig: FilterConfig[] = [

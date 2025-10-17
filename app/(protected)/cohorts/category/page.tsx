@@ -15,6 +15,8 @@ import {
   AlertTriangle,
   DollarSign,
   Filter,
+  Heart,
+  Star,
 } from "lucide-react";
 
 interface CategoryCohortData {

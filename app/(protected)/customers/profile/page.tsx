@@ -102,8 +102,14 @@ export default function CustomerProfilePage() {
     {
       id: 'customerId',
       label: 'Customer ID',
-      type: 'text',
-      placeholder: 'Enter customer ID',
+      type: 'select',
+      placeholder: 'Select customer',
+      options: [
+        { value: 'all', label: 'All Customers' },
+        { value: 'high-value', label: 'High Value' },
+        { value: 'at-risk', label: 'At Risk' },
+        { value: 'new', label: 'New Customers' },
+      ],
       autoRefresh: true,
     },
     {

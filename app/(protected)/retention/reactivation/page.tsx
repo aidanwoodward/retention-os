@@ -6,9 +6,6 @@ import {
   RefreshCw,
   BarChart3,
   Target,
-  Crown,
-  Activity,
-  Star,
   Filter,
   AlertTriangle,
   Clock,
@@ -18,6 +15,8 @@ import {
   Zap as ZapIcon,
   Mail,
   Phone,
+  Users,
+  Bell,
 } from "lucide-react";
 
 interface ReactivationData {
@@ -154,11 +153,11 @@ export default function ReactivationPage() {
     }).format(amount);
   };
 
-  const getReactivationLevel = (reactivation: ReactivationData) => {
-    if (reactivation.reactivation_score > 70) return { level: 'excellent', color: 'text-green-600', bg: 'bg-green-50' };
-    if (reactivation.reactivation_score > 40) return { level: 'good', color: 'text-blue-600', bg: 'bg-blue-50' };
-    return { level: 'poor', color: 'text-red-600', bg: 'bg-red-50' };
-  };
+  // const getReactivationLevel = (reactivation: ReactivationData) => {
+  //   if (reactivation.reactivation_score > 70) return { level: 'excellent', color: 'text-green-600', bg: 'bg-green-50' };
+  //   if (reactivation.reactivation_score > 40) return { level: 'good', color: 'text-blue-600', bg: 'bg-blue-50' };
+  //   return { level: 'poor', color: 'text-red-600', bg: 'bg-red-50' };
+  // };
 
   const getReactivationPriority = (priority: string) => {
     const priorities: Record<string, { color: string; bg: string; icon: React.ComponentType<{ className?: string }> }> = {

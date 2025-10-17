@@ -4,16 +4,14 @@ import { useState, useEffect, useCallback } from "react";
 import EnhancedFilters, { FilterConfig, FilterState } from "@/components/ui/enhanced-filters";
 import {
   TrendingUp,
-  BarChart3,
-  Target,
-  Crown,
-  Activity,
-  Star,
   Filter,
   AlertTriangle,
   RefreshCw,
   Download,
-  User,
+  Users,
+  DollarSign,
+  LineChart,
+  Crown,
 } from "lucide-react";
 
 interface RetentionCurveData {

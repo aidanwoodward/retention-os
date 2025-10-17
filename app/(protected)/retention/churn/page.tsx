@@ -5,10 +5,6 @@ import EnhancedFilters, { FilterConfig, FilterState } from "@/components/ui/enha
 import {
   AlertTriangle,
   BarChart3,
-  Target,
-  Crown,
-  Activity,
-  Star,
   Filter,
   CheckCircle,
   Clock,

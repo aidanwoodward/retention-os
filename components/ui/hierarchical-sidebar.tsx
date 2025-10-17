@@ -204,8 +204,6 @@ export function HierarchicalSidebar() {
               ? 'bg-blue-600 text-white'
               : 'text-slate-300 hover:bg-slate-800 hover:text-white'
           } ${isSubItem ? 'ml-6' : ''}`}
-          onMouseEnter={() => setHoveredItem(item.id)}
-          onMouseLeave={() => setHoveredItem(null)}
         >
           <Icon className="w-5 h-5 flex-shrink-0" />
           <span className="ml-3 font-medium">{item.label}</span>
@@ -261,10 +259,9 @@ export function HierarchicalSidebar() {
           isExpanded ? 'w-64' : 'w-48'
         } h-full flex flex-col border-r border-slate-800`}
         onMouseEnter={() => setIsExpanded(true)}
-        onMouseLeave={() => {
-          setIsExpanded(false);
-          setHoveredItem(null);
-        }}
+          onMouseLeave={() => {
+            setIsExpanded(false);
+          }}
       >
         {/* Logo/Brand */}
         <div className="p-4 border-b border-slate-800">

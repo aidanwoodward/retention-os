@@ -1,21 +1,20 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import EnhancedFilters, { FilterConfig, FilterState } from "@/components/ui/enhanced-filters";
 import {
   RefreshCw,
   BarChart3,
-  Target,
-  Crown,
   Activity,
   Star,
   Filter,
   AlertTriangle,
   ShoppingCart,
   Heart,
-  DollarSign,
   Package,
   Download,
+  Box,
+  CheckCircle,
 } from "lucide-react";
 
 interface ReplenishmentData {
@@ -143,13 +142,13 @@ export default function ReplenishmentMetricsPage() {
   }, [fetchReplenishments]);
 
   // const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  //   return new Intl.NumberFormat('en-US', {
+  //     style: 'currency',
+  //     currency: 'USD',
+  //     minimumFractionDigits: 0,
+  //     maximumFractionDigits: 0,
+  //   }).format(amount);
+  // };
 
   const getReplenishmentRisk = (replenishment: ReplenishmentData) => {
     if (replenishment.stockout_risk > 80) return { level: 'critical', color: 'text-red-600', bg: 'bg-red-50' };

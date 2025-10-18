@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
 import StatusBadge from "@/app/components/StatusBadge";
 import Link from "next/link";
-import PremiumDashboard from "./PremiumDashboard";
+import REDHomePage from "./REDHomePage";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -68,8 +68,8 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          {/* Premium Dashboard */}
-          <PremiumDashboard />
+          {/* RED Home Page */}
+          <REDHomePage />
         </div>
       </div>
     );

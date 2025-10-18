@@ -1,82 +1,98 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
+import { getAccountId } from "@/lib/database";
+
+// =============================================================================
+// TYPES
+// =============================================================================
+
+interface UserSettings {
+  user_id: string;
+  email: string;
+  name: string;
+  preferences: {
+    theme: 'light' | 'dark' | 'auto';
+    notifications: boolean;
+    email_reports: boolean;
+    dashboard_layout: string;
+  };
+  account: {
+    plan: 'free' | 'pro' | 'enterprise';
+    created_at: string;
+    last_login: string;
+  };
+}
+
+// =============================================================================
+// API ENDPOINT
+// =============================================================================
 
 export async function GET() {
   try {
-    // Mock data for user settings
-    // This will be replaced with real data once we implement the settings system
+    const cookieStore = await cookies();
     
-    const mockData = {
-      success: true,
-      data: {
-        user: {
-          id: "user_123",
-          name: "RetentionOS User",
-          email: "user@retentionos.com",
-          role: "admin" as const,
-          timezone: "America/New_York",
-          language: "en",
-          theme: "light" as const,
-          notifications: {
-            email: true,
-            push: true,
-            weekly_reports: true,
-            sync_alerts: false,
+    // Get the current user's session
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
           },
+          setAll() {},
         },
-        team: [
-          {
-            id: "member_1",
-            name: "Sarah Johnson",
-            email: "sarah@company.com",
-            role: "analyst" as const,
-            status: "active" as const,
-            lastActive: "2023-10-23T10:30:00Z",
-          },
-          {
-            id: "member_2",
-            name: "Mike Chen",
-            email: "mike@company.com",
-            role: "viewer" as const,
-            status: "active" as const,
-            lastActive: "2023-10-22T16:45:00Z",
-          },
-          {
-            id: "member_3",
-            name: "Emily Davis",
-            email: "emily@company.com",
-            role: "analyst" as const,
-            status: "pending" as const,
-            lastActive: "2023-10-20T09:15:00Z",
-          },
-        ],
-        rls_settings: {
-          enabled: true,
-          visibility: "team" as const,
-          data_retention_days: 365,
-        },
-        account: {
-          name: "RetentionOS Analytics",
-          plan: "pro" as const,
-          usage: {
-            data_sources: 2,
-            team_members: 3,
-            storage_gb: 15.2,
-          },
-        },
+      }
+    );
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const accountId = await getAccountId(session.user.id);
+    if (!accountId) {
+      return NextResponse.json({ error: "Account not found" }, { status: 404 });
+    }
+
+    // Get user data from Supabase auth
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // Mock user settings data
+    const userSettings: UserSettings = {
+      user_id: user?.id || '',
+      email: user?.email || '',
+      name: user?.user_metadata?.full_name || 'User',
+      preferences: {
+        theme: 'light',
+        notifications: true,
+        email_reports: true,
+        dashboard_layout: 'default'
       },
+      account: {
+        plan: 'pro',
+        created_at: user?.created_at || new Date().toISOString(),
+        last_login: new Date().toISOString()
+      }
     };
 
-    return NextResponse.json(mockData, {
-      headers: {
-        "Cache-Control": "s-maxage=60, stale-while-revalidate",
-        "Content-Type": "application/json",
-      },
+    console.log(`User settings fetched successfully for user: ${user?.id}`);
+
+    // Set cache headers for performance
+    const response = NextResponse.json({
+      success: true,
+      data: userSettings
     });
+
+    response.headers.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
+    return response;
+
   } catch (error) {
-    console.error("Error fetching user settings:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to fetch user settings" },
-      { status: 500 }
-    );
+    console.error('Error in user settings API:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: "Internal server error" 
+    }, { status: 500 });
   }
 }

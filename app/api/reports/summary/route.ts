@@ -1,89 +1,94 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
+import { getAccountId } from "@/lib/database";
 
-export async function GET() {
+// =============================================================================
+// TYPES
+// =============================================================================
+
+interface ReportSummaryData {
+  period: string;
+  total_revenue: number;
+  total_customers: number;
+  new_customers: number;
+  returning_customers: number;
+  avg_order_value: number;
+  retention_rate: number;
+  churn_rate: number;
+  top_products: string[];
+  key_insights: string[];
+}
+
+// =============================================================================
+// API ENDPOINT
+// =============================================================================
+
+export async function GET(request: Request) {
   try {
-    // const supabase = createServiceDatabaseClient();
+    const { searchParams } = new URL(request.url);
+    const period = searchParams.get('period') || '30d';
     
-    // For now, return mock data since we don't have the reports system implemented yet
-    // This will be replaced with real data once we implement the AI summary service
+    const cookieStore = await cookies();
     
-    const mockData = {
-      weekly_summary: {
-        period: "Week of January 15-21, 2024",
-        key_metrics: {
-          revenue: 125000,
-          revenue_change: 12.5,
-          retention_rate: 68.4,
-          retention_change: 3.2,
-          new_customers: 450,
-          new_customers_change: 8.7,
-          repeat_rate: 72.1,
-          repeat_rate_change: 5.8
+    // Get the current user's session
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll() {},
         },
-        insights: [
-          "Revenue increased by 12.5% this week, driven primarily by repeat customer purchases",
-          "Retention rate improved to 68.4%, indicating successful customer engagement strategies",
-          "New customer acquisition grew by 8.7%, with strong performance in the 25-34 age demographic",
-          "Cross-sell opportunities identified in the Electronics and Home & Kitchen categories",
-          "Customer lifetime value increased by 15% compared to the previous week"
-        ],
-        recommendations: [
-          "Implement targeted email campaigns for customers who haven't purchased in 60+ days",
-          "Create bundle offers combining top-performing product pairs to increase AOV",
-          "Develop loyalty program for high-value customers to improve retention",
-          "Optimize checkout flow based on cart abandonment patterns in the 18-24 age group",
-          "Launch reactivation campaign for dormant customers with personalized discounts"
-        ],
-        generated_at: new Date().toISOString()
-      },
-      executive_reports: [
-        {
-          id: "exec_001",
-          title: "Q4 2023 Retention Analysis",
-          period: "October - December 2023",
-          status: "generated",
-          created_at: "2024-01-10T10:30:00Z",
-          sections: ["Executive Summary", "Key Metrics", "Cohort Analysis", "Recommendations"]
-        },
-        {
-          id: "exec_002", 
-          title: "January 2024 Performance Report",
-          period: "January 1-31, 2024",
-          status: "ready",
-          created_at: "2024-01-15T14:20:00Z",
-          sections: ["Revenue Analysis", "Customer Segments", "Product Performance", "Action Items"]
-        },
-        {
-          id: "exec_003",
-          title: "Retention Strategy Review",
-          period: "January 2024",
-          status: "draft",
-          created_at: "2024-01-20T09:15:00Z",
-          sections: ["Current State", "Benchmarks", "Opportunities", "Next Steps"]
-        }
-      ],
-      total_reports: 3,
-      latest_generated: "2024-01-20T09:15:00Z"
+      }
+    );
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const accountId = await getAccountId(session.user.id);
+    if (!accountId) {
+      return NextResponse.json({ error: "Account not found" }, { status: 404 });
+    }
+
+    // For now, return mock data since we don't have reports table yet
+    const mockReportData: ReportSummaryData = {
+      period: period,
+      total_revenue: 125000,
+      total_customers: 2500,
+      new_customers: 150,
+      returning_customers: 800,
+      avg_order_value: 180,
+      retention_rate: 0.75,
+      churn_rate: 0.25,
+      top_products: ["Premium Headphones", "Wireless Mouse", "Smart Watch"],
+      key_insights: [
+        "Customer retention improved by 5% this month",
+        "New customer acquisition is up 12%",
+        "Average order value increased by $15"
+      ]
     };
 
-    return NextResponse.json({
+    console.log(`Report summary data fetched successfully for period: ${period}`);
+
+    // Set cache headers for performance
+    const response = NextResponse.json({
       success: true,
-      data: mockData
-    }, {
-      headers: {
-        'Cache-Control': 'public, max-age=300',
-        'ETag': `"reports-${Date.now()}"`
-      }
+      data: mockReportData
     });
 
+    response.headers.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
+    return response;
+
   } catch (error) {
-    console.error('Reports summary API error:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to fetch reports data' 
-      },
-      { status: 500 }
-    );
+    console.error('Error in reports summary API:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: "Internal server error" 
+    }, { status: 500 });
   }
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import EnhancedFilters, { FilterConfig, FilterState } from "@/components/ui/enhanced-filters";
+import { RevenueCohortsChart } from "@/components/charts/RevenueCohortsChart";
 import {
   DollarSign,
   TrendingUp,
@@ -305,16 +306,9 @@ export default function RevenueCohortsPage() {
         </div>
         
         <div className="p-6">
-          {/* Cohort Performance Chart Placeholder */}
+          {/* Revenue Cohort Chart */}
           <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Cohort Trends</h3>
-            <div className="h-80 bg-gradient-to-br from-green-50 to-blue-50 rounded-xl flex items-center justify-center border-2 border-dashed border-green-200">
-              <div className="text-center">
-                <BarChart3 className="w-16 h-16 text-green-400 mx-auto mb-4" />
-                <p className="text-green-600 font-medium">Revenue Cohort Chart</p>
-                <p className="text-green-500 text-sm">Interactive visualization coming soon</p>
-              </div>
-            </div>
+            <RevenueCohortsChart cohorts={cohorts} />
           </div>
 
           {/* Cohort Performance Table */}

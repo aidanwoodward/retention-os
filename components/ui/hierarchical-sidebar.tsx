@@ -278,33 +278,36 @@ export function HierarchicalSidebar() {
           </div>
         </div>
 
-        {/* Navigation Items */}
-        <div className="flex-1 flex flex-col py-4">
-          {/* Top Section */}
-          <div className="mb-6">
-            {isExpanded && (
-              <div className="px-4 mb-3">
-                <h3 className="text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                  Core Analytics & Insight Creation
-                </h3>
+        {/* Navigation Items - Scrollable */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto py-4">
+            {/* Top Section */}
+            <div className="mb-6">
+              {isExpanded && (
+                <div className="px-4 mb-3">
+                  <h3 className="text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                    Core Analytics & Insight Creation
+                  </h3>
+                </div>
+              )}
+              <div className="space-y-1">
+                {navigationStructure.top.map((item) => renderNavigationItem(item))}
               </div>
-            )}
-            <div className="space-y-1">
-              {navigationStructure.top.map((item) => renderNavigationItem(item))}
             </div>
-          </div>
 
-          {/* Bottom Section */}
-          <div className="mt-auto">
-            {isExpanded && (
-              <div className="px-4 mb-3">
-                <h3 className="text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                  Support & Configuration
-                </h3>
+            {/* Bottom Section */}
+            <div className="mt-auto">
+              {isExpanded && (
+                <div className="px-4 mb-3">
+                  <h3 className="text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                    Support & Configuration
+                  </h3>
+                </div>
+              )}
+              <div className="space-y-1">
+                {navigationStructure.bottom.map((item) => renderNavigationItem(item))}
               </div>
-            )}
-            <div className="space-y-1">
-              {navigationStructure.bottom.map((item) => renderNavigationItem(item))}
             </div>
           </div>
         </div>

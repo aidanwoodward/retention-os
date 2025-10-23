@@ -188,18 +188,52 @@ function calculateRetentionMetrics(customers: Customer[], orders: Order[]) {
   };
 }
 
-// Generate realistic dummy metrics for development
+// Generate realistic dummy metrics for development with 5-year growth patterns
 function generateDummyMetrics() {
+  // Simulate 5-year growth patterns
+  const currentYear = new Date().getFullYear();
+  const yearsInBusiness = 5;
+  const growthFactor = 1 + (yearsInBusiness * 0.15); // 15% YoY growth
+  
+  // Base metrics from 5 years ago
+  const baseCustomers = 200;
+  const baseOrders = 500;
+  const baseRevenue = 25000;
+  
+  // Current metrics with growth
+  const totalCustomers = Math.floor(baseCustomers * growthFactor);
+  const totalOrders = Math.floor(baseOrders * growthFactor * 1.2); // Order frequency also improved
+  const totalRevenue = Math.floor(baseRevenue * growthFactor * 1.3); // Revenue per customer improved
+  
+  // Improved retention over 5 years
+  const baseRetentionRate = 25;
+  const retentionImprovement = yearsInBusiness * 2; // 2% improvement per year
+  const retentionRate = Math.min(45, baseRetentionRate + retentionImprovement);
+  
+  // Geographic distribution
+  const geoBreakdown = {
+    UK: Math.floor(totalRevenue * 0.8),
+    Germany: Math.floor(totalRevenue * 0.07),
+    France: Math.floor(totalRevenue * 0.07),
+    Spain: Math.floor(totalRevenue * 0.06)
+  };
+  
   return {
-    totalCustomers: 500,
-    totalOrders: 1250,
-    retentionRate: 35.2,
-    customerLifetimeValue: 187.50,
-    atRiskCustomers: 45,
-    dormantCustomers: 23,
-    oneTimeBuyers: 180,
-    totalRevenue: 93750.00,
-    averageOrderValue: 75.00,
-    repeatCustomers: 320
+    totalCustomers,
+    totalOrders,
+    retentionRate: Math.round(retentionRate * 10) / 10,
+    customerLifetimeValue: Math.round((totalRevenue / totalCustomers) * 100) / 100,
+    atRiskCustomers: Math.floor(totalCustomers * 0.08), // Reduced from 15% to 8% over 5 years
+    dormantCustomers: Math.floor(totalCustomers * 0.05), // Reduced from 10% to 5% over 5 years
+    oneTimeBuyers: Math.floor(totalCustomers * 0.25), // Reduced from 40% to 25% over 5 years
+    totalRevenue,
+    averageOrderValue: Math.round((totalRevenue / totalOrders) * 100) / 100,
+    repeatCustomers: Math.floor(totalCustomers * retentionRate / 100),
+    geographicBreakdown: geoBreakdown,
+    yearOverYearGrowth: {
+      customerGrowth: 15.2,
+      revenueGrowth: 18.7,
+      retentionImprovement: 2.1
+    }
   };
 }

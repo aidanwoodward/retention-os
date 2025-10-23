@@ -43,6 +43,7 @@ export default function RevenueCohortsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<FilterState>({});
+  const [viewMode, setViewMode] = useState<'monthly' | 'quarterly' | 'annual'>('monthly');
   // const [selectedCohort, setSelectedCohort] = useState<string | null>(null);
 
   // Define filter configuration
@@ -296,7 +297,40 @@ export default function RevenueCohortsPage() {
               <BarChart3 className="w-6 h-6 mr-2 text-green-600" />
               Revenue Cohort Analysis
             </h2>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-4">
+              {/* View Mode Toggle */}
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('monthly')}
+                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'monthly'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Monthly
+                </button>
+                <button
+                  onClick={() => setViewMode('quarterly')}
+                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'quarterly'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Quarterly
+                </button>
+                <button
+                  onClick={() => setViewMode('annual')}
+                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'annual'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Annual
+                </button>
+              </div>
               <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
                 <Download className="w-4 h-4 mr-2 inline" />
                 Export Data
@@ -308,7 +342,7 @@ export default function RevenueCohortsPage() {
         <div className="p-6">
           {/* Revenue Cohort Chart */}
           <div className="mb-8">
-            <RevenueCohortsChart cohorts={cohorts} />
+            <RevenueCohortsChart cohorts={cohorts} viewMode={viewMode} />
           </div>
 
           {/* Cohort Performance Table */}

@@ -112,24 +112,57 @@ export async function GET(request: Request) {
     }
 
     if (!kpisData) {
-      // Return mock data with different values based on time period to demonstrate filtering
+      // Return mock data with 5-year growth patterns based on time period
       console.log("No data found, returning mock data for time period:", timePeriod);
       
+      // Calculate growth factors based on time period
+      const getGrowthFactor = (period: string) => {
+        switch (period) {
+          case '7d': return 1.0;
+          case '30d': return 1.2;
+          case '90d': return 1.5;
+          case '1y': return 2.0;
+          default: return 2.5; // All time
+        }
+      };
+      
+      const growthFactor = getGrowthFactor(timePeriod);
+      const yearsInBusiness = 5;
+      const baseGrowthFactor = 1 + (yearsInBusiness * 0.15); // 15% YoY growth
+      
+      // Base metrics with 5-year growth patterns
+      const baseCustomers = Math.floor(200 * baseGrowthFactor * growthFactor);
+      const baseOrders = Math.floor(500 * baseGrowthFactor * growthFactor * 1.2);
+      const baseRevenue = Math.floor(25000 * baseGrowthFactor * growthFactor * 1.3);
+      
+      // Improved retention over 5 years
+      const baseRetentionRate = 25;
+      const retentionImprovement = yearsInBusiness * 2; // 2% improvement per year
+      const retentionRate = Math.min(45, baseRetentionRate + retentionImprovement);
+      
+      // Geographic distribution
+      const geoBreakdown = {
+        UK: Math.floor(baseRevenue * 0.8),
+        Germany: Math.floor(baseRevenue * 0.07),
+        France: Math.floor(baseRevenue * 0.07),
+        Spain: Math.floor(baseRevenue * 0.06)
+      };
+      
       const mockData: KPIsData = {
-        total_customers: timePeriod === '7d' ? 150 : timePeriod === '30d' ? 500 : timePeriod === '90d' ? 1200 : 2500,
-        total_orders: timePeriod === '7d' ? 45 : timePeriod === '30d' ? 180 : timePeriod === '90d' ? 450 : 1200,
-        total_revenue: timePeriod === '7d' ? 4500 : timePeriod === '30d' ? 18000 : timePeriod === '90d' ? 45000 : 120000,
-        average_order_value: 100,
-        customer_lifetime_value: timePeriod === '7d' ? 30 : timePeriod === '30d' ? 36 : timePeriod === '90d' ? 37.5 : 48,
-        repeat_customers: timePeriod === '7d' ? 15 : timePeriod === '30d' ? 50 : timePeriod === '90d' ? 120 : 300,
-        retention_rate_percent: timePeriod === '7d' ? 10 : timePeriod === '30d' ? 25 : timePeriod === '90d' ? 30 : 35,
-        at_risk_customers: timePeriod === '7d' ? 5 : timePeriod === '30d' ? 20 : timePeriod === '90d' ? 50 : 100,
-        dormant_customers: timePeriod === '7d' ? 10 : timePeriod === '30d' ? 30 : timePeriod === '90d' ? 80 : 200,
-        one_time_buyers: timePeriod === '7d' ? 30 : timePeriod === '30d' ? 100 : timePeriod === '90d' ? 250 : 500,
-        new_customers_30d: timePeriod === '7d' ? 5 : timePeriod === '30d' ? 20 : timePeriod === '90d' ? 60 : 150,
-        revenue_30d: timePeriod === '7d' ? 500 : timePeriod === '30d' ? 2000 : timePeriod === '90d' ? 6000 : 15000,
-        revenue_90d: timePeriod === '7d' ? 1500 : timePeriod === '30d' ? 6000 : timePeriod === '90d' ? 18000 : 45000,
-        avg_orders_per_customer: timePeriod === '7d' ? 0.3 : timePeriod === '30d' ? 0.36 : timePeriod === '90d' ? 0.375 : 0.48,
+        total_customers: baseCustomers,
+        total_orders: baseOrders,
+        total_revenue: baseRevenue,
+        average_order_value: Math.round((baseRevenue / baseOrders) * 100) / 100,
+        customer_lifetime_value: Math.round((baseRevenue / baseCustomers) * 100) / 100,
+        repeat_customers: Math.floor(baseCustomers * retentionRate / 100),
+        retention_rate_percent: Math.round(retentionRate * 10) / 10,
+        at_risk_customers: Math.floor(baseCustomers * 0.08), // Reduced over 5 years
+        dormant_customers: Math.floor(baseCustomers * 0.05), // Reduced over 5 years
+        one_time_buyers: Math.floor(baseCustomers * 0.25), // Reduced over 5 years
+        new_customers_30d: Math.floor(baseCustomers * 0.15 * growthFactor),
+        revenue_30d: Math.floor(baseRevenue * 0.2 * growthFactor),
+        revenue_90d: Math.floor(baseRevenue * 0.6 * growthFactor),
+        avg_orders_per_customer: Math.round((baseOrders / baseCustomers) * 100) / 100,
         calculated_at: new Date().toISOString()
       };
       

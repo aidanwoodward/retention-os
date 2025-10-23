@@ -30,28 +30,47 @@ interface CohortData {
 
 interface RevenueCohortsChartProps {
   cohorts: CohortData[];
+  viewMode?: 'monthly' | 'quarterly' | 'annual';
 }
 
-// Transform cohort data into chart format
-const transformCohortData = (cohorts: CohortData[]) => {
+// Transform cohort data into chart format based on view mode
+const transformCohortData = (cohorts: CohortData[], viewMode: 'monthly' | 'quarterly' | 'annual' = 'monthly') => {
   const chartData: Record<string, Record<string, number | string>> = {};
   
   cohorts.forEach((cohort) => {
     cohort.periods.forEach((period) => {
-      const key = period.order_month;
+      let key: string;
+      
+      // Group data by time period based on view mode
+      switch (viewMode) {
+        case 'quarterly':
+          const quarter = Math.ceil(new Date(period.order_month).getMonth() / 3);
+          const year = new Date(period.order_month).getFullYear();
+          key = `Q${quarter} ${year}`;
+          break;
+        case 'annual':
+          key = new Date(period.order_month).getFullYear().toString();
+          break;
+        default: // monthly
+          key = period.order_month;
+      }
+      
       if (!chartData[key]) {
-        chartData[key] = { month: key };
+        chartData[key] = { period: key };
       }
       
       // Create a unique key for each cohort's contribution to this period
       const cohortKey = `cohort_${cohort.cohort_month.replace('-', '_')}`;
-      chartData[key][cohortKey] = period.total_revenue;
+      chartData[key][cohortKey] = (chartData[key][cohortKey] || 0) + period.total_revenue;
     });
   });
   
-  return Object.values(chartData).sort((a, b) => 
-    new Date(a.month).getTime() - new Date(b.month).getTime()
-  );
+  return Object.values(chartData).sort((a, b) => {
+    if (viewMode === 'annual') {
+      return parseInt(a.period) - parseInt(b.period);
+    }
+    return new Date(a.period).getTime() - new Date(b.period).getTime();
+  });
 };
 
 // Generate chart config for all cohorts
@@ -76,7 +95,7 @@ const generateChartConfig = (cohorts: CohortData[]): ChartConfig => {
   return config;
 };
 
-export function RevenueCohortsChart({ cohorts }: RevenueCohortsChartProps) {
+export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCohortsChartProps) {
   if (!cohorts || cohorts.length === 0) {
     return (
       <Card>
@@ -95,7 +114,7 @@ export function RevenueCohortsChart({ cohorts }: RevenueCohortsChartProps) {
     );
   }
 
-  const chartData = transformCohortData(cohorts);
+  const chartData = transformCohortData(cohorts, viewMode);
   const chartConfig = generateChartConfig(cohorts);
   const cohortKeys = Object.keys(chartConfig);
 
@@ -113,22 +132,28 @@ export function RevenueCohortsChart({ cohorts }: RevenueCohortsChartProps) {
       <CardHeader>
         <CardTitle>Revenue Cohort Trends</CardTitle>
         <CardDescription>
-          Revenue contribution by cohort over time - stacked view shows how each cohort contributes to monthly revenue
+          Revenue contribution by cohort over time - {viewMode} view shows how each cohort contributes to {viewMode} revenue
         </CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-80">
           <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <XAxis
-              dataKey="month"
+              dataKey="period"
               tickLine={false}
               tickMargin={10}
               axisLine={false}
               tickFormatter={(value) => {
-                return new Date(value).toLocaleDateString("en-US", {
-                  month: "short",
-                  year: "2-digit",
-                });
+                if (viewMode === 'annual') {
+                  return value;
+                } else if (viewMode === 'quarterly') {
+                  return value;
+                } else {
+                  return new Date(value).toLocaleDateString("en-US", {
+                    month: "short",
+                    year: "2-digit",
+                  });
+                }
               }}
             />
             <YAxis

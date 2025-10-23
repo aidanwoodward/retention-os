@@ -161,35 +161,59 @@ export async function GET(request: Request) {
   }
 }
 
-// Generate realistic dummy cohorts data for development
+// Generate realistic dummy cohorts data for development with 5-year patterns
 function generateDummyCohorts() {
   const cohorts = [];
   const now = new Date();
   
-  // Generate 12 months of cohort data
-  for (let i = 0; i < 12; i++) {
+  // Generate 60 months (5 years) of cohort data
+  for (let i = 0; i < 60; i++) {
     const cohortDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const cohortMonth = cohortDate.toISOString().slice(0, 7); // YYYY-MM format
     
-    // Generate cohort size (customers acquired in this month)
-    const cohortSize = Math.floor(Math.random() * 200) + 50; // 50-250 customers
+    // Calculate growth trends over 5 years
+    const yearsAgo = i / 12;
+    const growthFactor = 1 + (yearsAgo * 0.15); // 15% YoY growth in acquisition
+    const baseCohortSize = 100 + Math.random() * 150; // 100-250 base customers
+    const cohortSize = Math.floor(baseCohortSize * growthFactor);
+    
+    // Geographic distribution
+    const geoDistribution = {
+      UK: Math.floor(cohortSize * 0.8), // 80% UK
+      Germany: Math.floor(cohortSize * 0.07), // 7% Germany
+      France: Math.floor(cohortSize * 0.07), // 7% France
+      Spain: Math.floor(cohortSize * 0.06) // 6% Spain
+    };
     
     const periods = [];
     
-    // Generate 12 periods (months) of data for each cohort
-    for (let period = 0; period < 12; period++) {
+    // Generate 60 periods (months) of data for each cohort
+    for (let period = 0; period < 60; period++) {
       const orderDate = new Date(cohortDate.getFullYear(), cohortDate.getMonth() + period, 1);
       const orderMonth = orderDate.toISOString().slice(0, 7);
       
-      // Calculate retention and revenue for this period
-      const retentionRate = Math.max(0, 100 - (period * 8) - Math.random() * 20); // Decreasing retention
+      // Calculate improved retention over time (reducing churn)
+      const baseRetention = 100 - (period * 6); // Base retention decline
+      const improvementFactor = 1 + (yearsAgo * 0.1); // 10% improvement in retention YoY
+      const retentionRate = Math.max(0, baseRetention * improvementFactor + (Math.random() - 0.5) * 10);
       const activeCustomers = Math.floor((cohortSize * retentionRate) / 100);
       
-      // Revenue decreases over time but with some variation
-      const baseRevenue = activeCustomers * (80 + Math.random() * 120); // $80-$200 per active customer
-      const totalRevenue = Math.floor(baseRevenue * (1 - period * 0.05)); // 5% decrease per period
+      // Revenue growth patterns (10-20% YoY)
+      const revenueGrowthFactor = 1 + (yearsAgo * 0.15); // 15% YoY revenue growth
+      const baseRevenuePerCustomer = 120 + Math.random() * 180; // $120-$300 per customer
+      const totalRevenue = Math.floor(activeCustomers * baseRevenuePerCustomer * revenueGrowthFactor);
       
-      const totalOrders = Math.floor(activeCustomers * (1.2 + Math.random() * 0.8)); // 1.2-2.0 orders per customer
+      // Order frequency improvement over time
+      const orderFrequency = 1.5 + (yearsAgo * 0.1) + Math.random() * 0.5; // Improving order frequency
+      const totalOrders = Math.floor(activeCustomers * orderFrequency);
+      
+      // Geographic revenue distribution
+      const geoRevenue = {
+        UK: Math.floor(totalRevenue * 0.8),
+        Germany: Math.floor(totalRevenue * 0.07),
+        France: Math.floor(totalRevenue * 0.07),
+        Spain: Math.floor(totalRevenue * 0.06)
+      };
       
       periods.push({
         period_number: period,
@@ -197,13 +221,15 @@ function generateDummyCohorts() {
         active_customers: activeCustomers,
         total_orders: totalOrders,
         total_revenue: totalRevenue,
-        retention_rate_percent: retentionRate
+        retention_rate_percent: retentionRate,
+        geographic_breakdown: geoRevenue
       });
     }
     
     cohorts.push({
       cohort_month: cohortMonth,
       cohort_size: cohortSize,
+      geographic_distribution: geoDistribution,
       periods: periods
     });
   }

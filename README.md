@@ -3,6 +3,7 @@
 A Next.js 15 application for e-commerce retention analytics, built with Supabase authentication and designed to integrate with Shopify and Klaviyo.
 
 <!-- Updated: Enhanced with 5-year growth patterns and geographic insights -->
+<!-- Force deployment: Revenue Cohorts page with AI Analysis -->
 
 ## Tech Stack
 

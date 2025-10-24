@@ -61,15 +61,16 @@ const transformCohortData = (cohorts: CohortData[], viewMode: 'monthly' | 'quart
       
       // Create a unique key for each cohort's contribution to this period
       const cohortKey = `cohort_${cohort.cohort_month.replace('-', '_')}`;
-      chartData[key][cohortKey] = (chartData[key][cohortKey] || 0) + period.total_revenue;
+      const currentValue = chartData[key][cohortKey] as number || 0;
+      chartData[key][cohortKey] = currentValue + period.total_revenue;
     });
   });
   
   return Object.values(chartData).sort((a, b) => {
     if (viewMode === 'annual') {
-      return parseInt(a.period) - parseInt(b.period);
+      return parseInt(String(a.period)) - parseInt(String(b.period));
     }
-    return new Date(a.period).getTime() - new Date(b.period).getTime();
+    return new Date(String(a.period)).getTime() - new Date(String(b.period)).getTime();
   });
 };
 

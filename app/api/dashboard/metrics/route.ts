@@ -83,8 +83,6 @@ export async function GET() {
       return NextResponse.json({
         success: true,
         data: {
-          totalCustomers: dummyMetrics.totalCustomers,
-          totalOrders: dummyMetrics.totalOrders,
           ...dummyMetrics,
           shopDomain: shopifyConnection.shop_domain,
           lastSync: shopifyConnection.connected_at
@@ -191,7 +189,6 @@ function calculateRetentionMetrics(customers: Customer[], orders: Order[]) {
 // Generate realistic dummy metrics for development with 5-year growth patterns
 function generateDummyMetrics() {
   // Simulate 5-year growth patterns
-  const currentYear = new Date().getFullYear();
   const yearsInBusiness = 5;
   const growthFactor = 1 + (yearsInBusiness * 0.15); // 15% YoY growth
   

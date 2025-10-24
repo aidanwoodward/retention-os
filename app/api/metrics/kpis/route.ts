@@ -140,13 +140,13 @@ export async function GET(request: Request) {
       const retentionImprovement = yearsInBusiness * 2; // 2% improvement per year
       const retentionRate = Math.min(45, baseRetentionRate + retentionImprovement);
       
-      // Geographic distribution
-      const geoBreakdown = {
-        UK: Math.floor(baseRevenue * 0.8),
-        Germany: Math.floor(baseRevenue * 0.07),
-        France: Math.floor(baseRevenue * 0.07),
-        Spain: Math.floor(baseRevenue * 0.06)
-      };
+      // Geographic distribution (for future use)
+      // const geoBreakdown = {
+      //   UK: Math.floor(baseRevenue * 0.8),
+      //   Germany: Math.floor(baseRevenue * 0.07),
+      //   France: Math.floor(baseRevenue * 0.07),
+      //   Spain: Math.floor(baseRevenue * 0.06)
+      // };
       
       const mockData: KPIsData = {
         total_customers: baseCustomers,

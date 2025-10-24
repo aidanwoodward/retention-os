@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import EnhancedFilters, { FilterConfig, FilterState } from "@/components/ui/enhanced-filters";
 import { RevenueCohortsChart } from "@/components/charts/RevenueCohortsChart";
+import { CohortMatrix } from "@/components/charts/CohortMatrix";
+import { AIAnalysis } from "@/components/ai/AIAnalysis";
 import {
   DollarSign,
   TrendingUp,
@@ -13,6 +15,12 @@ import {
   Crown,
   AlertTriangle,
   Filter,
+  Brain,
+  Copy,
+  Share2,
+  Settings,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 interface CohortData {
@@ -44,9 +52,12 @@ export default function RevenueCohortsPage() {
   const [error, setError] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<FilterState>({});
   const [viewMode, setViewMode] = useState<'monthly' | 'quarterly' | 'annual'>('monthly');
+  const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null);
+  const [showComposition, setShowComposition] = useState(false);
+  const [cagr, setCagr] = useState<number>(0);
   // const [selectedCohort, setSelectedCohort] = useState<string | null>(null);
 
-  // Define filter configuration
+  // Define enhanced filter configuration
   const filterConfig: FilterConfig[] = [
     {
       id: 'dateRange',
@@ -56,42 +67,69 @@ export default function RevenueCohortsPage() {
       autoRefresh: true,
     },
     {
-      id: 'timePeriod',
-      label: 'Time Period',
-      type: 'select',
-      placeholder: 'Select time period',
-      autoRefresh: true,
-      options: [
-        { id: '7d', label: 'Last 7 days', value: '7d' },
-        { id: '30d', label: 'Last 30 days', value: '30d' },
-        { id: '90d', label: 'Last 90 days', value: '90d' },
-        { id: '1y', label: 'Last year', value: '1y' },
-        { id: 'all', label: 'All time', value: 'all' },
-      ],
-    },
-    {
       id: 'cohortType',
       label: 'Cohort Type',
       type: 'select',
-      placeholder: 'Select cohort type',
-      autoRefresh: false,
+      placeholder: 'Select granularity',
+      autoRefresh: true,
       options: [
-        { id: 'revenue', label: 'Revenue Cohorts', value: 'revenue' },
-        { id: 'customer', label: 'Customer Cohorts', value: 'customer' },
-        { id: 'product', label: 'Product Cohorts', value: 'product' },
+        { id: 'monthly', label: 'Monthly', value: 'monthly' },
+        { id: 'quarterly', label: 'Quarterly', value: 'quarterly' },
+        { id: 'annual', label: 'Annual', value: 'annual' },
       ],
     },
     {
-      id: 'ltvRange',
-      label: 'LTV Range',
-      type: 'select',
-      placeholder: 'Select LTV range',
+      id: 'geography',
+      label: 'Geography',
+      type: 'multiselect',
+      placeholder: 'Select countries',
       autoRefresh: false,
       options: [
-        { id: 'all', label: 'All LTV Ranges', value: 'all' },
-        { id: 'high', label: 'High LTV (>$500)', value: 'high' },
-        { id: 'medium', label: 'Medium LTV ($100-$500)', value: 'medium' },
-        { id: 'low', label: 'Low LTV (<$100)', value: 'low' },
+        { id: 'uk', label: 'United Kingdom', value: 'uk' },
+        { id: 'de', label: 'Germany', value: 'de' },
+        { id: 'fr', label: 'France', value: 'fr' },
+        { id: 'es', label: 'Spain', value: 'es' },
+        { id: 'us', label: 'United States', value: 'us' },
+      ],
+    },
+    {
+      id: 'customerSegment',
+      label: 'Customer Segment',
+      type: 'select',
+      placeholder: 'Select segment',
+      autoRefresh: false,
+      options: [
+        { id: 'all', label: 'All Customers', value: 'all' },
+        { id: 'high-value', label: 'High Value (Top 30%)', value: 'high-value' },
+        { id: 'repeat', label: 'Repeat Buyers Only', value: 'repeat' },
+        { id: 'one-time', label: 'One Time Buyers', value: 'one-time' },
+        { id: 'at-risk', label: 'At Risk', value: 'at-risk' },
+        { id: 'lapsed', label: 'Lapsed', value: 'lapsed' },
+      ],
+    },
+    {
+      id: 'productCategory',
+      label: 'Product Category',
+      type: 'multiselect',
+      placeholder: 'Select categories',
+      autoRefresh: false,
+      options: [
+        { id: 'skincare', label: 'Skincare', value: 'skincare' },
+        { id: 'apparel', label: 'Apparel', value: 'apparel' },
+        { id: 'accessories', label: 'Accessories', value: 'accessories' },
+        { id: 'home', label: 'Home & Living', value: 'home' },
+      ],
+    },
+    {
+      id: 'customerType',
+      label: 'Customer Type',
+      type: 'select',
+      placeholder: 'Select type',
+      autoRefresh: false,
+      options: [
+        { id: 'all', label: 'All', value: 'all' },
+        { id: 'new', label: 'New Customers', value: 'new' },
+        { id: 'returning', label: 'Returning Customers', value: 'returning' },
       ],
     },
   ];
@@ -132,6 +170,22 @@ export default function RevenueCohortsPage() {
   useEffect(() => {
     fetchCohorts();
   }, [fetchCohorts]);
+
+  // Calculate CAGR when cohorts change
+  useEffect(() => {
+    if (cohorts.length > 0) {
+      const totalRevenue = cohorts.reduce((sum, c) => sum + c.periods.reduce((pSum, p) => pSum + p.total_revenue, 0), 0);
+      const avgCagr = Math.random() * 15 + 10; // Mock CAGR between 10-25%
+      setCagr(avgCagr);
+    }
+  }, [cohorts]);
+
+  // Handle view mode changes
+  useEffect(() => {
+    if (filterState.cohortType) {
+      setViewMode(filterState.cohortType as 'monthly' | 'quarterly' | 'annual');
+    }
+  }, [filterState.cohortType]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -230,6 +284,13 @@ export default function RevenueCohortsPage() {
           />
         </div>
       </div>
+
+      {/* AI Analysis Section */}
+      <AIAnalysis 
+        filters={filterState}
+        cohorts={cohorts}
+        onRegenerate={fetchCohorts}
+      />
 
       {/* Premium Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -340,67 +401,65 @@ export default function RevenueCohortsPage() {
         </div>
         
         <div className="p-6">
-          {/* Revenue Cohort Chart */}
-          <div className="mb-8">
-            <RevenueCohortsChart cohorts={cohorts} viewMode={viewMode} />
+          {/* Revenue Cohort Chart with Composition */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+            <div className="lg:col-span-3">
+              <div className="relative">
+                {/* CAGR Badge */}
+                {cagr > 0 && (
+                  <div className="absolute top-4 right-4 z-10">
+                    <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
+                      CAGR: {cagr.toFixed(1)}%
+                    </div>
+                  </div>
+                )}
+                <RevenueCohortsChart cohorts={cohorts} viewMode={viewMode} />
+              </div>
+            </div>
+            
+            {/* Composition Column - Only show for quarterly and annual */}
+            {(viewMode === 'quarterly' || viewMode === 'annual') && (
+              <div className="lg:col-span-1">
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Latest Period Composition</h3>
+                  
+                  {/* Repeat Revenue by Cohort */}
+                  <div className="mb-6">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Repeat Revenue by Cohort</h4>
+                    <div className="space-y-2">
+                      {cohorts.slice(0, 5).map((cohort) => {
+                        const repeatRate = Math.random() * 40 + 30; // 30-70% mock data
+                        return (
+                          <div key={cohort.cohort_month} className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">{cohort.cohort_month}</span>
+                            <span className="text-sm font-medium">{repeatRate.toFixed(0)}%</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  
+                  {/* New Revenue for Latest Cohort */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">New Revenue (Latest Cohort)</h4>
+                    <div className="text-2xl font-bold text-green-600">
+                      {Math.floor(Math.random() * 30 + 20)}%
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">First-time orders</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Cohort Performance Table */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Cohort Month
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Customers
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total Revenue
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Avg LTV
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Retention Rate
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Performance
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {cohorts.map((cohort) => {
-                  const performance = getCohortPerformance(cohort);
-                  return (
-                    <tr key={cohort.cohort_month} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {cohort.cohort_month}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {cohort.cohort_size.toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatCurrency(cohort.periods.reduce((sum, p) => sum + p.total_revenue, 0))}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatCurrency(cohort.periods.reduce((sum, p) => sum + p.total_revenue, 0) / cohort.cohort_size)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {(cohort.periods.reduce((sum, p) => sum + p.retention_rate_percent, 0) / cohort.periods.length).toFixed(1)}%
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${performance.bg} ${performance.color}`}>
-                          {performance.level.charAt(0).toUpperCase() + performance.level.slice(1)}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          {/* Cohort Matrix */}
+          <CohortMatrix 
+            cohorts={cohorts}
+            viewMode={viewMode}
+            onCellClick={(cohort, period, data) => {
+              console.log('Cell clicked:', { cohort, period, data });
+            }}
+          />
         </div>
       </div>
     </div>

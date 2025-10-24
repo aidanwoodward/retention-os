@@ -14,8 +14,8 @@ import {
 } from "lucide-react";
 
 interface AIAnalysisProps {
-  filters: any;
-  cohorts: any[];
+  filters: Record<string, unknown>;
+  cohorts: unknown[];
   onRegenerate?: () => void;
 }
 

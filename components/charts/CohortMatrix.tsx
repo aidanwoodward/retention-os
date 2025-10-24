@@ -18,9 +18,9 @@ import {
 } from "lucide-react";
 
 interface CohortMatrixProps {
-  cohorts: any[];
+  cohorts: unknown[];
   viewMode: 'monthly' | 'quarterly' | 'annual';
-  onCellClick?: (cohort: string, period: number, data: any) => void;
+  onCellClick?: (cohort: string, period: number, data: MatrixCell) => void;
 }
 
 interface MatrixCell {
@@ -40,18 +40,22 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
     const maxPeriods = viewMode === 'annual' ? 5 : viewMode === 'quarterly' ? 20 : 60;
 
     cohorts.forEach((cohort) => {
-      matrix[cohort.cohort_month] = {};
+      const cohortData = cohort as Record<string, unknown>;
+      const cohortMonth = cohortData.cohort_month as string;
+      matrix[cohortMonth] = {};
       
-      cohort.periods.forEach((period: any, index: number) => {
+      const periods = cohortData.periods as Array<Record<string, unknown>>;
+      periods.forEach((period, index: number) => {
         if (index < maxPeriods) {
-          const previousRevenue = index > 0 ? cohort.periods[index - 1]?.total_revenue || 0 : 0;
-          const retentionRate = previousRevenue > 0 ? (period.total_revenue / previousRevenue) * 100 : 100;
+          const previousRevenue = index > 0 ? (periods[index - 1]?.total_revenue as number) || 0 : 0;
+          const currentRevenue = period.total_revenue as number;
+          const retentionRate = previousRevenue > 0 ? (currentRevenue / previousRevenue) * 100 : 100;
           
-          matrix[cohort.cohort_month][index] = {
-            revenue: period.total_revenue,
+          matrix[cohortMonth][index] = {
+            revenue: currentRevenue,
             retention: retentionRate,
             period: index,
-            cohort: cohort.cohort_month
+            cohort: cohortMonth
           };
         }
       });

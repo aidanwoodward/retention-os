@@ -15,12 +15,6 @@ import {
   Crown,
   AlertTriangle,
   Filter,
-  Brain,
-  Copy,
-  Share2,
-  Settings,
-  Eye,
-  EyeOff,
 } from "lucide-react";
 
 interface CohortData {
@@ -52,8 +46,6 @@ export default function RevenueCohortsPage() {
   const [error, setError] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<FilterState>({});
   const [viewMode, setViewMode] = useState<'monthly' | 'quarterly' | 'annual'>('monthly');
-  const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null);
-  const [showComposition, setShowComposition] = useState(false);
   const [cagr, setCagr] = useState<number>(0);
   // const [selectedCohort, setSelectedCohort] = useState<string | null>(null);
 
@@ -174,7 +166,6 @@ export default function RevenueCohortsPage() {
   // Calculate CAGR when cohorts change
   useEffect(() => {
     if (cohorts.length > 0) {
-      const totalRevenue = cohorts.reduce((sum, c) => sum + c.periods.reduce((pSum, p) => pSum + p.total_revenue, 0), 0);
       const avgCagr = Math.random() * 15 + 10; // Mock CAGR between 10-25%
       setCagr(avgCagr);
     }
@@ -196,15 +187,6 @@ export default function RevenueCohortsPage() {
     }).format(amount);
   };
 
-  const getCohortPerformance = (cohort: CohortData) => {
-    const totalRevenue = cohort.periods.reduce((sum, period) => sum + period.total_revenue, 0);
-    const avgLtv = totalRevenue / cohort.cohort_size;
-    
-    if (avgLtv > 500) return { level: 'excellent', color: 'text-green-600', bg: 'bg-green-50' };
-    if (avgLtv > 200) return { level: 'good', color: 'text-blue-600', bg: 'bg-blue-50' };
-    if (avgLtv > 100) return { level: 'average', color: 'text-yellow-600', bg: 'bg-yellow-50' };
-    return { level: 'poor', color: 'text-red-600', bg: 'bg-red-50' };
-  };
 
   if (loading) {
     return (

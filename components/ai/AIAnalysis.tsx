@@ -32,7 +32,6 @@ export function AIAnalysis({ filters, cohorts, onRegenerate }: AIAnalysisProps) 
   const [insights, setInsights] = useState<AIInsight[]>([]);
   const [loading, setLoading] = useState(false);
   const [lastGenerated, setLastGenerated] = useState<Date | null>(null);
-  const [viewMode, setViewMode] = useState<'summary' | 'detailed'>('summary');
 
   const generateInsights = async () => {
     setLoading(true);
@@ -162,29 +161,6 @@ export function AIAnalysis({ filters, cohorts, onRegenerate }: AIAnalysisProps) 
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            {/* View Mode Toggle */}
-            <div className="flex bg-gray-100 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode('summary')}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'summary'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Summary
-              </button>
-              <button
-                onClick={() => setViewMode('detailed')}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'detailed'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Detailed
-              </button>
-            </div>
             
             {/* Actions */}
             <button
@@ -230,56 +206,18 @@ export function AIAnalysis({ filters, cohorts, onRegenerate }: AIAnalysisProps) 
             </div>
           </div>
         ) : insights.length > 0 ? (
-          <div className="space-y-4">
-            {viewMode === 'summary' ? (
-              <div className="grid gap-3">
-                {insights.slice(0, 4).map((insight) => (
-                  <div
-                    key={insight.id}
-                    className={`p-4 rounded-lg border ${getInsightColor(insight.type)}`}
-                  >
-                    <div className="flex items-start">
-                      {getInsightIcon(insight.type, insight.trend)}
-                      <div className="ml-3 flex-1">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-semibold text-gray-900">{insight.title}</h4>
-                          {insight.metric && (
-                            <span className="text-sm font-medium text-gray-600">
-                              {insight.metric}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-700 mt-1">{insight.description}</p>
-                      </div>
-                    </div>
+          <div className="space-y-3">
+            <ul className="space-y-2">
+              {insights.map((insight) => (
+                <li key={insight.id} className="flex items-start">
+                  <span className="flex-shrink-0 w-2 h-2 bg-gray-400 rounded-full mt-2 mr-3"></span>
+                  <div className="flex-1">
+                    <span className="font-medium text-gray-900">{insight.title}:</span>
+                    <span className="text-gray-700 ml-1">{insight.description}</span>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {insights.map((insight) => (
-                  <div
-                    key={insight.id}
-                    className={`p-4 rounded-lg border ${getInsightColor(insight.type)}`}
-                  >
-                    <div className="flex items-start">
-                      {getInsightIcon(insight.type, insight.trend)}
-                      <div className="ml-3 flex-1">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-semibold text-gray-900">{insight.title}</h4>
-                          {insight.metric && (
-                            <span className="text-sm font-medium text-gray-600">
-                              {insight.metric}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-700 mt-1">{insight.description}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                </li>
+              ))}
+            </ul>
           </div>
         ) : (
           <div className="text-center py-12">

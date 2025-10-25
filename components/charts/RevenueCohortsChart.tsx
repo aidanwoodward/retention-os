@@ -74,15 +74,20 @@ const transformCohortData = (cohorts: CohortData[], viewMode: 'monthly' | 'quart
   });
 };
 
-// Generate chart config for all cohorts
+// Generate chart config for all cohorts with navy to light blue gradient
 const generateChartConfig = (cohorts: CohortData[]): ChartConfig => {
   const config: ChartConfig = {};
   const colors = [
-    "hsl(var(--chart-1))",
-    "hsl(var(--chart-2))",
-    "hsl(var(--chart-3))",
-    "hsl(var(--chart-4))",
-    "hsl(var(--chart-5))",
+    "#1E3A8A", // Navy blue
+    "#2563EB", // Blue
+    "#3B82F6", // Light blue
+    "#60A5FA", // Lighter blue
+    "#93C5FD", // Very light blue
+    "#DBEAFE", // Lightest blue
+    "#0EA5E9", // Cyan blue
+    "#06B6D4", // Light cyan
+    "#67E8F9", // Very light cyan
+    "#A5F3FC"  // Lightest cyan
   ];
   
   cohorts.forEach((cohort, index) => {
@@ -120,6 +125,11 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
   const cohortKeys = Object.keys(chartConfig);
 
   const formatCurrency = (value: number) => {
+    if (value >= 1000000) {
+      return `$${(value / 1000000).toFixed(1)}m`;
+    } else if (value >= 1000) {
+      return `$${(value / 1000).toFixed(1)}k`;
+    }
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -162,22 +172,28 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
               axisLine={false}
               tickFormatter={(value) => formatCurrency(value)}
             />
-            <ChartTooltip
-              content={
-                <ChartTooltipContent
-                  formatter={(value, name) => [
-                    formatCurrency(Number(value)),
-                    chartConfig[name as keyof typeof chartConfig]?.label || name,
-                  ]}
-                  labelFormatter={(value) => 
-                    new Date(value).toLocaleDateString("en-US", {
-                      month: "long",
-                      year: "numeric",
-                    })
-                  }
-                />
-              }
-            />
+                   <ChartTooltip
+                     content={
+                       <ChartTooltipContent
+                         formatter={(value, name) => [
+                           formatCurrency(Number(value)),
+                           chartConfig[name as keyof typeof chartConfig]?.label || name,
+                         ]}
+                         labelFormatter={(value) => {
+                           if (viewMode === 'annual') {
+                             return value;
+                           } else if (viewMode === 'quarterly') {
+                             return value;
+                           } else {
+                             return new Date(value).toLocaleDateString("en-US", {
+                               month: "short",
+                               year: "numeric",
+                             });
+                           }
+                         }}
+                       />
+                     }
+                   />
             {cohortKeys.map((key, index) => (
               <Bar
                 key={key}

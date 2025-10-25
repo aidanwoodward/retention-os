@@ -37,7 +37,7 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
   // Generate matrix data from cohorts
   const generateMatrixData = () => {
     const matrix: Record<string, Record<number, MatrixCell>> = {};
-    const maxPeriods = viewMode === 'annual' ? 5 : viewMode === 'quarterly' ? 20 : 60;
+    const maxPeriods = viewMode === 'annual' ? 5 : viewMode === 'quarterly' ? 8 : 12;
 
     cohorts.forEach((cohort) => {
       const cohortData = cohort as Record<string, unknown>;
@@ -92,10 +92,11 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
   };
 
   const formatPeriod = (period: number) => {
+    const currentYear = new Date().getFullYear();
     if (viewMode === 'annual') {
-      return `Year ${period + 1}`;
+      return `${currentYear - maxPeriods + period + 1}`;
     } else if (viewMode === 'quarterly') {
-      return `Q${Math.floor(period / 3) + 1}`;
+      return `Q${period + 1}`;
     } else {
       return `Month ${period + 1}`;
     }
@@ -165,7 +166,7 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-w-full">
             <div className="min-w-full">
               {/* Header */}
               <div className="grid grid-cols-12 gap-2 mb-4">

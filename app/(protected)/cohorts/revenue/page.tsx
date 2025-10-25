@@ -179,12 +179,26 @@ export default function RevenueCohortsPage() {
   }, [filterState.cohortType]);
 
   const formatCurrency = (amount: number) => {
+    if (amount >= 1000000) {
+      return `$${(amount / 1000000).toFixed(1)}m`;
+    } else if (amount >= 1000) {
+      return `$${(amount / 1000).toFixed(1)}k`;
+    }
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
+  };
+
+  const formatNumber = (num: number) => {
+    if (num >= 1000000) {
+      return `${(num / 1000000).toFixed(1)}m`;
+    } else if (num >= 1000) {
+      return `${(num / 1000).toFixed(1)}k`;
+    }
+    return num.toLocaleString();
   };
 
 
@@ -245,27 +259,17 @@ export default function RevenueCohortsPage() {
         </div>
       </div>
 
-      {/* Enhanced Filters */}
-      <div className="mb-8">
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center">
-              <Filter className="w-6 h-6 text-green-600 mr-2" />
-              <h3 className="text-xl font-semibold text-gray-900">Revenue Cohort Filters</h3>
+            {/* Enhanced Filters */}
+            <div className="mb-8">
+              <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                <EnhancedFilters
+                  filters={filterConfig}
+                  onFiltersChange={setFilterState}
+                  onApplyFilters={fetchCohorts}
+                  loading={loading}
+                />
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <RefreshCw className="w-4 h-4 text-gray-400" />
-              <span className="text-sm text-gray-500">Real-time updates</span>
-            </div>
-          </div>
-          <EnhancedFilters
-            filters={filterConfig}
-            onFiltersChange={setFilterState}
-            onApplyFilters={fetchCohorts}
-            loading={loading}
-          />
-        </div>
-      </div>
 
       {/* AI Analysis Section */}
       <AIAnalysis 
@@ -283,6 +287,7 @@ export default function RevenueCohortsPage() {
               <p className="text-3xl font-bold text-green-900">
                 {formatCurrency(cohorts.reduce((sum, c) => sum + c.periods.reduce((pSum, p) => pSum + p.total_revenue, 0), 0))}
               </p>
+              <p className="text-sm text-green-700 mt-1">+18.7% YoY</p>
             </div>
             <DollarSign className="w-8 h-8 text-green-600" />
           </div>
@@ -308,8 +313,9 @@ export default function RevenueCohortsPage() {
             <div>
               <p className="text-purple-600 text-sm font-medium">Total Customers</p>
               <p className="text-3xl font-bold text-purple-900">
-                {cohorts.reduce((sum, c) => sum + c.cohort_size, 0).toLocaleString()}
+                {formatNumber(cohorts.reduce((sum, c) => sum + c.cohort_size, 0))}
               </p>
+              <p className="text-sm text-purple-700 mt-1">+15.2% YoY</p>
             </div>
             <Users className="w-8 h-8 text-purple-600" />
           </div>
@@ -341,39 +347,6 @@ export default function RevenueCohortsPage() {
               Revenue Cohort Analysis
             </h2>
             <div className="flex items-center space-x-4">
-              {/* View Mode Toggle */}
-              <div className="flex bg-gray-100 rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode('monthly')}
-                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                    viewMode === 'monthly'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Monthly
-                </button>
-                <button
-                  onClick={() => setViewMode('quarterly')}
-                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                    viewMode === 'quarterly'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Quarterly
-                </button>
-                <button
-                  onClick={() => setViewMode('annual')}
-                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                    viewMode === 'annual'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Annual
-                </button>
-              </div>
               <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
                 <Download className="w-4 h-4 mr-2 inline" />
                 Export Data

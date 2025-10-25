@@ -9,12 +9,10 @@ import {
   DollarSign,
   TrendingUp,
   Users,
-  RefreshCw,
   Download,
   BarChart3,
   Crown,
   AlertTriangle,
-  Filter,
 } from "lucide-react";
 
 interface CohortData {
@@ -46,7 +44,7 @@ export default function RevenueCohortsPage() {
   const [error, setError] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<FilterState>({});
   const [viewMode, setViewMode] = useState<'monthly' | 'quarterly' | 'annual'>('monthly');
-  const [cagr, setCagr] = useState<number>(0);
+  // const [cagr, setCagr] = useState<number>(0);
   // const [selectedCohort, setSelectedCohort] = useState<string | null>(null);
 
   // Define enhanced filter configuration

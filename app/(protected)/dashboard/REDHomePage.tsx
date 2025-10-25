@@ -7,8 +7,6 @@ import EnhancedFilters, { FilterConfig, FilterState } from "@/components/ui/enha
 import { 
   TrendingUp, 
   TrendingDown, 
-  DollarSign, 
-  ShoppingCart, 
   Users, 
   Target, 
   BarChart3,
@@ -20,7 +18,6 @@ import {
   ArrowRight,
   FileText,
   Package,
-  UserCheck,
   Activity,
   RefreshCw,
   ExternalLink
@@ -80,7 +77,7 @@ interface SectionCard {
 // =============================================================================
 
 export default function REDHomePage() {
-  const router = useRouter();
+  // const router = useRouter();
   const [kpis, setKpis] = useState<KPIData[]>([]);
   const [healthScore, setHealthScore] = useState<BusinessHealthScore | null>(null);
   const [insights, setInsights] = useState<AIInsight[]>([]);
@@ -643,7 +640,7 @@ function BusinessHealthScoreCard({ healthScore }: { healthScore: BusinessHealthS
     return 'text-red-600';
   };
 
-  const getScoreBg = (score: number) => {
+  // const getScoreBg = (score: number) => {
     if (score >= 80) return 'bg-green-50';
     if (score >= 60) return 'bg-yellow-50';
     return 'bg-red-50';

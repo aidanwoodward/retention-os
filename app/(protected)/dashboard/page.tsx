@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
-import StatusBadge from "@/app/components/StatusBadge";
+// import StatusBadge from "@/app/components/StatusBadge";
 import Link from "next/link";
 import REDHomePage from "./REDHomePage";
 
@@ -37,7 +37,7 @@ export default async function DashboardPage() {
     .limit(1);
 
   const shopifyConnected = Boolean(shopifyConnections && shopifyConnections.length > 0);
-  const klaviyoConnected = false; // TODO: Implement Klaviyo connection check
+  // const klaviyoConnected = false; // TODO: Implement Klaviyo connection check
 
   // Show the retention dashboard (with dummy data if no connection)
   return (

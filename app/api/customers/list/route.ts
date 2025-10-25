@@ -7,7 +7,7 @@ import { getAccountId } from "@/lib/database";
 // TYPES
 // =============================================================================
 
-interface CustomerData {
+// interface CustomerData {
   customer_id: string;
   email_hash: string;
   first_name: string;

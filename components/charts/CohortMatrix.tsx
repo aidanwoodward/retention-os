@@ -12,7 +12,6 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  Eye,
   Download,
   Share2,
 } from "lucide-react";
@@ -40,7 +39,7 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
     const maxPeriods = viewMode === 'annual' ? 5 : viewMode === 'quarterly' ? 8 : 12;
 
     // Group cohorts by year/quarter based on view mode
-    const groupedCohorts: Record<string, any[]> = {};
+    const groupedCohorts: Record<string, Record<string, unknown>[]> = {};
     
     cohorts.forEach((cohort) => {
       const cohortData = cohort as Record<string, unknown>;

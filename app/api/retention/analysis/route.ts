@@ -22,7 +22,7 @@ interface RetentionAnalysisData {
 // API ENDPOINT
 // =============================================================================
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     // const { searchParams } = new URL(request.url);
     // const limit = parseInt(searchParams.get('limit') || '50');

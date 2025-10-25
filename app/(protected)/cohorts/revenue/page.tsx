@@ -162,12 +162,12 @@ export default function RevenueCohortsPage() {
   }, [fetchCohorts]);
 
   // Calculate CAGR when cohorts change
-  useEffect(() => {
-    if (cohorts.length > 0) {
-      const avgCagr = Math.random() * 15 + 10; // Mock CAGR between 10-25%
-      setCagr(avgCagr);
-    }
-  }, [cohorts]);
+  // useEffect(() => {
+  //   if (cohorts.length > 0) {
+  //     const avgCagr = Math.random() * 15 + 10; // Mock CAGR between 10-25%
+  //     setCagr(avgCagr);
+  //   }
+  // }, [cohorts]);
 
   // Handle view mode changes
   useEffect(() => {

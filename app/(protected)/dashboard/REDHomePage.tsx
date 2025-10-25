@@ -641,10 +641,10 @@ function BusinessHealthScoreCard({ healthScore }: { healthScore: BusinessHealthS
   };
 
   // const getScoreBg = (score: number) => {
-    if (score >= 80) return 'bg-green-50';
-    if (score >= 60) return 'bg-yellow-50';
-    return 'bg-red-50';
-  };
+  //   if (score >= 80) return 'bg-green-50';
+  //   if (score >= 60) return 'bg-yellow-50';
+  //   return 'bg-red-50';
+  // };
 
   return (
     <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">

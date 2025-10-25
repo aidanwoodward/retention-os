@@ -96,7 +96,7 @@ export function AIAnalysis({ filters, cohorts }: AIAnalysisProps) {
     generateInsights();
   }, [filters, cohorts]);
 
-  // const getInsightIcon = (type: string, trend?: string) => {
+  const getInsightIcon = (type: string, trend?: string) => {
     switch (type) {
       case 'improvement':
         return <TrendingUp className="w-4 h-4 text-green-600" />;
@@ -109,7 +109,7 @@ export function AIAnalysis({ filters, cohorts }: AIAnalysisProps) {
     }
   };
 
-  // const getInsightColor = (type: string) => {
+  const getInsightColor = (type: string) => {
     switch (type) {
       case 'improvement':
         return 'border-green-200 bg-green-50';

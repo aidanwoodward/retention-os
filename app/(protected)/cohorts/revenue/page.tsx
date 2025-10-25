@@ -360,17 +360,7 @@ export default function RevenueCohortsPage() {
           {/* Revenue Cohort Chart with Composition */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
             <div className="lg:col-span-3">
-              <div className="relative">
-                {/* CAGR Badge */}
-                {cagr > 0 && (
-                  <div className="absolute top-4 right-4 z-10">
-                    <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
-                      CAGR: {cagr.toFixed(1)}%
-                    </div>
-                  </div>
-                )}
-                <RevenueCohortsChart cohorts={cohorts} viewMode={viewMode} />
-              </div>
+              <RevenueCohortsChart cohorts={cohorts} viewMode={viewMode} />
             </div>
             
             {/* Composition Column - Only show for quarterly and annual */}

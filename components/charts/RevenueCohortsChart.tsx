@@ -216,10 +216,13 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
                    <ChartTooltip
                      content={
                        <ChartTooltipContent
-                         formatter={(value, name) => [
-                           formatCurrency(Number(value)),
-                           chartConfig[name as keyof typeof chartConfig]?.label || name,
-                         ]}
+                         formatter={(value, name) => {
+                           const label = chartConfig[name as keyof typeof chartConfig]?.label || name;
+                           return [
+                             `${label}: ${formatCurrency(Number(value))}`,
+                             ''
+                           ];
+                         }}
                          labelFormatter={(value) => {
                            if (viewMode === 'annual') {
                              return value;

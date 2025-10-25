@@ -206,18 +206,32 @@ export function AIAnalysis({ filters, cohorts, onRegenerate }: AIAnalysisProps) 
             </div>
           </div>
         ) : insights.length > 0 ? (
-          <div className="space-y-3">
-            <ul className="space-y-2">
-              {insights.map((insight) => (
-                <li key={insight.id} className="flex items-start">
-                  <span className="flex-shrink-0 w-2 h-2 bg-gray-400 rounded-full mt-2 mr-3"></span>
-                  <div className="flex-1">
-                    <span className="font-medium text-gray-900">{insight.title}:</span>
-                    <span className="text-gray-700 ml-1">{insight.description}</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
+          <div className="space-y-4">
+            {/* High-level Summary */}
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200">
+              <p className="text-gray-800 leading-relaxed">
+                Revenue retention has shown strong improvement with a 12% quarter-over-quarter increase, 
+                driven primarily by high-value customer segments and successful European market expansion. 
+                While UK and Germany cohorts are performing exceptionally well, Spain requires attention 
+                due to declining repeat orders, suggesting a need for strategic discount and campaign adjustments.
+              </p>
+            </div>
+            
+            {/* Detailed Insights */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">Key Insights:</h4>
+              <ul className="space-y-2">
+                {insights.map((insight) => (
+                  <li key={insight.id} className="flex items-start">
+                    <span className="flex-shrink-0 w-2 h-2 bg-gray-400 rounded-full mt-2 mr-3"></span>
+                    <div className="flex-1">
+                      <span className="font-medium text-gray-900">{insight.title}:</span>
+                      <span className="text-gray-700 ml-1">{insight.description}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         ) : (
           <div className="text-center py-12">

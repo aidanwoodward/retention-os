@@ -6,6 +6,7 @@ A Next.js 15 application for e-commerce retention analytics, built with Supabase
 <!-- Force deployment: Revenue Cohorts page with AI Analysis -->
 <!-- Fixed Git email configuration for Vercel deployment -->
 <!-- Fresh commit with correct author email for Vercel -->
+<!-- Final fix: Repository-level Git config -->
 
 ## Tech Stack
 

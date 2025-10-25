@@ -39,26 +39,65 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
     const matrix: Record<string, Record<number, MatrixCell>> = {};
     const maxPeriods = viewMode === 'annual' ? 5 : viewMode === 'quarterly' ? 8 : 12;
 
+    // Group cohorts by year/quarter based on view mode
+    const groupedCohorts: Record<string, any[]> = {};
+    
     cohorts.forEach((cohort) => {
       const cohortData = cohort as Record<string, unknown>;
       const cohortMonth = cohortData.cohort_month as string;
-      matrix[cohortMonth] = {};
+      const date = new Date(cohortMonth);
       
-      const periods = cohortData.periods as Array<Record<string, unknown>>;
-      periods.forEach((period, index: number) => {
-        if (index < maxPeriods) {
-          const previousRevenue = index > 0 ? (periods[index - 1]?.total_revenue as number) || 0 : 0;
-          const currentRevenue = period.total_revenue as number;
-          const retentionRate = previousRevenue > 0 ? (currentRevenue / previousRevenue) * 100 : 100;
+      let groupKey: string;
+      if (viewMode === 'annual') {
+        groupKey = date.getFullYear().toString();
+      } else if (viewMode === 'quarterly') {
+        const year = date.getFullYear();
+        const quarter = Math.floor(date.getMonth() / 3) + 1;
+        groupKey = `${year}-Q${quarter}`;
+      } else {
+        groupKey = cohortMonth;
+      }
+      
+      if (!groupedCohorts[groupKey]) {
+        groupedCohorts[groupKey] = [];
+      }
+      groupedCohorts[groupKey].push(cohortData);
+    });
+
+    // Process grouped cohorts
+    Object.entries(groupedCohorts).forEach(([groupKey, groupCohorts]) => {
+      matrix[groupKey] = {};
+      
+      // Aggregate data across all cohorts in this group
+      for (let periodIndex = 0; periodIndex < maxPeriods; periodIndex++) {
+        let totalRevenue = 0;
+        let totalPreviousRevenue = 0;
+        let cohortCount = 0;
+        
+        groupCohorts.forEach((cohortData) => {
+          const periods = cohortData.periods as Array<Record<string, unknown>>;
+          if (periods[periodIndex]) {
+            totalRevenue += periods[periodIndex].total_revenue as number;
+            if (periodIndex > 0 && periods[periodIndex - 1]) {
+              totalPreviousRevenue += periods[periodIndex - 1].total_revenue as number;
+            }
+            cohortCount++;
+          }
+        });
+        
+        if (cohortCount > 0) {
+          const avgRevenue = totalRevenue / cohortCount;
+          const avgPreviousRevenue = totalPreviousRevenue / cohortCount;
+          const retentionRate = avgPreviousRevenue > 0 ? (avgRevenue / avgPreviousRevenue) * 100 : 100;
           
-          matrix[cohortMonth][index] = {
-            revenue: currentRevenue,
+          matrix[groupKey][periodIndex] = {
+            revenue: totalRevenue,
             retention: retentionRate,
-            period: index,
-            cohort: cohortMonth
+            period: periodIndex,
+            cohort: groupKey
           };
         }
-      });
+      }
     });
 
     return matrix;

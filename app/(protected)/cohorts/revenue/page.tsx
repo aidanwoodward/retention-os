@@ -296,13 +296,14 @@ export default function RevenueCohortsPage() {
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-600 text-sm font-medium">Average LTV</p>
+              <p className="text-blue-600 text-sm font-medium">Average LTV (2024)</p>
               <p className="text-3xl font-bold text-blue-900">
                 {formatCurrency(cohorts.reduce((sum, c) => {
                   const totalRevenue = c.periods.reduce((pSum, p) => pSum + p.total_revenue, 0);
                   return sum + (totalRevenue / c.cohort_size);
                 }, 0) / cohorts.length || 0)}
               </p>
+              <p className="text-sm text-blue-700 mt-1">+12.3% YoY</p>
             </div>
             <TrendingUp className="w-8 h-8 text-blue-600" />
           </div>

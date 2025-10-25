@@ -91,6 +91,18 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
     }).format(amount);
   };
 
+  const formatCohortLabel = (cohortMonth: string) => {
+    const date = new Date(cohortMonth);
+    if (viewMode === 'annual') {
+      return `${date.getFullYear()} Cohort`;
+    } else if (viewMode === 'quarterly') {
+      const year = date.getFullYear();
+      const quarter = Math.floor(date.getMonth() / 3) + 1;
+      return `${year}-Q${quarter} Cohort`;
+    }
+    return cohortMonth; // YYYY-MM for monthly
+  };
+
   const formatPeriod = (period: number) => {
     const currentYear = new Date().getFullYear();
     if (viewMode === 'annual') {
@@ -183,7 +195,7 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
                 {cohortMonths.map((cohort) => (
                   <div key={cohort} className="grid grid-cols-12 gap-2">
                     <div className="col-span-2 text-sm font-medium text-gray-900 py-2">
-                      {cohort}
+                      {formatCohortLabel(cohort)}
                     </div>
                     {Array.from({ length: maxPeriods }, (_, i) => {
                       const cell = matrixData[cohort][i];

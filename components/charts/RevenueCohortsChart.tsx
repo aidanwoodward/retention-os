@@ -60,7 +60,21 @@ const transformCohortData = (cohorts: CohortData[], viewMode: 'monthly' | 'quart
       }
       
       // Create a unique key for each cohort's contribution to this period
-      const cohortKey = `cohort_${cohort.cohort_month.replace('-', '_')}`;
+      let cohortKey: string;
+      if (viewMode === 'annual') {
+        // For annual view, group cohorts by year only
+        const cohortYear = new Date(cohort.cohort_month).getFullYear();
+        cohortKey = `cohort_${cohortYear}`;
+      } else if (viewMode === 'quarterly') {
+        // For quarterly view, group cohorts by year-quarter
+        const cohortYear = new Date(cohort.cohort_month).getFullYear();
+        const cohortQuarter = Math.ceil(new Date(cohort.cohort_month).getMonth() / 3);
+        cohortKey = `cohort_${cohortYear}_Q${cohortQuarter}`;
+      } else {
+        // For monthly view, use full month
+        cohortKey = `cohort_${cohort.cohort_month.replace('-', '_')}`;
+      }
+      
       const currentValue = chartData[key][cohortKey] as number || 0;
       chartData[key][cohortKey] = currentValue + period.total_revenue;
     });
@@ -75,7 +89,7 @@ const transformCohortData = (cohorts: CohortData[], viewMode: 'monthly' | 'quart
 };
 
 // Generate chart config for all cohorts with navy to light blue gradient
-const generateChartConfig = (cohorts: CohortData[]): ChartConfig => {
+const generateChartConfig = (cohorts: CohortData[], viewMode: 'monthly' | 'quarterly' | 'annual' = 'monthly'): ChartConfig => {
   const config: ChartConfig = {};
   const colors = [
     "#1E3A8A", // Navy blue
@@ -90,10 +104,37 @@ const generateChartConfig = (cohorts: CohortData[]): ChartConfig => {
     "#A5F3FC"  // Lightest cyan
   ];
   
-  cohorts.forEach((cohort, index) => {
-    const key = `cohort_${cohort.cohort_month.replace('-', '_')}`;
+  // Get unique cohort keys based on view mode
+  const cohortKeys = new Set<string>();
+  cohorts.forEach((cohort) => {
+    let key: string;
+    if (viewMode === 'annual') {
+      const cohortYear = new Date(cohort.cohort_month).getFullYear();
+      key = `cohort_${cohortYear}`;
+    } else if (viewMode === 'quarterly') {
+      const cohortYear = new Date(cohort.cohort_month).getFullYear();
+      const cohortQuarter = Math.ceil(new Date(cohort.cohort_month).getMonth() / 3);
+      key = `cohort_${cohortYear}_Q${cohortQuarter}`;
+    } else {
+      key = `cohort_${cohort.cohort_month.replace('-', '_')}`;
+    }
+    cohortKeys.add(key);
+  });
+  
+  Array.from(cohortKeys).forEach((key, index) => {
+    let label: string;
+    if (viewMode === 'annual') {
+      const year = key.replace('cohort_', '');
+      label = year;
+    } else if (viewMode === 'quarterly') {
+      const parts = key.replace('cohort_', '').split('_Q');
+      label = `${parts[0]}-Q${parts[1]}`;
+    } else {
+      label = key.replace('cohort_', '').replace('_', '-');
+    }
+    
     config[key] = {
-      label: cohort.cohort_month,
+      label: label,
       color: colors[index % colors.length],
     };
   });
@@ -121,7 +162,7 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
   }
 
   const chartData = transformCohortData(cohorts, viewMode);
-  const chartConfig = generateChartConfig(cohorts);
+  const chartConfig = generateChartConfig(cohorts, viewMode);
   const cohortKeys = Object.keys(chartConfig);
 
   const formatCurrency = (value: number) => {

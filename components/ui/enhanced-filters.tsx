@@ -138,7 +138,7 @@ export function EnhancedFilters({
               <Button
                 variant="outline"
                 className={cn(
-                  "justify-between text-left font-normal",
+                  "w-full justify-between text-left font-normal",
                   !currentValue && "text-muted-foreground"
                 )}
               >
@@ -194,7 +194,7 @@ export function EnhancedFilters({
               <Button
                 variant="outline"
                 className={cn(
-                  "justify-between text-left font-normal",
+                  "w-full justify-between text-left font-normal",
                   !currentValue && "text-muted-foreground"
                 )}
               >
@@ -234,7 +234,7 @@ export function EnhancedFilters({
               <Button
                 variant="outline"
                 className={cn(
-                  "justify-between text-left font-normal",
+                  "w-full justify-between text-left font-normal",
                   !currentValue && "text-muted-foreground"
                 )}
               >
@@ -364,16 +364,18 @@ export function EnhancedFilters({
       </div>
 
       {/* Filter Controls */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {filters.map((filter) => (
-          <div key={filter.id} className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
+          <div key={filter.id} className="space-y-3">
+            <label className="block text-sm font-medium text-gray-700">
               {filter.label}
               {filter.autoRefresh && (
                 <span className="ml-1 text-xs text-green-600">(auto)</span>
               )}
             </label>
-            {renderFilter(filter)}
+            <div className="w-full">
+              {renderFilter(filter)}
+            </div>
           </div>
         ))}
       </div>

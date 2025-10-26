@@ -196,8 +196,8 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
+      <Card className="w-full">
+        <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Cohort Revenue Matrix</CardTitle>
@@ -220,31 +220,31 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3">
           <div className="overflow-x-auto">
             <div className="min-w-max">
               {/* Header */}
-              <div className="flex gap-2 mb-4">
-                <div className="w-32 font-semibold text-gray-700 flex-shrink-0">Cohort</div>
+              <div className="flex gap-1 mb-3">
+                <div className="w-24 font-semibold text-gray-700 flex-shrink-0 text-sm">Cohort</div>
                 {Array.from({ length: maxPeriods }, (_, i) => (
-                  <div key={i} className="w-24 text-center font-semibold text-gray-700 text-sm flex-shrink-0">
+                  <div key={i} className="w-20 text-center font-semibold text-gray-700 text-xs flex-shrink-0">
                     {formatPeriod(i)}
                   </div>
                 ))}
               </div>
               
               {/* Matrix Rows */}
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {cohortMonths.map((cohort) => (
-                  <div key={cohort} className="flex gap-2">
-                    <div className="w-32 text-sm font-medium text-gray-900 py-2 flex-shrink-0">
+                  <div key={cohort} className="flex gap-1">
+                    <div className="w-24 text-xs font-medium text-gray-900 py-1 flex-shrink-0">
                       {formatCohortLabel(cohort)}
                     </div>
                     {Array.from({ length: maxPeriods }, (_, i) => {
                       const cell = matrixData[cohort][i];
                       if (!cell) {
                         return (
-                          <div key={i} className="w-24 text-center py-2 text-gray-400 flex-shrink-0">
+                          <div key={i} className="w-20 text-center py-1 text-gray-400 flex-shrink-0 text-xs">
                             -
                           </div>
                         );
@@ -254,14 +254,14 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
                         <button
                           key={i}
                           onClick={() => handleCellClick(cohort, i, cell)}
-                          className={`w-24 p-2 rounded-lg border text-center hover:shadow-md transition-all flex-shrink-0 ${getRetentionColor(cell.retention)}`}
+                          className={`w-20 p-1 rounded text-center hover:shadow-md transition-all flex-shrink-0 ${getRetentionColor(cell.retention)}`}
                         >
-                          <div className="font-bold text-sm">
+                          <div className="font-bold text-xs">
                             {formatCurrency(cell.revenue)}
                           </div>
-                          <div className="text-xs flex items-center justify-center mt-1">
+                          <div className="text-xs flex items-center justify-center mt-0.5">
                             {getRetentionIcon(cell.retention)}
-                            <span className="ml-1">
+                            <span className="ml-0.5">
                               {cell.retention.toFixed(0)}%
                             </span>
                           </div>

@@ -36,7 +36,7 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
   // Generate matrix data from cohorts
   const generateMatrixData = () => {
     const matrix: Record<string, Record<number, MatrixCell>> = {};
-    const maxPeriods = viewMode === 'annual' ? 5 : viewMode === 'quarterly' ? 8 : 12;
+    const maxPeriods = viewMode === 'annual' ? 5 : viewMode === 'quarterly' ? 20 : 24;
 
     // Group cohorts by year/quarter based on view mode
     const groupedCohorts: Record<string, Record<string, unknown>[]> = {};
@@ -173,9 +173,9 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
     if (viewMode === 'annual') {
       return `${currentYear - maxPeriods + period + 1}`;
     } else if (viewMode === 'quarterly') {
-      return `Q${period + 1}`;
+      return `After ${period + 1} quarter${period + 1 === 1 ? '' : 's'}`;
     } else {
-      return `Month ${period + 1}`;
+      return `After ${period + 1} month${period + 1 === 1 ? '' : 's'}`;
     }
   };
 

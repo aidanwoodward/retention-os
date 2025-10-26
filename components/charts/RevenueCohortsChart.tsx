@@ -83,7 +83,19 @@ const transformCohortData = (cohorts: CohortData[], viewMode: 'monthly' | 'quart
   return Object.values(chartData).sort((a, b) => {
     if (viewMode === 'annual') {
       return parseInt(String(a.period)) - parseInt(String(b.period));
+    } else if (viewMode === 'quarterly') {
+      // Custom sort for quarterly: Q# YYYY format
+      const [quarterA, yearA] = String(a.period).split(' ');
+      const [quarterB, yearB] = String(b.period).split(' ');
+      const yearANum = parseInt(yearA);
+      const yearBNum = parseInt(yearB);
+      const quarterANum = parseInt(quarterA.replace('Q', ''));
+      const quarterBNum = parseInt(quarterB.replace('Q', ''));
+      
+      if (yearANum !== yearBNum) return yearANum - yearBNum;
+      return quarterANum - quarterBNum;
     }
+    // For monthly, sort by date
     return new Date(String(a.period)).getTime() - new Date(String(b.period)).getTime();
   });
 };

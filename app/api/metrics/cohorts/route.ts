@@ -187,9 +187,16 @@ function generateDummyCohorts() {
     
     const periods = [];
     
-    // Generate 60 periods (months) of data for each cohort
-    for (let period = 0; period < 60; period++) {
+    // Generate periods (months) of data for each cohort, but limit to October 2025
+    const maxPeriods = Math.min(60, 60 - i); // Limit periods based on how far back the cohort is
+    for (let period = 0; period < maxPeriods; period++) {
       const orderDate = new Date(cohortDate.getFullYear(), cohortDate.getMonth() + period, 1);
+      
+      // Don't generate data beyond October 2025
+      if (orderDate.getFullYear() > 2025 || (orderDate.getFullYear() === 2025 && orderDate.getMonth() > 9)) {
+        break;
+      }
+      
       const orderMonth = orderDate.toISOString().slice(0, 7);
       
       // Calculate improved retention over time (reducing churn)

@@ -212,10 +212,19 @@ function generateDummyCohorts() {
       const retentionRate = Math.max(0, baseRetention * improvementFactor + (Math.random() - 0.5) * 10);
       const activeCustomers = Math.floor((cohortSize * retentionRate) / 100);
       
-      // Revenue growth patterns (10-20% YoY)
+      // Revenue calculation differs for original vs repeat purchases
       const revenueGrowthFactor = 1 + (yearsAgo * 0.15); // 15% YoY revenue growth
-      const baseRevenuePerCustomer = 120 + Math.random() * 180; // $120-$300 per customer
-      const totalRevenue = Math.floor(activeCustomers * baseRevenuePerCustomer * revenueGrowthFactor);
+      let totalRevenue: number;
+      
+      if (period === 0) {
+        // Original Value: Revenue from new customers' first purchases
+        const firstPurchaseRevenue = 150 + Math.random() * 200; // $150-$350 per customer (higher first purchase)
+        totalRevenue = Math.floor(cohortSize * firstPurchaseRevenue * revenueGrowthFactor);
+      } else {
+        // After N periods: Revenue from returning customers' repeat purchases
+        const repeatPurchaseRevenue = 80 + Math.random() * 120; // $80-$200 per customer (lower repeat purchase)
+        totalRevenue = Math.floor(activeCustomers * repeatPurchaseRevenue * revenueGrowthFactor);
+      }
       
       // Order frequency improvement over time
       const orderFrequency = 1.5 + (yearsAgo * 0.1) + Math.random() * 0.5; // Improving order frequency

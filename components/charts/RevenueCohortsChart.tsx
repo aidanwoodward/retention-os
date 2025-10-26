@@ -43,7 +43,8 @@ const transformCohortData = (cohorts: CohortData[], viewMode: 'monthly' | 'quart
       // Group data by time period based on view mode
       switch (viewMode) {
         case 'quarterly':
-          const quarter = Math.ceil(new Date(period.order_month).getMonth() / 3);
+          const month = new Date(period.order_month).getMonth(); // 0-11
+          const quarter = Math.floor(month / 3) + 1; // Convert to 1-4
           const year = new Date(period.order_month).getFullYear();
           key = `Q${quarter} ${year}`;
           break;
@@ -67,7 +68,8 @@ const transformCohortData = (cohorts: CohortData[], viewMode: 'monthly' | 'quart
       } else if (viewMode === 'quarterly') {
         // For quarterly view, group cohorts by year-quarter
         const cohortYear = new Date(cohort.cohort_month).getFullYear();
-        const cohortQuarter = Math.ceil(new Date(cohort.cohort_month).getMonth() / 3);
+        const cohortMonth = new Date(cohort.cohort_month).getMonth(); // 0-11
+        const cohortQuarter = Math.floor(cohortMonth / 3) + 1; // Convert to 1-4
         cohortKey = `cohort_${cohortYear}_Q${cohortQuarter}`;
       } else {
         // For monthly view, use full month

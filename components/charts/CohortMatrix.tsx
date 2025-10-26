@@ -266,7 +266,7 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
             <div className="min-w-max">
               {/* Header */}
               <div className="flex gap-1 mb-3">
-                <div className="w-24 font-semibold text-gray-700 flex-shrink-0 text-sm">Cohort</div>
+                <div className="w-24 font-semibold text-gray-700 flex-shrink-0 text-sm sticky left-0 bg-white z-10 px-1">Cohort</div>
                 <div className="w-20 font-semibold text-gray-700 flex-shrink-0 text-xs text-center">Original Value</div>
                 {Array.from({ length: actualMaxPeriods }, (_, i) => (
                   <div key={i} className="w-20 text-center font-semibold text-gray-700 text-xs flex-shrink-0">
@@ -279,7 +279,7 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
               <div className="space-y-1">
                 {cohortMonths.map((cohort) => (
                   <div key={cohort} className="flex gap-1">
-                    <div className="w-24 text-xs font-medium text-gray-900 py-1 flex-shrink-0">
+                    <div className="w-24 text-xs font-medium text-gray-900 py-1 flex-shrink-0 sticky left-0 bg-white z-10 px-1">
                       {formatCohortLabel(cohort)}
                     </div>
                     {/* Original Value Column */}

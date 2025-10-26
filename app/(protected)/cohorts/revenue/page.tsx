@@ -202,7 +202,7 @@ export default function RevenueCohortsPage() {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8">
         <div className="animate-pulse space-y-6">
           <div className="h-10 bg-gray-200 rounded w-1/2"></div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -220,7 +220,7 @@ export default function RevenueCohortsPage() {
 
   if (error) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
           <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-red-800 mb-2">Error Loading Cohorts</h3>
@@ -237,7 +237,7 @@ export default function RevenueCohortsPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8">
       {/* Premium Header with Gradient */}
       <div className="mb-8">
         <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 rounded-2xl p-8 text-white">
@@ -277,7 +277,7 @@ export default function RevenueCohortsPage() {
       />
 
       {/* Premium Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 border border-green-200">
           <div className="flex items-center justify-between">
             <div>
@@ -356,7 +356,7 @@ export default function RevenueCohortsPage() {
         
         <div className="p-6">
           {/* Revenue Cohort Chart with Composition */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8">
             <div className="lg:col-span-3">
               <RevenueCohortsChart cohorts={cohorts} viewMode={viewMode} />
             </div>

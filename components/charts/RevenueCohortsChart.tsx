@@ -191,6 +191,31 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
     }).format(value);
   };
 
+  // Custom tooltip component with colored squares
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
+          <p className="font-semibold text-gray-900 mb-2">{label}</p>
+          <div className="space-y-1">
+            {payload.map((entry: any, index: number) => (
+              <div key={index} className="flex items-center gap-2">
+                <div 
+                  className="w-3 h-3 rounded-sm" 
+                  style={{ backgroundColor: entry.color }}
+                />
+                <span className="text-sm text-gray-700">
+                  {chartConfig[entry.dataKey as keyof typeof chartConfig]?.label}: {formatCurrency(entry.value)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -225,28 +250,7 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
               axisLine={false}
               tickFormatter={(value) => formatCurrency(value)}
             />
-                   <ChartTooltip
-                     content={
-                       <ChartTooltipContent
-                         formatter={(value, name) => [
-                           formatCurrency(Number(value)),
-                           chartConfig[name as keyof typeof chartConfig]?.label || name,
-                         ]}
-                         labelFormatter={(value) => {
-                           if (viewMode === 'annual') {
-                             return value;
-                           } else if (viewMode === 'quarterly') {
-                             return value;
-                           } else {
-                             return new Date(value).toLocaleDateString("en-US", {
-                               month: "short",
-                               year: "numeric",
-                             });
-                           }
-                         }}
-                       />
-                     }
-                   />
+            <ChartTooltip content={<CustomTooltip />} />
             {cohortKeys.map((key, index) => (
               <Bar
                 key={key}

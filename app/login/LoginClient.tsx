@@ -93,7 +93,10 @@ export default function LoginClient() {
           <div className="flex flex-col gap-2 sm:flex-row">
             <LoadingButton
               isLoading={status === "sending_link"}
-              onClick={sendMagicLink}
+              onClick={() => {
+                const fakeEvent = { preventDefault: () => {} } as FormEvent<HTMLFormElement>;
+                sendMagicLink(fakeEvent);
+              }}
               loadingText="Sending..."
               className="w-full rounded-xl bg-black p-3 text-white hover:opacity-90"
             >

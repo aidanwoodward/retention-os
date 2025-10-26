@@ -7,10 +7,6 @@ import {
   Copy,
   Download,
   Clock,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  CheckCircle,
 } from "lucide-react";
 
 interface AIAnalysisProps {

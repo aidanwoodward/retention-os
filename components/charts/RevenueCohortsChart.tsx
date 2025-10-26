@@ -228,16 +228,16 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
   };
 
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <CardTitle>Revenue Cohort Trends</CardTitle>
         <CardDescription>
           Revenue contribution by cohort over time - {viewMode} view shows how each cohort contributes to {viewMode} revenue
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="h-80">
-          <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+      <CardContent className="p-6">
+        <ChartContainer config={chartConfig} className="h-80 w-full">
+          <BarChart data={chartData} margin={{ top: 20, right: 5, left: 20, bottom: 5 }} maxBarSize={80}>
             <XAxis
               dataKey="period"
               tickLine={false}

@@ -3,6 +3,7 @@
 import { useState, FormEvent, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter, useSearchParams } from "next/navigation";
+import { LoadingButton } from "@/components/ui/loading-buttons";
 
 export default function LoginClient() {
   const router = useRouter();
@@ -90,23 +91,25 @@ export default function LoginClient() {
           />
 
           <div className="flex flex-col gap-2 sm:flex-row">
-            <button
-              type="submit"
-              disabled={status === "sending_link"}
-              className="w-full rounded-xl bg-black p-3 text-white hover:opacity-90 disabled:opacity-50"
+            <LoadingButton
+              isLoading={status === "sending_link"}
+              onClick={sendMagicLink}
+              loadingText="Sending..."
+              className="w-full rounded-xl bg-black p-3 text-white hover:opacity-90"
             >
-              {status === "sending_link" ? "Sending…" : "Send magic link"}
-            </button>
+              Send Magic Link
+            </LoadingButton>
 
-            <button
-              type="button"
+            <LoadingButton
+              isLoading={status === "sending_code"}
               onClick={sendEmailCode}
-              disabled={status === "sending_code" || !email}
-              className="w-full rounded-xl border p-3 hover:bg-gray-50 disabled:opacity-50"
-              title={!email ? "Enter email first" : ""}
+              disabled={!email}
+              loadingText="Sending..."
+              variant="outline"
+              className="w-full rounded-xl border p-3 hover:bg-gray-50"
             >
-              {status === "sending_code" ? "Sending…" : "Send 6-digit code"}
-            </button>
+              Send 6-digit Code
+            </LoadingButton>
           </div>
         </form>
 

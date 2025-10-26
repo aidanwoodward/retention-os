@@ -3,6 +3,12 @@
 import { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
+import { LoadingButton } from "@/components/ui/loading-buttons";
 
 export default function VerifyClient() {
   const router = useRouter();
@@ -43,32 +49,58 @@ export default function VerifyClient() {
           We sent a code to your email. Paste it below to sign in.
         </p>
 
-        <form onSubmit={onSubmit} className="space-y-3">
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@brand.com"
-            className="w-full rounded-lg border border-gray-300 p-3 focus:outline-none focus:ring"
-          />
-          <input
-            inputMode="numeric"
-            pattern="\d{6}"
-            maxLength={6}
-            required
-            value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-            placeholder="6-digit code"
-            className="w-full rounded-lg border border-gray-300 p-3 tracking-[0.3em] text-center font-mono text-lg"
-          />
-          <button
-            type="submit"
-            disabled={status === "verifying"}
-            className="w-full rounded-xl bg-black p-3 text-white hover:opacity-90 disabled:opacity-50"
+        <form onSubmit={onSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Email Address
+            </label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@brand.com"
+              className="w-full rounded-lg border border-gray-300 p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-700">
+              Enter 6-digit code
+            </label>
+            <div className="flex justify-center">
+              <InputOTP
+                maxLength={6}
+                value={code}
+                onChange={(value) => setCode(value)}
+              >
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+            <div className="text-center text-sm text-gray-600">
+              {code === "" ? (
+                <>Enter the 6-digit code sent to your email.</>
+              ) : (
+                <>You entered: {code}</>
+              )}
+            </div>
+          </div>
+          
+          <LoadingButton
+            isLoading={status === "verifying"}
+            onClick={onSubmit}
+            loadingText="Verifying..."
+            className="w-full rounded-xl bg-black p-3 text-white hover:opacity-90"
           >
-            {status === "verifying" ? "Verifying…" : "Verify code"}
-          </button>
+            Verify Code
+          </LoadingButton>
         </form>
 
         {message && <p className="mt-4 text-sm text-red-600">{message}</p>}

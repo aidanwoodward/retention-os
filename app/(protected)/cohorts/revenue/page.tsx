@@ -5,6 +5,7 @@ import EnhancedFilters, { FilterConfig, FilterState } from "@/components/ui/enha
 import { RevenueCohortsChart } from "@/components/charts/RevenueCohortsChart";
 import { CohortMatrix } from "@/components/charts/CohortMatrix";
 import { AIAnalysis } from "@/components/ai/AIAnalysis";
+import { LoadingButton, RefreshButton } from "@/components/ui/loading-buttons";
 import {
   DollarSign,
   TrendingUp,
@@ -225,12 +226,14 @@ export default function RevenueCohortsPage() {
           <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-red-800 mb-2">Error Loading Cohorts</h3>
           <p className="text-red-600 mb-4">{error}</p>
-          <button 
+          <LoadingButton
+            isLoading={loading}
             onClick={fetchCohorts}
+            loadingText="Retrying..."
             className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
           >
             Try Again
-          </button>
+          </LoadingButton>
         </div>
       </div>
     );
@@ -346,10 +349,15 @@ export default function RevenueCohortsPage() {
               Revenue Cohort Analysis
             </h2>
             <div className="flex items-center space-x-4">
-              <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+              <LoadingButton
+                isLoading={false}
+                onClick={() => console.log('Export data')}
+                loadingText="Exporting..."
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
                 <Download className="w-4 h-4 mr-2 inline" />
                 Export Data
-              </button>
+              </LoadingButton>
             </div>
           </div>
         </div>

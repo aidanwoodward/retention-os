@@ -129,16 +129,21 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
     }).format(amount);
   };
 
-  const formatCohortLabel = (cohortMonth: string) => {
-    const date = new Date(cohortMonth);
+  const formatCohortLabel = (cohortKey: string) => {
     if (viewMode === 'annual') {
-      return `${date.getFullYear()} Cohort`;
+      // cohortKey is already the year (e.g., "2020")
+      return `${cohortKey} Cohort`;
     } else if (viewMode === 'quarterly') {
-      const year = date.getFullYear();
-      const quarter = Math.floor(date.getMonth() / 3) + 1;
-      return `${year}-Q${quarter} Cohort`;
+      // cohortKey is already in format "2020-Q1"
+      return `${cohortKey} Cohort`;
+    } else {
+      // For monthly, cohortKey is "YYYY-MM", convert to "Month-YYYY"
+      const [year, month] = cohortKey.split('-');
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthIndex = parseInt(month) - 1;
+      return `${monthNames[monthIndex]}-${year}`;
     }
-    return cohortMonth; // YYYY-MM for monthly
   };
 
   const formatPeriod = (period: number) => {

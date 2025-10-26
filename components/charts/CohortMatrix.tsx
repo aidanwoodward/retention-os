@@ -86,8 +86,23 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
         
         if (cohortCount > 0) {
           const avgRevenue = totalRevenue / cohortCount;
-          const avgPreviousRevenue = totalPreviousRevenue / cohortCount;
-          const retentionRate = avgPreviousRevenue > 0 ? (avgRevenue / avgPreviousRevenue) * 100 : 100;
+          // Calculate retention relative to the original period (period 0)
+          let originalRevenue = 0;
+          if (periodIndex === 0) {
+            originalRevenue = avgRevenue; // First period is the baseline
+          } else {
+            // Find the original revenue for this cohort group
+            let totalOriginalRevenue = 0;
+            groupCohorts.forEach((cohortData) => {
+              const periods = cohortData.periods as Array<Record<string, unknown>>;
+              if (periods[0]) {
+                totalOriginalRevenue += periods[0].total_revenue as number;
+              }
+            });
+            originalRevenue = totalOriginalRevenue / cohortCount;
+          }
+          
+          const retentionRate = originalRevenue > 0 ? (avgRevenue / originalRevenue) * 100 : 100;
           
           matrix[groupKey][periodIndex] = {
             revenue: totalRevenue,
@@ -189,12 +204,16 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
     const csvData = [];
     
     // Header row
-    const header = ['Cohort', ...Array.from({ length: actualMaxPeriods }, (_, i) => formatPeriod(i))];
+    const header = ['Cohort', 'Original Value', ...Array.from({ length: actualMaxPeriods }, (_, i) => formatPeriod(i))];
     csvData.push(header);
     
     // Data rows
     cohortMonths.forEach(cohort => {
       const row = [cohort];
+      // Add original value
+      const originalValue = matrixData[cohort][0] ? formatCurrency(matrixData[cohort][0].revenue) : '';
+      row.push(originalValue);
+      
       for (let i = 0; i < actualMaxPeriods; i++) {
         const cell = matrixData[cohort][i];
         if (cell) {
@@ -248,6 +267,7 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
               {/* Header */}
               <div className="flex gap-1 mb-3">
                 <div className="w-24 font-semibold text-gray-700 flex-shrink-0 text-sm">Cohort</div>
+                <div className="w-20 font-semibold text-gray-700 flex-shrink-0 text-xs text-center">Original Value</div>
                 {Array.from({ length: actualMaxPeriods }, (_, i) => (
                   <div key={i} className="w-20 text-center font-semibold text-gray-700 text-xs flex-shrink-0">
                     {formatPeriod(i)}
@@ -261,6 +281,10 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
                   <div key={cohort} className="flex gap-1">
                     <div className="w-24 text-xs font-medium text-gray-900 py-1 flex-shrink-0">
                       {formatCohortLabel(cohort)}
+                    </div>
+                    {/* Original Value Column */}
+                    <div className="w-20 text-center py-1 text-gray-900 flex-shrink-0 text-xs font-semibold">
+                      {matrixData[cohort][0] ? formatCurrency(matrixData[cohort][0].revenue) : '-'}
                     </div>
                     {Array.from({ length: actualMaxPeriods }, (_, i) => {
                       const cell = matrixData[cohort][i];

@@ -1,5 +1,5 @@
 import { NotFoundPage } from "@/components/ui/not-found";
 
-export default function SegmentsPage() {
+export default function CustomersPage() {
   return <NotFoundPage />;
 }

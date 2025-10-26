@@ -95,7 +95,10 @@ export default function VerifyClient() {
           
           <LoadingButton
             isLoading={status === "verifying"}
-            onClick={onSubmit}
+            onClick={() => {
+              const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+              onSubmit(fakeEvent);
+            }}
             loadingText="Verifying..."
             className="w-full rounded-xl bg-black p-3 text-white hover:opacity-90"
           >

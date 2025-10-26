@@ -104,16 +104,16 @@ const transformCohortData = (cohorts: CohortData[], viewMode: 'monthly' | 'quart
 const generateChartConfig = (cohorts: CohortData[], viewMode: 'monthly' | 'quarterly' | 'annual' = 'monthly'): ChartConfig => {
   const config: ChartConfig = {};
   const colors = [
-    "#1E3A8A", // Navy blue
-    "#2563EB", // Blue
-    "#3B82F6", // Light blue
-    "#60A5FA", // Lighter blue
-    "#93C5FD", // Very light blue
-    "#DBEAFE", // Lightest blue
-    "#0EA5E9", // Cyan blue
-    "#06B6D4", // Light cyan
-    "#67E8F9", // Very light cyan
-    "#A5F3FC"  // Lightest cyan
+    "var(--chart-1)", // Navy blue
+    "var(--chart-2)", // Blue
+    "var(--chart-3)", // Light blue
+    "var(--chart-4)", // Lighter blue
+    "var(--chart-5)", // Very light blue
+    "var(--chart-6)", // Lightest blue
+    "var(--chart-7)", // Cyan blue
+    "var(--chart-8)", // Light cyan
+    "var(--chart-9)", // Very light cyan
+    "var(--chart-10)"  // Lightest cyan
   ];
   
   // Get unique cohort keys based on view mode
@@ -228,13 +228,10 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
                    <ChartTooltip
                      content={
                        <ChartTooltipContent
-                         formatter={(value, name) => {
-                           const label = chartConfig[name as keyof typeof chartConfig]?.label || name;
-                           return [
-                             `${label}: ${formatCurrency(Number(value))}`,
-                             ''
-                           ];
-                         }}
+                         formatter={(value, name) => [
+                           formatCurrency(Number(value)),
+                           chartConfig[name as keyof typeof chartConfig]?.label || name,
+                         ]}
                          labelFormatter={(value) => {
                            if (viewMode === 'annual') {
                              return value;

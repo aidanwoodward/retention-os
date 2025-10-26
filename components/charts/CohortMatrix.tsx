@@ -108,6 +108,28 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
     Object.keys(matrixData[month]).length
   ));
 
+  // Calculate actual periods with data to avoid empty trailing columns
+  const getActualMaxPeriods = () => {
+    let maxPeriodsWithData = 0;
+    cohortMonths.forEach(cohort => {
+      const cohortData = matrixData[cohort];
+      if (cohortData) {
+        // Find the highest period index that has data
+        const periodsWithData = Object.keys(cohortData)
+          .map(Number)
+          .filter(period => cohortData[period] && cohortData[period].revenue > 0)
+          .sort((a, b) => b - a);
+        
+        if (periodsWithData.length > 0) {
+          maxPeriodsWithData = Math.max(maxPeriodsWithData, periodsWithData[0] + 1);
+        }
+      }
+    });
+    return Math.min(maxPeriodsWithData, maxPeriods);
+  };
+
+  const actualMaxPeriods = getActualMaxPeriods();
+
   const getRetentionColor = (retention: number) => {
     if (retention >= 75) return 'bg-green-100 text-green-800 border-green-200';
     if (retention >= 50) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
@@ -167,13 +189,13 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
     const csvData = [];
     
     // Header row
-    const header = ['Cohort', ...Array.from({ length: maxPeriods }, (_, i) => formatPeriod(i))];
+    const header = ['Cohort', ...Array.from({ length: actualMaxPeriods }, (_, i) => formatPeriod(i))];
     csvData.push(header);
     
     // Data rows
     cohortMonths.forEach(cohort => {
       const row = [cohort];
-      for (let i = 0; i < maxPeriods; i++) {
+      for (let i = 0; i < actualMaxPeriods; i++) {
         const cell = matrixData[cohort][i];
         if (cell) {
           row.push(`${formatCurrency(cell.revenue)} (${cell.retention.toFixed(1)}%)`);
@@ -226,7 +248,7 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
               {/* Header */}
               <div className="flex gap-1 mb-3">
                 <div className="w-24 font-semibold text-gray-700 flex-shrink-0 text-sm">Cohort</div>
-                {Array.from({ length: maxPeriods }, (_, i) => (
+                {Array.from({ length: actualMaxPeriods }, (_, i) => (
                   <div key={i} className="w-20 text-center font-semibold text-gray-700 text-xs flex-shrink-0">
                     {formatPeriod(i)}
                   </div>
@@ -240,7 +262,7 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
                     <div className="w-24 text-xs font-medium text-gray-900 py-1 flex-shrink-0">
                       {formatCohortLabel(cohort)}
                     </div>
-                    {Array.from({ length: maxPeriods }, (_, i) => {
+                    {Array.from({ length: actualMaxPeriods }, (_, i) => {
                       const cell = matrixData[cohort][i];
                       if (!cell) {
                         return (

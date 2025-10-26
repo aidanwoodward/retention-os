@@ -2,16 +2,16 @@
 
 import * as React from "react"
 import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  PieChart,
+  BarChart3,
+  Users,
+  Package,
+  TrendingUp,
   Settings2,
-  SquareTerminal,
+  Home,
+  Target,
+  Zap,
+  Shield,
+  Crown,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -26,132 +26,138 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-// This is sample data.
+// Retention Analytics navigation data
 const data = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    name: "Aidan Woodward",
+    email: "aidan@retention-os.com",
+    avatar: "/avatars/aidan.jpg",
   },
   teams: [
     {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
+      name: "Retention OS",
+      logo: Crown,
       plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
     },
   ],
   navMain: [
     {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: Home,
       isActive: true,
+    },
+    {
+      title: "Cohorts",
+      url: "#",
+      icon: BarChart3,
       items: [
         {
-          title: "History",
-          url: "#",
+          title: "Revenue Cohorts",
+          url: "/cohorts/revenue",
         },
         {
-          title: "Starred",
-          url: "#",
+          title: "Category Cohorts",
+          url: "/cohorts/category",
         },
         {
-          title: "Settings",
-          url: "#",
+          title: "Composition Cohorts",
+          url: "/cohorts/composition",
         },
       ],
     },
     {
-      title: "Models",
+      title: "Customers",
       url: "#",
-      icon: Bot,
+      icon: Users,
       items: [
         {
-          title: "Genesis",
-          url: "#",
+          title: "Customer List",
+          url: "/customers/list",
         },
         {
-          title: "Explorer",
-          url: "#",
+          title: "Customer Segments",
+          url: "/customers/segments",
         },
         {
-          title: "Quantum",
-          url: "#",
+          title: "Customer Profile",
+          url: "/customers/profile",
         },
       ],
     },
     {
-      title: "Documentation",
+      title: "Products",
       url: "#",
-      icon: BookOpen,
+      icon: Package,
       items: [
         {
-          title: "Introduction",
-          url: "#",
+          title: "Product Performance",
+          url: "/products/performance",
         },
         {
-          title: "Get Started",
-          url: "#",
+          title: "Cross-sell Analysis",
+          url: "/products/cross-sell",
         },
         {
-          title: "Tutorials",
-          url: "#",
+          title: "Replenishment",
+          url: "/products/replenishment",
+        },
+      ],
+    },
+    {
+      title: "Retention",
+      url: "#",
+      icon: TrendingUp,
+      items: [
+        {
+          title: "Churn Analysis",
+          url: "/retention/churn",
         },
         {
-          title: "Changelog",
-          url: "#",
+          title: "Retention Curve",
+          url: "/retention/curve",
+        },
+        {
+          title: "Reactivation",
+          url: "/retention/reactivation",
         },
       ],
     },
     {
       title: "Settings",
-      url: "#",
+      url: "/settings",
       icon: Settings2,
       items: [
         {
-          title: "General",
-          url: "#",
+          title: "Integrations",
+          url: "/integrations",
         },
         {
-          title: "Team",
-          url: "#",
+          title: "User Settings",
+          url: "/settings/user",
         },
         {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
+          title: "API Keys",
+          url: "/settings/api",
         },
       ],
     },
   ],
   projects: [
     {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
+      name: "UK Market",
+      url: "/segments/uk",
+      icon: Target,
     },
     {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
+      name: "European Expansion",
+      url: "/segments/europe",
+      icon: Zap,
     },
     {
-      name: "Travel",
-      url: "#",
-      icon: Map,
+      name: "Premium Customers",
+      url: "/segments/premium",
+      icon: Shield,
     },
   ],
 }

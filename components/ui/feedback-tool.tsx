@@ -106,7 +106,7 @@ export function FeedbackTool() {
               return (
                 <button
                   key={type.id}
-                  onClick={() => setFeedback(prev => ({ ...prev, type: type.id as any }))}
+                  onClick={() => setFeedback(prev => ({ ...prev, type: type.id as 'general' | 'bug' | 'feature' | 'improvement' }))}
                   className={`p-3 rounded-lg border text-left transition-colors ${
                     feedback.type === type.id
                       ? 'border-blue-500 bg-blue-50'
@@ -186,7 +186,7 @@ export function FeedbackTool() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
               <FieldDescription>
-                We'll only use this to follow up if needed
+                We&apos;ll only use this to follow up if needed
               </FieldDescription>
             </Field>
           </FieldGroup>

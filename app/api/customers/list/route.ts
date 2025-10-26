@@ -7,24 +7,24 @@ import { getAccountId } from "@/lib/database";
 // TYPES
 // =============================================================================
 
-interface CustomerData {
-  customer_id: string;
-  email_hash: string;
-  first_name: string;
-  last_name: string;
-  total_orders: number;
-  total_spent: number;
-  avg_order_value: number;
-  last_order_date: string;
-  days_since_last_order: number;
-  customer_lifespan_days: number;
-  value_segment: string;
-  activity_segment: string;
-  frequency_segment: string;
-  aov_segment: string;
-  lifetime_value: number;
-  repeat_rate: number;
-}
+// interface CustomerData {
+//   customer_id: string;
+//   email_hash: string;
+//   first_name: string;
+//   last_name: string;
+//   total_orders: number;
+//   total_spent: number;
+//   avg_order_value: number;
+//   last_order_date: string;
+//   days_since_last_order: number;
+//   customer_lifespan_days: number;
+//   value_segment: string;
+//   activity_segment: string;
+//   frequency_segment: string;
+//   aov_segment: string;
+//   lifetime_value: number;
+//   repeat_rate: number;
+// }
 
 // =============================================================================
 // API ENDPOINT

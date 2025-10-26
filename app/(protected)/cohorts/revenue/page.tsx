@@ -5,7 +5,7 @@ import EnhancedFilters, { FilterConfig, FilterState } from "@/components/ui/enha
 import { RevenueCohortsChart } from "@/components/charts/RevenueCohortsChart";
 import { CohortMatrix } from "@/components/charts/CohortMatrix";
 import { AIAnalysis } from "@/components/ai/AIAnalysis";
-import { LoadingButton, RefreshButton } from "@/components/ui/loading-buttons";
+import { LoadingButton } from "@/components/ui/loading-buttons";
 import {
   DollarSign,
   TrendingUp,

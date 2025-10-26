@@ -96,31 +96,31 @@ export function AIAnalysis({ filters, cohorts }: AIAnalysisProps) {
     generateInsights();
   }, [filters, cohorts]);
 
-  const getInsightIcon = (type: string, trend?: string) => {
-    switch (type) {
-      case 'improvement':
-        return <TrendingUp className="w-4 h-4 text-green-600" />;
-      case 'decline':
-        return <TrendingDown className="w-4 h-4 text-red-600" />;
-      case 'anomaly':
-        return <AlertTriangle className="w-4 h-4 text-yellow-600" />;
-      default:
-        return <CheckCircle className="w-4 h-4 text-blue-600" />;
-    }
-  };
+  // const getInsightIcon = (type: string, trend?: string) => {
+  //   switch (type) {
+  //     case 'improvement':
+  //       return <TrendingUp className="w-4 h-4 text-green-600" />;
+  //     case 'decline':
+  //       return <TrendingDown className="w-4 h-4 text-red-600" />;
+  //     case 'anomaly':
+  //       return <AlertTriangle className="w-4 h-4 text-yellow-600" />;
+  //     default:
+  //       return <CheckCircle className="w-4 h-4 text-blue-600" />;
+  //   }
+  // };
 
-  const getInsightColor = (type: string) => {
-    switch (type) {
-      case 'improvement':
-        return 'border-green-200 bg-green-50';
-      case 'decline':
-        return 'border-red-200 bg-red-50';
-      case 'anomaly':
-        return 'border-yellow-200 bg-yellow-50';
-      default:
-        return 'border-blue-200 bg-blue-50';
-    }
-  };
+  // const getInsightColor = (type: string) => {
+  //   switch (type) {
+  //     case 'improvement':
+  //       return 'border-green-200 bg-green-50';
+  //     case 'decline':
+  //       return 'border-red-200 bg-red-50';
+  //     case 'anomaly':
+  //       return 'border-yellow-200 bg-yellow-50';
+  //     default:
+  //       return 'border-blue-200 bg-blue-50';
+  //   }
+  // };
 
   const copyToClipboard = async () => {
     const text = insights.map(insight => 

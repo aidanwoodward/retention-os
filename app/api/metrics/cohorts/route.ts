@@ -164,11 +164,12 @@ export async function GET(request: Request) {
 // Generate realistic dummy cohorts data for development with 5-year patterns
 function generateDummyCohorts() {
   const cohorts = [];
-  const now = new Date();
+  // Set a fixed "current" date for consistent data generation
+  const currentDate = new Date(2025, 9, 1); // October 1, 2025
   
   // Generate 60 months (5 years) of cohort data
   for (let i = 0; i < 60; i++) {
-    const cohortDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const cohortDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
     const cohortMonth = cohortDate.toISOString().slice(0, 7); // YYYY-MM format
     
     // Calculate growth trends over 5 years
@@ -192,8 +193,14 @@ function generateDummyCohorts() {
     for (let period = 0; period < maxPeriods; period++) {
       const orderDate = new Date(cohortDate.getFullYear(), cohortDate.getMonth() + period, 1);
       
-      // Don't generate data beyond October 2025
+      // Don't generate data beyond October 2025 (current "now" date)
       if (orderDate.getFullYear() > 2025 || (orderDate.getFullYear() === 2025 && orderDate.getMonth() > 9)) {
+        break;
+      }
+      
+      // Additional check: Don't generate data for periods that would be in the future
+      // For example, a July 2025 cohort shouldn't have data for "After 3 quarters" (April 2026)
+      if (orderDate > currentDate) {
         break;
       }
       

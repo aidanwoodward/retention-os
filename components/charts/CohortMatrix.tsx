@@ -221,13 +221,13 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto max-w-full">
-            <div className="min-w-full">
+          <div className="overflow-x-auto">
+            <div className="min-w-max">
               {/* Header */}
-              <div className="grid grid-cols-12 gap-2 mb-4">
-                <div className="col-span-2 font-semibold text-gray-700">Cohort</div>
+              <div className="flex gap-2 mb-4">
+                <div className="w-32 font-semibold text-gray-700 flex-shrink-0">Cohort</div>
                 {Array.from({ length: maxPeriods }, (_, i) => (
-                  <div key={i} className="text-center font-semibold text-gray-700 text-sm">
+                  <div key={i} className="w-24 text-center font-semibold text-gray-700 text-sm flex-shrink-0">
                     {formatPeriod(i)}
                   </div>
                 ))}
@@ -236,15 +236,15 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
               {/* Matrix Rows */}
               <div className="space-y-2">
                 {cohortMonths.map((cohort) => (
-                  <div key={cohort} className="grid grid-cols-12 gap-2">
-                    <div className="col-span-2 text-sm font-medium text-gray-900 py-2">
+                  <div key={cohort} className="flex gap-2">
+                    <div className="w-32 text-sm font-medium text-gray-900 py-2 flex-shrink-0">
                       {formatCohortLabel(cohort)}
                     </div>
                     {Array.from({ length: maxPeriods }, (_, i) => {
                       const cell = matrixData[cohort][i];
                       if (!cell) {
                         return (
-                          <div key={i} className="text-center py-2 text-gray-400">
+                          <div key={i} className="w-24 text-center py-2 text-gray-400 flex-shrink-0">
                             -
                           </div>
                         );
@@ -254,7 +254,7 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
                         <button
                           key={i}
                           onClick={() => handleCellClick(cohort, i, cell)}
-                          className={`p-2 rounded-lg border text-center hover:shadow-md transition-all ${getRetentionColor(cell.retention)}`}
+                          className={`w-24 p-2 rounded-lg border text-center hover:shadow-md transition-all flex-shrink-0 ${getRetentionColor(cell.retention)}`}
                         >
                           <div className="font-bold text-sm">
                             {formatCurrency(cell.revenue)}

@@ -215,7 +215,7 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
       row.push(originalValue);
       
       for (let i = 0; i < actualMaxPeriods; i++) {
-        const cell = matrixData[cohort][i];
+        const cell = matrixData[cohort][i + 1]; // Start from period 1, not period 0
         if (cell) {
           row.push(`${formatCurrency(cell.revenue)} (${cell.retention.toFixed(1)}%)`);
         } else {
@@ -287,7 +287,7 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
                       {matrixData[cohort][0] ? formatCurrency(matrixData[cohort][0].revenue) : '-'}
                     </div>
                     {Array.from({ length: actualMaxPeriods }, (_, i) => {
-                      const cell = matrixData[cohort][i];
+                      const cell = matrixData[cohort][i + 1]; // Start from period 1, not period 0
                       if (!cell) {
                         return (
                           <div key={i} className="w-20 text-center py-1 text-gray-400 flex-shrink-0 text-xs">
@@ -299,7 +299,7 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
                       return (
                         <button
                           key={i}
-                          onClick={() => handleCellClick(cohort, i, cell)}
+                          onClick={() => handleCellClick(cohort, i + 1, cell)}
                           className={`w-20 p-1 rounded text-center hover:shadow-md transition-all flex-shrink-0 ${getRetentionColor(cell.retention)}`}
                         >
                           <div className="font-bold text-xs">

@@ -13,6 +13,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { FloatingFeedbackButton } from "@/components/ui/floating-feedback-button"
 
 export default function ProtectedLayout({
   children,
@@ -49,6 +50,7 @@ export default function ProtectedLayout({
           {children}
         </div>
       </SidebarInset>
+      <FloatingFeedbackButton />
     </SidebarProvider>
   )
 }

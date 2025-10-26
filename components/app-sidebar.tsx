@@ -12,6 +12,7 @@ import {
   Zap,
   Shield,
   Crown,
+  MessageSquare,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -139,6 +140,11 @@ const data = {
         {
           title: "API Keys",
           url: "/settings/api",
+        },
+        {
+          title: "Feedback & Support",
+          url: "/feedback",
+          icon: MessageSquare,
         },
       ],
     },

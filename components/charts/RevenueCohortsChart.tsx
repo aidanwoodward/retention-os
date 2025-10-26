@@ -270,7 +270,6 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
                 dataKey={key}
                 stackId="revenue"
                 fill={`var(--color-${key})`}
-                radius={index === cohortKeys.length - 1 ? [0, 0, 4, 4] : 0}
               />
             ))}
           </BarChart>

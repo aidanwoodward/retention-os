@@ -246,122 +246,106 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
   // Generate matrix data from cohorts
   const generateMatrixData = () => {
     const matrix: Record<string, Record<number, MatrixCell>> = {};
-    const maxPeriods = viewMode === 'annual' ? 5 : viewMode === 'quarterly' ? 20 : 24;
-
-    // Group cohorts by year/quarter based on view mode
-    const groupedCohorts: Record<string, Record<string, unknown>[]> = {};
     
+    // Define the years we want to show in annual view
+    const years = ['2020', '2021', '2022', '2023', '2024', '2025'];
+    const maxPeriods = viewMode === 'annual' ? years.length : viewMode === 'quarterly' ? 20 : 24;
+
+    // Process each cohort individually
     cohorts.forEach((cohort) => {
       const cohortData = cohort as Record<string, unknown>;
       const cohortMonth = cohortData.cohort_month as string;
-      const date = new Date(cohortMonth);
+      const periods = cohortData.periods as Array<Record<string, unknown>>;
       
-      let groupKey: string;
+      // Create cohort key based on view mode
+      let cohortKey: string;
       if (viewMode === 'annual') {
-        groupKey = date.getFullYear().toString();
+        const cohortYear = new Date(cohortMonth).getFullYear();
+        cohortKey = `${cohortYear} Cohort`;
       } else if (viewMode === 'quarterly') {
-        const year = date.getFullYear();
-        const quarter = Math.floor(date.getMonth() / 3) + 1;
-        groupKey = `${year}-Q${quarter}`;
+        const cohortYear = new Date(cohortMonth).getFullYear();
+        const cohortQuarter = Math.floor(new Date(cohortMonth).getMonth() / 3) + 1;
+        cohortKey = `${cohortYear}-Q${cohortQuarter} Cohort`;
       } else {
-        groupKey = cohortMonth;
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const month = new Date(cohortMonth).getMonth();
+        const year = new Date(cohortMonth).getFullYear();
+        cohortKey = `${monthNames[month]}-${year}`;
       }
       
-      if (!groupedCohorts[groupKey]) {
-        groupedCohorts[groupKey] = [];
-      }
-      groupedCohorts[groupKey].push(cohortData);
-    });
-
-    // Process grouped cohorts
-    Object.entries(groupedCohorts).forEach(([groupKey, groupCohorts]) => {
-      matrix[groupKey] = {};
+      matrix[cohortKey] = {};
       
-      // For each cohort group, find periods that match each year/quarter
-      const years = ['2020', '2021', '2022', '2023', '2024', '2025'];
-      
+      // Process each period for this cohort
       for (let periodIndex = 0; periodIndex < maxPeriods; periodIndex++) {
         let totalRevenue = 0;
-        let totalOriginalRevenue = 0;
-        let cohortCount = 0;
+        let originalRevenue = 0;
         
-        if (viewMode === 'quarterly') {
-          // For quarterly view, find the period that corresponds to periodIndex quarters after the cohort start
-          groupCohorts.forEach((cohortData) => {
-            const periods = cohortData.periods as Array<Record<string, unknown>>;
-            
-            // Find the period that matches our target quarter relative to the cohort
-            const targetPeriod = periods.find(period => {
-              const periodNumber = period.period_number as number;
-              return periodNumber === periodIndex;
-            });
-            
-            if (targetPeriod) {
-              totalRevenue += targetPeriod.total_revenue as number;
-              cohortCount++;
-            }
-          });
-        } else if (viewMode === 'annual') {
+        if (viewMode === 'annual') {
           // For annual view, find periods that fall within the target year
-          const targetYear = years[periodIndex] || '';
+          const targetYear = years[periodIndex];
           if (!targetYear) continue;
           
-          groupCohorts.forEach((cohortData) => {
-            const periods = cohortData.periods as Array<Record<string, unknown>>;
-            
-            // Find all periods that fall within the target year
-            const periodsInYear = periods.filter(period => {
-              const orderMonth = period.order_month as string;
-              return orderMonth.startsWith(targetYear);
-            });
-            
-            // Sum up revenue for all periods in this year
-            periodsInYear.forEach(period => {
-              totalRevenue += period.total_revenue as number;
-              cohortCount++;
-            });
+          // Find all periods for this cohort that fall within the target year
+          const periodsInYear = periods.filter(period => {
+            const orderMonth = period.order_month as string;
+            return orderMonth.startsWith(targetYear);
           });
-        } else {
-          // For monthly view, use the existing logic
-          const baseDate = new Date(groupKey);
-          const targetDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + periodIndex);
-          const targetPeriod = targetDate.toISOString().slice(0, 7); // YYYY-MM format
           
-          groupCohorts.forEach((cohortData) => {
-            const periods = cohortData.periods as Array<Record<string, unknown>>;
-            
-            // Find the period that matches our target month
-            const foundPeriod = periods.find(period => {
-              const orderMonth = period.order_month as string;
-              return orderMonth.startsWith(targetPeriod);
-            });
-            
-            if (foundPeriod) {
-              totalRevenue += foundPeriod.total_revenue as number;
-              cohortCount++;
-            }
+          // Sum up revenue for all periods in this year
+          periodsInYear.forEach(period => {
+            totalRevenue += period.total_revenue as number;
           });
-        }
-        
-        // Also get the original revenue (period 0) for retention calculation
-        groupCohorts.forEach((cohortData) => {
-          const periods = cohortData.periods as Array<Record<string, unknown>>;
+          
+          // Get original revenue (period 0) for retention calculation
           const originalPeriod = periods.find(p => (p.period_number as number) === 0);
           if (originalPeriod) {
-            totalOriginalRevenue += originalPeriod.total_revenue as number;
+            originalRevenue = originalPeriod.total_revenue as number;
           }
-        });
-        
-        if (cohortCount > 0) {
-          const avgRevenue = totalRevenue / cohortCount;
-          const avgOriginalRevenue = totalOriginalRevenue / cohortCount;
-          const retentionRate = avgOriginalRevenue > 0 ? (avgRevenue / avgOriginalRevenue) * 100 : 0;
           
-          matrix[groupKey][periodIndex] = {
-            revenue: avgRevenue,
+        } else if (viewMode === 'quarterly') {
+          // For quarterly view, find the period that corresponds to periodIndex quarters after the cohort start
+          const targetPeriod = periods.find(period => {
+            const periodNumber = period.period_number as number;
+            return periodNumber === periodIndex;
+          });
+          
+          if (targetPeriod) {
+            totalRevenue = targetPeriod.total_revenue as number;
+          }
+          
+          // Get original revenue (period 0) for retention calculation
+          const originalPeriod = periods.find(p => (p.period_number as number) === 0);
+          if (originalPeriod) {
+            originalRevenue = originalPeriod.total_revenue as number;
+          }
+          
+        } else {
+          // For monthly view, find the period that corresponds to periodIndex months after the cohort start
+          const targetPeriod = periods.find(period => {
+            const periodNumber = period.period_number as number;
+            return periodNumber === periodIndex;
+          });
+          
+          if (targetPeriod) {
+            totalRevenue = targetPeriod.total_revenue as number;
+          }
+          
+          // Get original revenue (period 0) for retention calculation
+          const originalPeriod = periods.find(p => (p.period_number as number) === 0);
+          if (originalPeriod) {
+            originalRevenue = originalPeriod.total_revenue as number;
+          }
+        }
+        
+        // Store the data if we have revenue
+        if (totalRevenue > 0 || periodIndex === 0) { // Always show Original Value (period 0)
+          const retentionRate = originalRevenue > 0 ? (totalRevenue / originalRevenue) * 100 : 0;
+          
+          matrix[cohortKey][periodIndex] = {
+            revenue: totalRevenue,
             retention: retentionRate,
             period: periodIndex,
-            cohort: groupKey
+            cohort: cohortKey
           };
         }
       }

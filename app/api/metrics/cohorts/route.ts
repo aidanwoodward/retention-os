@@ -189,8 +189,8 @@ function generateDummyCohorts() {
     const periods = [];
     
     // Generate periods (months) of data for each cohort, but limit to October 2025
-    // Ensure newer cohorts still get meaningful data (at least 6 periods for recent cohorts)
-    const maxPeriods = Math.min(60, Math.max(6, 60 - i)); // At least 6 periods, but limit to current date
+    // Ensure newer cohorts still get meaningful data (at least 12 periods for recent cohorts)
+    const maxPeriods = Math.min(60, Math.max(12, 60 - i)); // At least 12 periods, but limit to current date
     for (let period = 0; period < maxPeriods; period++) {
       const orderDate = new Date(cohortDate.getFullYear(), cohortDate.getMonth() + period, 1);
       

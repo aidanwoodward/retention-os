@@ -174,9 +174,10 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
     );
   }
 
-  // Always use quarterly view for the bar chart to avoid visual clutter
-  const chartData = transformCohortData(cohorts, 'quarterly');
-  const chartConfig = generateChartConfig(cohorts, 'quarterly');
+  // Use quarterly view only when monthly is selected (to avoid clutter), otherwise respect the selected viewMode
+  const chartViewMode = viewMode === 'monthly' ? 'quarterly' : viewMode;
+  const chartData = transformCohortData(cohorts, chartViewMode);
+  const chartConfig = generateChartConfig(cohorts, chartViewMode);
   const cohortKeys = Object.keys(chartConfig);
 
   const formatCurrency = (value: number) => {
@@ -273,7 +274,7 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
       <CardHeader>
         <CardTitle>Revenue Cohort Trends</CardTitle>
         <CardDescription>
-          Revenue contribution by cohort over time - quarterly view shows how each cohort contributes to quarterly revenue
+          Revenue contribution by cohort over time - {chartViewMode === 'annual' ? 'annual' : chartViewMode === 'quarterly' ? 'quarterly' : 'monthly'} view shows how each cohort contributes to {chartViewMode === 'annual' ? 'annual' : chartViewMode === 'quarterly' ? 'quarterly' : 'monthly'} revenue
         </CardDescription>
       </CardHeader>
       <CardContent className="p-6">

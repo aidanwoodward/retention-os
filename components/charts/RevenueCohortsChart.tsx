@@ -232,12 +232,15 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
 
   // Custom label component for displaying total on top of each bar
   const renderCustomLabel = (props: {
-    x?: number;
-    y?: number;
-    width?: number;
-    payload?: Record<string, number | string>;
+    x?: string | number;
+    y?: string | number;
+    width?: string | number;
+    payload?: Record<string, unknown>;
   }) => {
-    const { x = 0, y = 0, width = 0, payload = {} } = props;
+    const x = typeof props.x === 'string' ? parseFloat(props.x) : (props.x || 0);
+    const y = typeof props.y === 'string' ? parseFloat(props.y) : (props.y || 0);
+    const width = typeof props.width === 'string' ? parseFloat(props.width) : (props.width || 0);
+    const payload = props.payload || {};
     
     // Calculate total for this bar by summing all cohort values
     let total = 0;

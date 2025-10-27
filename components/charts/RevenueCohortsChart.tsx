@@ -101,20 +101,20 @@ const transformCohortData = (cohorts: CohortData[], viewMode: 'monthly' | 'quart
   });
 };
 
-// Generate chart config for all cohorts with navy to light blue gradient
+// Generate chart config for all cohorts with distinct colors
 const generateChartConfig = (cohorts: CohortData[], viewMode: 'monthly' | 'quarterly' | 'annual' = 'monthly'): ChartConfig => {
   const config: ChartConfig = {};
   const colors = [
-    "var(--chart-1)", // Navy blue
-    "var(--chart-2)", // Blue
-    "var(--chart-3)", // Light blue
-    "var(--chart-4)", // Lighter blue
-    "var(--chart-5)", // Very light blue
-    "var(--chart-6)", // Lightest blue
-    "var(--chart-7)", // Cyan blue
-    "var(--chart-8)", // Light cyan
-    "var(--chart-9)", // Very light cyan
-    "var(--chart-10)"  // Lightest cyan
+    "#1e40af", // Deep blue
+    "#3b82f6", // Blue
+    "#60a5fa", // Light blue
+    "#93c5fd", // Lighter blue
+    "#dbeafe", // Very light blue
+    "#1e3a8a", // Dark blue
+    "#2563eb", // Medium blue
+    "#1d4ed8", // Blue-700
+    "#1e40af", // Blue-800
+    "#1e3a8a"  // Blue-900
   ];
   
   // Get unique cohort keys based on view mode
@@ -174,8 +174,9 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
     );
   }
 
-  const chartData = transformCohortData(cohorts, viewMode);
-  const chartConfig = generateChartConfig(cohorts, viewMode);
+  // Always use quarterly view for the bar chart to avoid visual clutter
+  const chartData = transformCohortData(cohorts, 'quarterly');
+  const chartConfig = generateChartConfig(cohorts, 'quarterly');
   const cohortKeys = Object.keys(chartConfig);
 
   const formatCurrency = (value: number) => {
@@ -269,7 +270,7 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
       <CardHeader>
         <CardTitle>Revenue Cohort Trends</CardTitle>
         <CardDescription>
-          Revenue contribution by cohort over time - {viewMode} view shows how each cohort contributes to {viewMode} revenue
+          Revenue contribution by cohort over time - quarterly view shows how each cohort contributes to quarterly revenue
         </CardDescription>
       </CardHeader>
       <CardContent className="p-6">
@@ -304,7 +305,7 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
                 key={key}
                 dataKey={key}
                 stackId="revenue"
-                fill={`var(--color-${key})`}
+                fill={chartConfig[key]?.color}
               >
                 {/* Only show label on the last bar (topmost in stack) */}
                 {index === cohortKeys.length - 1 && (

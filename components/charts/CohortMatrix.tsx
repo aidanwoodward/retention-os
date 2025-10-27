@@ -14,7 +14,10 @@ import {
   Minus,
   Download,
   Share2,
+  Palette,
+  Target,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface CohortMatrixProps {
   cohorts: unknown[];
@@ -27,11 +30,98 @@ interface MatrixCell {
   retention: number;
   period: number;
   cohort: string;
+  percentile?: number;
+  deltaFromTarget?: number;
+  color?: string;
+}
+
+type ColorMode = 'relative' | 'goal-based';
+
+interface ColorThresholds {
+  red: number;
+  amber: number;
+  green: number;
 }
 
 export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixProps) {
   const [selectedCell, setSelectedCell] = useState<MatrixCell | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [colorMode, setColorMode] = useState<ColorMode>('relative');
+
+  // Color calculation functions
+  const calculateQuantiles = (values: number[]): ColorThresholds => {
+    const sorted = [...values].sort((a, b) => a - b);
+    const len = sorted.length;
+    
+    return {
+      red: sorted[Math.floor(len * 0.25)] || 0,    // 25th percentile
+      amber: sorted[Math.floor(len * 0.5)] || 0,   // 50th percentile (median)
+      green: sorted[Math.floor(len * 0.75)] || 0   // 75th percentile
+    };
+  };
+
+  const interpolateColor = (value: number, thresholds: ColorThresholds): string => {
+    const { red, amber, green } = thresholds;
+    
+    // Define color stops
+    const redColor = { r: 220, g: 38, b: 38 };    // #DC2626
+    const amberColor = { r: 245, g: 158, b: 11 }; // #F59E0B
+    const greenColor = { r: 22, g: 163, b: 74 };  // #16A34A
+    
+    let color;
+    if (value <= red) {
+      // Between 0 and red threshold - pure red
+      color = redColor;
+    } else if (value <= amber) {
+      // Between red and amber - interpolate red to amber
+      const ratio = (value - red) / (amber - red);
+      color = {
+        r: Math.round(redColor.r + (amberColor.r - redColor.r) * ratio),
+        g: Math.round(redColor.g + (amberColor.g - redColor.g) * ratio),
+        b: Math.round(redColor.b + (amberColor.b - redColor.b) * ratio)
+      };
+    } else if (value <= green) {
+      // Between amber and green - interpolate amber to green
+      const ratio = (value - amber) / (green - amber);
+      color = {
+        r: Math.round(amberColor.r + (greenColor.r - amberColor.r) * ratio),
+        g: Math.round(amberColor.g + (greenColor.g - amberColor.g) * ratio),
+        b: Math.round(amberColor.b + (greenColor.b - amberColor.b) * ratio)
+      };
+    } else {
+      // Above green threshold - pure green
+      color = greenColor;
+    }
+    
+    return `rgb(${color.r}, ${color.g}, ${color.b})`;
+  };
+
+  const calculatePercentile = (value: number, values: number[]): number => {
+    const sorted = [...values].sort((a, b) => a - b);
+    const index = sorted.findIndex(v => v >= value);
+    return index === -1 ? 100 : (index / sorted.length) * 100;
+  };
+
+  const getTargetRetention = (period: number): number => {
+    // Industry-standard retention curve (can be customized per client)
+    // This is a typical SaaS/subscription retention curve
+    const targets = {
+      0: 100,   // Original value
+      1: 80,    // After 1 period
+      2: 65,    // After 2 periods
+      3: 55,    // After 3 periods
+      4: 48,    // After 4 periods
+      5: 42,    // After 5 periods
+      6: 38,    // After 6 periods
+      7: 35,    // After 7 periods
+      8: 32,    // After 8 periods
+      9: 30,    // After 9 periods
+      10: 28,   // After 10 periods
+      11: 26,   // After 11 periods
+      12: 24    // After 12 periods
+    };
+    return targets[period as keyof typeof targets] || 20;
+  };
 
   // Generate matrix data from cohorts
   const generateMatrixData = () => {
@@ -138,6 +228,59 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
       }
     });
 
+    // Calculate colors based on the selected mode
+    if (colorMode === 'relative') {
+      // Calculate quantiles for each period
+      const periodQuantiles: Record<number, ColorThresholds> = {};
+      
+      // Collect all retention values for each period
+      const periodValues: Record<number, number[]> = {};
+      Object.values(matrix).forEach(cohortData => {
+        Object.entries(cohortData).forEach(([periodStr, cell]) => {
+          const period = parseInt(periodStr);
+          if (!periodValues[period]) periodValues[period] = [];
+          periodValues[period].push(cell.retention);
+        });
+      });
+      
+      // Calculate quantiles for each period
+      Object.entries(periodValues).forEach(([periodStr, values]) => {
+        const period = parseInt(periodStr);
+        periodQuantiles[period] = calculateQuantiles(values);
+      });
+      
+      // Apply colors based on quantiles
+      Object.values(matrix).forEach(cohortData => {
+        Object.entries(cohortData).forEach(([periodStr, cell]) => {
+          const period = parseInt(periodStr);
+          const thresholds = periodQuantiles[period];
+          if (thresholds) {
+            const percentile = calculatePercentile(cell.retention, periodValues[period]);
+            cell.percentile = percentile;
+            cell.color = interpolateColor(cell.retention, thresholds);
+          }
+        });
+      });
+    } else {
+      // Goal-based mode
+      Object.values(matrix).forEach(cohortData => {
+        Object.entries(cohortData).forEach(([periodStr, cell]) => {
+          const period = parseInt(periodStr);
+          const target = getTargetRetention(period);
+          const delta = cell.retention - target;
+          cell.deltaFromTarget = delta;
+          
+          // Color based on delta from target
+          const thresholds: ColorThresholds = {
+            red: target - 10,    // More than 10% below target
+            amber: target,       // At target
+            green: target + 10   // More than 10% above target
+          };
+          cell.color = interpolateColor(cell.retention, thresholds);
+        });
+      });
+    }
+
     return matrix;
   };
 
@@ -169,16 +312,34 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
 
   const actualMaxPeriods = getActualMaxPeriods();
 
-  const getRetentionColor = (retention: number) => {
-    if (retention >= 75) return 'bg-green-100 text-green-800 border-green-200';
-    if (retention >= 50) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    return 'bg-red-100 text-red-800 border-red-200';
+  const getRetentionColor = (cell: MatrixCell) => {
+    if (!cell.color) return 'bg-gray-100 text-gray-800 border-gray-200';
+    
+    // Determine text color based on background brightness
+    const rgb = cell.color.match(/\d+/g);
+    if (!rgb) return 'bg-gray-100 text-gray-800 border-gray-200';
+    
+    const [r, g, b] = rgb.map(Number);
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    const textColor = brightness > 128 ? 'text-gray-900' : 'text-white';
+    
+    return `border-2 ${textColor}`;
   };
 
-  const getRetentionIcon = (retention: number) => {
-    if (retention >= 75) return <TrendingUp className="w-3 h-3 text-green-600" />;
-    if (retention >= 50) return <Minus className="w-3 h-3 text-yellow-600" />;
-    return <TrendingDown className="w-3 h-3 text-red-600" />;
+  const getRetentionIcon = (cell: MatrixCell) => {
+    if (cell.percentile !== undefined) {
+      if (cell.percentile >= 75) return <TrendingUp className="w-3 h-3" />;
+      if (cell.percentile >= 25) return <Minus className="w-3 h-3" />;
+      return <TrendingDown className="w-3 h-3" />;
+    }
+    
+    if (cell.deltaFromTarget !== undefined) {
+      if (cell.deltaFromTarget > 5) return <TrendingUp className="w-3 h-3" />;
+      if (cell.deltaFromTarget > -5) return <Minus className="w-3 h-3" />;
+      return <TrendingDown className="w-3 h-3" />;
+    }
+    
+    return <Minus className="w-3 h-3" />;
   };
 
   const formatCurrency = (amount: number) => {
@@ -267,10 +428,33 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
             <div>
               <CardTitle>Cohort Revenue Matrix</CardTitle>
               <CardDescription>
-                Revenue retention by cohort and elapsed period. Green ≥75%, Yellow 50-75%, Red &lt;50%
+                {colorMode === 'relative' 
+                  ? "Colors reflect this account's distribution (relative mode) - Green = top 25%, Amber = middle 50%, Red = bottom 25%"
+                  : "Colors reflect variance from target (goal-based mode) - Green = +10% above target, Amber = ±5% of target, Red = -10% below target"
+                }
               </CardDescription>
             </div>
             <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant={colorMode === 'relative' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setColorMode('relative')}
+                  className="flex items-center"
+                >
+                  <Palette className="w-4 h-4 mr-1" />
+                  Relative
+                </Button>
+                <Button
+                  variant={colorMode === 'goal-based' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setColorMode('goal-based')}
+                  className="flex items-center"
+                >
+                  <Target className="w-4 h-4 mr-1" />
+                  Goal-Based
+                </Button>
+              </div>
               <button
                 onClick={exportMatrix}
                 className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center"
@@ -324,13 +508,19 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
                         <button
                           key={i}
                           onClick={() => handleCellClick(cohort, i + 1, cell)}
-                          className={`w-20 p-1 rounded text-center hover:shadow-md transition-all flex-shrink-0 ${getRetentionColor(cell.retention)}`}
+                          className={`w-20 p-1 rounded text-center hover:shadow-md transition-all flex-shrink-0 ${getRetentionColor(cell)}`}
+                          style={{ backgroundColor: cell.color }}
+                          title={
+                            colorMode === 'relative' 
+                              ? `${cell.retention.toFixed(1)}% retention (${cell.percentile?.toFixed(0)}th percentile)`
+                              : `${cell.retention.toFixed(1)}% retention (${cell.deltaFromTarget && cell.deltaFromTarget > 0 ? '+' : ''}${cell.deltaFromTarget?.toFixed(1)}% vs target)`
+                          }
                         >
                           <div className="font-bold text-xs">
                             {formatCurrency(cell.revenue)}
                           </div>
                           <div className="text-xs flex items-center justify-center mt-0.5">
-                            {getRetentionIcon(cell.retention)}
+                            {getRetentionIcon(cell)}
                             <span className="ml-0.5">
                               {cell.retention.toFixed(0)}%
                             </span>

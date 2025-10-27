@@ -285,10 +285,6 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
         let totalOriginalRevenue = 0;
         let cohortCount = 0;
         
-        // For quarterly view, we need to find the period that corresponds to the target quarter
-        // The issue is that we're looking for specific quarters instead of periods relative to each cohort
-        let matchingPeriod: Record<string, unknown> | undefined;
-        
         if (viewMode === 'quarterly') {
           // For quarterly view, find the period that corresponds to periodIndex quarters after the cohort start
           groupCohorts.forEach((cohortData) => {
@@ -301,16 +297,14 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
             });
             
             if (targetPeriod) {
-              matchingPeriod = targetPeriod;
+              totalRevenue += targetPeriod.total_revenue as number;
+              cohortCount++;
             }
           });
         } else if (viewMode === 'annual') {
           // For annual view, find periods that fall within the target year
           const targetYear = years[periodIndex] || '';
-          if (!targetYear) return;
-          
-          let totalRevenueForYear = 0;
-          let periodCount = 0;
+          if (!targetYear) continue;
           
           groupCohorts.forEach((cohortData) => {
             const periods = cohortData.periods as Array<Record<string, unknown>>;
@@ -323,19 +317,10 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
             
             // Sum up revenue for all periods in this year
             periodsInYear.forEach(period => {
-              totalRevenueForYear += period.total_revenue as number;
-              periodCount++;
+              totalRevenue += period.total_revenue as number;
+              cohortCount++;
             });
           });
-          
-          if (periodCount > 0) {
-            // Create a synthetic period object for the year
-            matchingPeriod = {
-              total_revenue: totalRevenueForYear,
-              period_number: periodIndex,
-              order_month: `${targetYear}-01` // Use January as representative month
-            };
-          }
         } else {
           // For monthly view, use the existing logic
           const baseDate = new Date(groupKey);
@@ -352,14 +337,10 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
             });
             
             if (foundPeriod) {
-              matchingPeriod = foundPeriod;
+              totalRevenue += foundPeriod.total_revenue as number;
+              cohortCount++;
             }
           });
-        }
-        
-        if (matchingPeriod) {
-          totalRevenue += matchingPeriod.total_revenue as number;
-          cohortCount++;
         }
         
         // Also get the original revenue (period 0) for retention calculation

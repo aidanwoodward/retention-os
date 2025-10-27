@@ -279,54 +279,72 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
       
       // For each cohort group, find periods that match each year/quarter
       const years = ['2020', '2021', '2022', '2023', '2024', '2025'];
-      const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
       
       for (let periodIndex = 0; periodIndex < maxPeriods; periodIndex++) {
         let totalRevenue = 0;
         let totalOriginalRevenue = 0;
         let cohortCount = 0;
         
-        // Determine which time period we're looking for
-        let targetPeriod: string;
-        if (viewMode === 'annual') {
-          targetPeriod = years[periodIndex] || '';
-        } else if (viewMode === 'quarterly') {
-          const yearIndex = Math.floor(periodIndex / 4);
-          const quarterIndex = periodIndex % 4;
-          targetPeriod = `${years[yearIndex]}-${quarters[quarterIndex]}` || '';
-        } else {
-          // For monthly, we need to calculate the target month
-          const baseDate = new Date(groupKey);
-          const targetDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + periodIndex);
-          targetPeriod = targetDate.toISOString().slice(0, 7); // YYYY-MM format
-        }
+        // For quarterly view, we need to find the period that corresponds to the target quarter
+        // The issue is that we're looking for specific quarters instead of periods relative to each cohort
+        let matchingPeriod: Record<string, unknown> | undefined;
         
-        if (!targetPeriod) continue;
-        
-        groupCohorts.forEach((cohortData) => {
-          const periods = cohortData.periods as Array<Record<string, unknown>>;
-          
-          // Find the period that matches our target time period
-          const matchingPeriod = periods.find(period => {
-            const orderMonth = period.order_month as string;
-            if (viewMode === 'annual') {
-              return orderMonth.startsWith(targetPeriod);
-            } else if (viewMode === 'quarterly') {
-              const date = new Date(orderMonth);
-              const year = date.getFullYear().toString();
-              const quarter = `Q${Math.floor(date.getMonth() / 3) + 1}`;
-              return `${year}-${quarter}` === targetPeriod;
-            } else {
-              return orderMonth.startsWith(targetPeriod);
+        if (viewMode === 'quarterly') {
+          // For quarterly view, find the period that corresponds to periodIndex quarters after the cohort start
+          groupCohorts.forEach((cohortData) => {
+            const periods = cohortData.periods as Array<Record<string, unknown>>;
+            
+            // Find the period that matches our target quarter relative to the cohort
+            const targetPeriod = periods.find(period => {
+              const periodNumber = period.period_number as number;
+              return periodNumber === periodIndex;
+            });
+            
+            if (targetPeriod) {
+              matchingPeriod = targetPeriod;
             }
           });
-          
-          if (matchingPeriod) {
-            totalRevenue += matchingPeriod.total_revenue as number;
-            cohortCount++;
+        } else {
+          // For annual and monthly views, use the existing logic
+          let targetPeriod: string;
+          if (viewMode === 'annual') {
+            targetPeriod = years[periodIndex] || '';
+          } else {
+            // For monthly, we need to calculate the target month
+            const baseDate = new Date(groupKey);
+            const targetDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + periodIndex);
+            targetPeriod = targetDate.toISOString().slice(0, 7); // YYYY-MM format
           }
           
-          // Also get the original revenue (period 0) for retention calculation
+          if (!targetPeriod) return;
+          
+          groupCohorts.forEach((cohortData) => {
+            const periods = cohortData.periods as Array<Record<string, unknown>>;
+            
+            // Find the period that matches our target time period
+            const foundPeriod = periods.find(period => {
+              const orderMonth = period.order_month as string;
+              if (viewMode === 'annual') {
+                return orderMonth.startsWith(targetPeriod);
+              } else {
+                return orderMonth.startsWith(targetPeriod);
+              }
+            });
+            
+            if (foundPeriod) {
+              matchingPeriod = foundPeriod;
+            }
+          });
+        }
+        
+        if (matchingPeriod) {
+          totalRevenue += matchingPeriod.total_revenue as number;
+          cohortCount++;
+        }
+        
+        // Also get the original revenue (period 0) for retention calculation
+        groupCohorts.forEach((cohortData) => {
+          const periods = cohortData.periods as Array<Record<string, unknown>>;
           const originalPeriod = periods.find(p => (p.period_number as number) === 0);
           if (originalPeriod) {
             totalOriginalRevenue += originalPeriod.total_revenue as number;

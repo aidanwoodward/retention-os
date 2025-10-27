@@ -67,45 +67,69 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
     Object.entries(groupedCohorts).forEach(([groupKey, groupCohorts]) => {
       matrix[groupKey] = {};
       
-      // Aggregate data across all cohorts in this group
+      // For each cohort group, find periods that match each year/quarter
+      const years = ['2020', '2021', '2022', '2023', '2024', '2025'];
+      const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
+      
       for (let periodIndex = 0; periodIndex < maxPeriods; periodIndex++) {
         let totalRevenue = 0;
-        let totalPreviousRevenue = 0;
+        let totalOriginalRevenue = 0;
         let cohortCount = 0;
+        
+        // Determine which time period we're looking for
+        let targetPeriod: string;
+        if (viewMode === 'annual') {
+          targetPeriod = years[periodIndex] || '';
+        } else if (viewMode === 'quarterly') {
+          const yearIndex = Math.floor(periodIndex / 4);
+          const quarterIndex = periodIndex % 4;
+          targetPeriod = `${years[yearIndex]}-${quarters[quarterIndex]}` || '';
+        } else {
+          // For monthly, we need to calculate the target month
+          const baseDate = new Date(groupKey);
+          const targetDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + periodIndex);
+          targetPeriod = targetDate.toISOString().slice(0, 7); // YYYY-MM format
+        }
+        
+        if (!targetPeriod) continue;
         
         groupCohorts.forEach((cohortData) => {
           const periods = cohortData.periods as Array<Record<string, unknown>>;
-          if (periods[periodIndex]) {
-            totalRevenue += periods[periodIndex].total_revenue as number;
-            if (periodIndex > 0 && periods[periodIndex - 1]) {
-              totalPreviousRevenue += periods[periodIndex - 1].total_revenue as number;
+          
+          // Find the period that matches our target time period
+          const matchingPeriod = periods.find(period => {
+            const orderMonth = period.order_month as string;
+            if (viewMode === 'annual') {
+              return orderMonth.startsWith(targetPeriod);
+            } else if (viewMode === 'quarterly') {
+              const date = new Date(orderMonth);
+              const year = date.getFullYear().toString();
+              const quarter = `Q${Math.floor(date.getMonth() / 3) + 1}`;
+              return `${year}-${quarter}` === targetPeriod;
+            } else {
+              return orderMonth.startsWith(targetPeriod);
             }
+          });
+          
+          if (matchingPeriod) {
+            totalRevenue += matchingPeriod.total_revenue as number;
             cohortCount++;
+          }
+          
+          // Also get the original revenue (period 0) for retention calculation
+          const originalPeriod = periods.find(p => (p.period_number as number) === 0);
+          if (originalPeriod) {
+            totalOriginalRevenue += originalPeriod.total_revenue as number;
           }
         });
         
         if (cohortCount > 0) {
           const avgRevenue = totalRevenue / cohortCount;
-          // Calculate retention relative to the original period (period 0)
-          let originalRevenue = 0;
-          if (periodIndex === 0) {
-            originalRevenue = avgRevenue; // First period is the baseline
-          } else {
-            // Find the original revenue for this cohort group
-            let totalOriginalRevenue = 0;
-            groupCohorts.forEach((cohortData) => {
-              const periods = cohortData.periods as Array<Record<string, unknown>>;
-              if (periods[0]) {
-                totalOriginalRevenue += periods[0].total_revenue as number;
-              }
-            });
-            originalRevenue = totalOriginalRevenue / cohortCount;
-          }
-          
-          const retentionRate = originalRevenue > 0 ? (avgRevenue / originalRevenue) * 100 : 100;
+          const avgOriginalRevenue = totalOriginalRevenue / cohortCount;
+          const retentionRate = avgOriginalRevenue > 0 ? (avgRevenue / avgOriginalRevenue) * 100 : 0;
           
           matrix[groupKey][periodIndex] = {
-            revenue: totalRevenue,
+            revenue: avgRevenue,
             retention: retentionRate,
             period: periodIndex,
             cohort: groupKey
@@ -316,6 +340,35 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
                     })}
                   </div>
                 ))}
+                
+                {/* Total Revenue Row */}
+                <div className="flex gap-1 border-t-2 border-gray-300 pt-2 mt-2">
+                  <div className="w-24 text-xs font-bold text-gray-900 py-1 flex-shrink-0 sticky left-0 bg-white z-10 px-1">
+                    Total Revenue
+                  </div>
+                  {/* Original Value Total */}
+                  <div className="w-20 text-center py-1 text-gray-900 flex-shrink-0 text-xs font-bold">
+                    {formatCurrency(
+                      cohortMonths.reduce((sum, cohort) => {
+                        const originalValue = matrixData[cohort][0]?.revenue || 0;
+                        return sum + originalValue;
+                      }, 0)
+                    )}
+                  </div>
+                  {/* Period Totals */}
+                  {Array.from({ length: actualMaxPeriods }, (_, i) => {
+                    const totalRevenue = cohortMonths.reduce((sum, cohort) => {
+                      const cell = matrixData[cohort][i + 1];
+                      return sum + (cell?.revenue || 0);
+                    }, 0);
+                    
+                    return (
+                      <div key={i} className="w-20 text-center py-1 text-gray-900 flex-shrink-0 text-xs font-bold bg-gray-100 rounded">
+                        {formatCurrency(totalRevenue)}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>

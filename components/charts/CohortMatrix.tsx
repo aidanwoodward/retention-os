@@ -111,11 +111,11 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
     
     const L = 116 * fy - 16;
     const a = 500 * (fx - fy);
-    const b = 200 * (fy - fz);
+    const bLab = 200 * (fy - fz);
     
     // Convert LAB to HCL
-    const C = Math.sqrt(a * a + b * b);
-    const H = Math.atan2(b, a) * 180 / Math.PI;
+    const C = Math.sqrt(a * a + bLab * bLab);
+    let H = Math.atan2(bLab, a) * 180 / Math.PI;
     if (H < 0) H += 360;
     
     return { H, C, L };
@@ -124,13 +124,13 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
   // Convert HCL back to RGB
   const hclToRgb = (H: number, C: number, L: number) => {
     // Convert HCL to LAB
-    const a = C * Math.cos(H * Math.PI / 180);
-    const b = C * Math.sin(H * Math.PI / 180);
+    const aLab = C * Math.cos(H * Math.PI / 180);
+    const bLab = C * Math.sin(H * Math.PI / 180);
     
     // Convert LAB to XYZ
     const fy = (L + 16) / 116;
-    const fx = a / 500 + fy;
-    const fz = fy - b / 200;
+    const fx = aLab / 500 + fy;
+    const fz = fy - bLab / 200;
     
     const xn = fx > 0.206897 ? Math.pow(fx, 3) : (fx - 16/116) / 7.787;
     const yn = fy > 0.206897 ? Math.pow(fy, 3) : (fy - 16/116) / 7.787;

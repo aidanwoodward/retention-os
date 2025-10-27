@@ -304,31 +304,51 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
               matchingPeriod = targetPeriod;
             }
           });
-        } else {
-          // For annual and monthly views, use the existing logic
-          let targetPeriod: string;
-          if (viewMode === 'annual') {
-            targetPeriod = years[periodIndex] || '';
-          } else {
-            // For monthly, we need to calculate the target month
-            const baseDate = new Date(groupKey);
-            const targetDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + periodIndex);
-            targetPeriod = targetDate.toISOString().slice(0, 7); // YYYY-MM format
-          }
+        } else if (viewMode === 'annual') {
+          // For annual view, find periods that fall within the target year
+          const targetYear = years[periodIndex] || '';
+          if (!targetYear) return;
           
-          if (!targetPeriod) return;
+          let totalRevenueForYear = 0;
+          let periodCount = 0;
           
           groupCohorts.forEach((cohortData) => {
             const periods = cohortData.periods as Array<Record<string, unknown>>;
             
-            // Find the period that matches our target time period
+            // Find all periods that fall within the target year
+            const periodsInYear = periods.filter(period => {
+              const orderMonth = period.order_month as string;
+              return orderMonth.startsWith(targetYear);
+            });
+            
+            // Sum up revenue for all periods in this year
+            periodsInYear.forEach(period => {
+              totalRevenueForYear += period.total_revenue as number;
+              periodCount++;
+            });
+          });
+          
+          if (periodCount > 0) {
+            // Create a synthetic period object for the year
+            matchingPeriod = {
+              total_revenue: totalRevenueForYear,
+              period_number: periodIndex,
+              order_month: `${targetYear}-01` // Use January as representative month
+            };
+          }
+        } else {
+          // For monthly view, use the existing logic
+          const baseDate = new Date(groupKey);
+          const targetDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + periodIndex);
+          const targetPeriod = targetDate.toISOString().slice(0, 7); // YYYY-MM format
+          
+          groupCohorts.forEach((cohortData) => {
+            const periods = cohortData.periods as Array<Record<string, unknown>>;
+            
+            // Find the period that matches our target month
             const foundPeriod = periods.find(period => {
               const orderMonth = period.order_month as string;
-              if (viewMode === 'annual') {
-                return orderMonth.startsWith(targetPeriod);
-              } else {
-                return orderMonth.startsWith(targetPeriod);
-              }
+              return orderMonth.startsWith(targetPeriod);
             });
             
             if (foundPeriod) {

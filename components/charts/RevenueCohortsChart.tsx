@@ -1,6 +1,6 @@
 "use client";
 
-import { Bar, BarChart, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, XAxis, YAxis, LabelList } from "recharts";
 import {
   Card,
   CardContent,
@@ -229,6 +229,41 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
     return null;
   };
 
+  // Custom label component for displaying total on top of each bar
+  const renderCustomLabel = (props: {
+    x?: number;
+    y?: number;
+    width?: number;
+    payload?: Record<string, number | string>;
+  }) => {
+    const { x = 0, y = 0, width = 0, payload = {} } = props;
+    
+    // Calculate total for this bar by summing all cohort values
+    let total = 0;
+    Object.keys(chartConfig).forEach((key) => {
+      const val = payload[key] as number;
+      if (typeof val === 'number' && !isNaN(val)) {
+        total += val;
+      }
+    });
+    
+    // Only show label if there's a valid total
+    if (total === 0) return null;
+    
+    return (
+      <text
+        x={x + width / 2}
+        y={y - 5}
+        fill="#374151"
+        textAnchor="middle"
+        fontSize={12}
+        fontWeight={600}
+      >
+        {formatCurrency(total)}
+      </text>
+    );
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -239,7 +274,7 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
       </CardHeader>
       <CardContent className="p-6">
         <ChartContainer config={chartConfig} className="h-80 w-full">
-          <BarChart data={chartData} margin={{ top: 20, right: 5, left: 20, bottom: 5 }} maxBarSize={80}>
+          <BarChart data={chartData} margin={{ top: 35, right: 5, left: 20, bottom: 5 }} maxBarSize={80}>
             <XAxis
               dataKey="period"
               tickLine={false}
@@ -270,7 +305,15 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
                 dataKey={key}
                 stackId="revenue"
                 fill={`var(--color-${key})`}
-              />
+              >
+                {/* Only show label on the last bar (topmost in stack) */}
+                {index === cohortKeys.length - 1 && (
+                  <LabelList
+                    dataKey={key}
+                    content={renderCustomLabel}
+                  />
+                )}
+              </Bar>
             ))}
           </BarChart>
         </ChartContainer>

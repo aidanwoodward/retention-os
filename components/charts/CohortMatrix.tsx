@@ -56,58 +56,170 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
   const [showDetails, setShowDetails] = useState(false);
   const [colorMode, setColorMode] = useState<ColorMode>('relative');
 
-  // Color calculation functions
+  // Advanced adaptive color calculation functions
   const calculateQuantiles = (values: number[]): ColorThresholds => {
+    if (values.length === 0) {
+      return { red: 0, amber: 0, green: 0 };
+    }
+    
     const sorted = [...values].sort((a, b) => a - b);
     const len = sorted.length;
     
+    // Use more sophisticated quantile calculation
+    const getQuantile = (p: number) => {
+      const index = (len - 1) * p;
+      const lower = Math.floor(index);
+      const upper = Math.ceil(index);
+      const weight = index - lower;
+      
+      if (upper >= len) return sorted[len - 1];
+      return sorted[lower] * (1 - weight) + sorted[upper] * weight;
+    };
+    
     return {
-      red: sorted[Math.floor(len * 0.25)] || 0,    // 25th percentile
-      amber: sorted[Math.floor(len * 0.5)] || 0,   // 50th percentile (median)
-      green: sorted[Math.floor(len * 0.75)] || 0   // 75th percentile
+      red: getQuantile(0.25),    // 25th percentile
+      amber: getQuantile(0.5),   // 50th percentile (median)
+      green: getQuantile(0.75)   // 75th percentile
+    };
+  };
+
+  // Convert RGB to HCL for perceptually uniform color interpolation
+  const rgbToHcl = (r: number, g: number, b: number) => {
+    // Convert RGB to XYZ
+    const rNorm = r / 255;
+    const gNorm = g / 255;
+    const bNorm = b / 255;
+    
+    // Apply gamma correction
+    const rLin = rNorm > 0.04045 ? Math.pow((rNorm + 0.055) / 1.055, 2.4) : rNorm / 12.92;
+    const gLin = gNorm > 0.04045 ? Math.pow((gNorm + 0.055) / 1.055, 2.4) : gNorm / 12.92;
+    const bLin = bNorm > 0.04045 ? Math.pow((bNorm + 0.055) / 1.055, 2.4) : bNorm / 12.92;
+    
+    // Convert to XYZ
+    const x = rLin * 0.4124564 + gLin * 0.3575761 + bLin * 0.1804375;
+    const y = rLin * 0.2126729 + gLin * 0.7151522 + bLin * 0.0721750;
+    const z = rLin * 0.0193339 + gLin * 0.1191920 + bLin * 0.9503041;
+    
+    // Convert XYZ to LAB
+    const xn = x / 0.95047;
+    const yn = y / 1.00000;
+    const zn = z / 1.08883;
+    
+    const fx = xn > 0.008856 ? Math.pow(xn, 1/3) : (7.787 * xn + 16/116);
+    const fy = yn > 0.008856 ? Math.pow(yn, 1/3) : (7.787 * yn + 16/116);
+    const fz = zn > 0.008856 ? Math.pow(zn, 1/3) : (7.787 * zn + 16/116);
+    
+    const L = 116 * fy - 16;
+    const a = 500 * (fx - fy);
+    const b = 200 * (fy - fz);
+    
+    // Convert LAB to HCL
+    const C = Math.sqrt(a * a + b * b);
+    const H = Math.atan2(b, a) * 180 / Math.PI;
+    if (H < 0) H += 360;
+    
+    return { H, C, L };
+  };
+
+  // Convert HCL back to RGB
+  const hclToRgb = (H: number, C: number, L: number) => {
+    // Convert HCL to LAB
+    const a = C * Math.cos(H * Math.PI / 180);
+    const b = C * Math.sin(H * Math.PI / 180);
+    
+    // Convert LAB to XYZ
+    const fy = (L + 16) / 116;
+    const fx = a / 500 + fy;
+    const fz = fy - b / 200;
+    
+    const xn = fx > 0.206897 ? Math.pow(fx, 3) : (fx - 16/116) / 7.787;
+    const yn = fy > 0.206897 ? Math.pow(fy, 3) : (fy - 16/116) / 7.787;
+    const zn = fz > 0.206897 ? Math.pow(fz, 3) : (fz - 16/116) / 7.787;
+    
+    const x = xn * 0.95047;
+    const y = yn * 1.00000;
+    const z = zn * 1.08883;
+    
+    // Convert XYZ to RGB
+    const rLin = x * 3.2404542 + y * -1.5371385 + z * -0.4985314;
+    const gLin = x * -0.9692660 + y * 1.8760108 + z * 0.0415560;
+    const bLin = x * 0.0556434 + y * -0.2040259 + z * 1.0572252;
+    
+    // Apply gamma correction
+    const r = rLin > 0.0031308 ? 1.055 * Math.pow(rLin, 1/2.4) - 0.055 : 12.92 * rLin;
+    const g = gLin > 0.0031308 ? 1.055 * Math.pow(gLin, 1/2.4) - 0.055 : 12.92 * gLin;
+    const b = bLin > 0.0031308 ? 1.055 * Math.pow(bLin, 1/2.4) - 0.055 : 12.92 * bLin;
+    
+    return {
+      r: Math.max(0, Math.min(255, Math.round(r * 255))),
+      g: Math.max(0, Math.min(255, Math.round(g * 255))),
+      b: Math.max(0, Math.min(255, Math.round(b * 255)))
     };
   };
 
   const interpolateColor = (value: number, thresholds: ColorThresholds): string => {
     const { red, amber, green } = thresholds;
     
-    // Define color stops
-    const redColor = { r: 220, g: 38, b: 38 };    // #DC2626
-    const amberColor = { r: 245, g: 158, b: 11 }; // #F59E0B
-    const greenColor = { r: 22, g: 163, b: 74 };  // #16A34A
+    // Define color stops in HCL space for perceptually uniform interpolation
+    const redHcl = rgbToHcl(220, 38, 38);    // #DC2626
+    const amberHcl = rgbToHcl(245, 158, 11); // #F59E0B
+    const greenHcl = rgbToHcl(22, 163, 74);  // #16A34A
     
     let color;
+    
     if (value <= red) {
-      // Between 0 and red threshold - pure red
-      color = redColor;
+      // Below 25th percentile - pure red
+      color = { r: 220, g: 38, b: 38 };
     } else if (value <= amber) {
-      // Between red and amber - interpolate red to amber
+      // Between 25th and 50th percentile - interpolate red to amber
       const ratio = (value - red) / (amber - red);
-      color = {
-        r: Math.round(redColor.r + (amberColor.r - redColor.r) * ratio),
-        g: Math.round(redColor.g + (amberColor.g - redColor.g) * ratio),
-        b: Math.round(redColor.b + (amberColor.b - redColor.b) * ratio)
+      const interpolatedHcl = {
+        H: redHcl.H + (amberHcl.H - redHcl.H) * ratio,
+        C: redHcl.C + (amberHcl.C - redHcl.C) * ratio,
+        L: redHcl.L + (amberHcl.L - redHcl.L) * ratio
       };
+      color = hclToRgb(interpolatedHcl.H, interpolatedHcl.C, interpolatedHcl.L);
     } else if (value <= green) {
-      // Between amber and green - interpolate amber to green
+      // Between 50th and 75th percentile - interpolate amber to green
       const ratio = (value - amber) / (green - amber);
-      color = {
-        r: Math.round(amberColor.r + (greenColor.r - amberColor.r) * ratio),
-        g: Math.round(amberColor.g + (greenColor.g - amberColor.g) * ratio),
-        b: Math.round(amberColor.b + (greenColor.b - amberColor.b) * ratio)
+      const interpolatedHcl = {
+        H: amberHcl.H + (greenHcl.H - amberHcl.H) * ratio,
+        C: amberHcl.C + (greenHcl.C - amberHcl.C) * ratio,
+        L: amberHcl.L + (greenHcl.L - amberHcl.L) * ratio
       };
+      color = hclToRgb(interpolatedHcl.H, interpolatedHcl.C, interpolatedHcl.L);
     } else {
-      // Above green threshold - pure green
-      color = greenColor;
+      // Above 75th percentile - pure green
+      color = { r: 22, g: 163, b: 74 };
     }
     
     return `rgb(${color.r}, ${color.g}, ${color.b})`;
   };
 
   const calculatePercentile = (value: number, values: number[]): number => {
+    if (values.length === 0) return 0;
+    
     const sorted = [...values].sort((a, b) => a - b);
     const index = sorted.findIndex(v => v >= value);
-    return index === -1 ? 100 : (index / sorted.length) * 100;
+    
+    if (index === -1) return 100;
+    if (index === 0) return 0;
+    
+    // More accurate percentile calculation
+    const lowerIndex = index - 1;
+    const upperIndex = index;
+    const lowerValue = sorted[lowerIndex];
+    const upperValue = sorted[upperIndex];
+    
+    if (lowerValue === upperValue) {
+      return (lowerIndex / sorted.length) * 100;
+    }
+    
+    // Linear interpolation between adjacent values
+    const ratio = (value - lowerValue) / (upperValue - lowerValue);
+    const interpolatedIndex = lowerIndex + ratio;
+    
+    return (interpolatedIndex / sorted.length) * 100;
   };
 
   const getTargetRetention = (period: number): number => {
@@ -437,8 +549,8 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
               <CardTitle>Cohort Revenue Matrix</CardTitle>
               <CardDescription>
                 {colorMode === 'relative' 
-                  ? "Colors reflect this account's distribution (relative mode) - Green = top 25%, Amber = middle 50%, Red = bottom 25%"
-                  : "Colors reflect variance from target (goal-based mode) - Green = +10% above target, Amber = ±5% of target, Red = -10% below target"
+                  ? "🎨 Adaptive Quantile Scaling: Colors represent performance relative to this account's own cohort distribution. Green = top 25% performers, Amber = middle 50%, Red = bottom 25%. This ensures fair visualization across all industries - low-retention industries (camera gear) and high-retention industries (vitamins) both show meaningful variation."
+                  : "🎯 Goal-Based Scaling: Colors reflect variance from industry-standard retention targets. Green = +10% above target, Amber = ±5% of target, Red = -10% below target. Based on typical SaaS/subscription retention curves."
                 }
               </CardDescription>
             </div>
@@ -578,8 +690,8 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
                           style={{ backgroundColor: cell.color }}
                           title={
                             colorMode === 'relative' 
-                              ? `${cell.retention.toFixed(1)}% retention (${cell.percentile?.toFixed(0)}th percentile)`
-                              : `${cell.retention.toFixed(1)}% retention (${cell.deltaFromTarget && cell.deltaFromTarget > 0 ? '+' : ''}${cell.deltaFromTarget?.toFixed(1)}% vs target)`
+                              ? `${cell.retention.toFixed(1)}% retention at Period ${i + 1}\n${cell.percentile?.toFixed(0)}th percentile of all cohorts at this period\nAdaptive scaling based on account's data distribution`
+                              : `${cell.retention.toFixed(1)}% retention at Period ${i + 1}\n${cell.deltaFromTarget && cell.deltaFromTarget > 0 ? '+' : ''}${cell.deltaFromTarget?.toFixed(1)}% vs industry target\nGoal-based scaling mode`
                           }
                         >
                           <div className="font-bold text-xs">
@@ -626,6 +738,43 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
                   })}
                 </div>
               </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Color Legend */}
+      <Card className="bg-gradient-to-r from-red-50 via-amber-50 to-green-50 border-gray-200">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="text-sm font-medium text-gray-700">
+                {colorMode === 'relative' ? 'Adaptive Quantile Scale' : 'Goal-Based Scale'}
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-4 rounded" style={{ backgroundColor: '#DC2626' }}></div>
+                <span className="text-xs text-gray-600">
+                  {colorMode === 'relative' ? 'Bottom 25%' : 'Below Target'}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-4 rounded" style={{ backgroundColor: '#F59E0B' }}></div>
+                <span className="text-xs text-gray-600">
+                  {colorMode === 'relative' ? 'Middle 50%' : 'At Target'}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-4 rounded" style={{ backgroundColor: '#16A34A' }}></div>
+                <span className="text-xs text-gray-600">
+                  {colorMode === 'relative' ? 'Top 25%' : 'Above Target'}
+                </span>
+              </div>
+            </div>
+            <div className="text-xs text-gray-500">
+              {colorMode === 'relative' 
+                ? '🎨 Smooth HCL interpolation ensures perceptually uniform color transitions'
+                : '🎯 Based on industry-standard retention curves'
+              }
             </div>
           </div>
         </CardContent>

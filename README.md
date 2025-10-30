@@ -21,9 +21,15 @@ A Next.js 15 application for e-commerce retention analytics, built with Supabase
 
 - 🔐 **Authentication**: Magic link and 6-digit OTP via Supabase
 - 🛡️ **Protected Routes**: Middleware-based route protection
-- 📊 **Dashboard**: Analytics overview for retention metrics
+- 📊 **MVP Navigation**: Complete PRD-based structure with 6 main modules
+  - **Executive**: Home overview, data reconciliation, exports
+  - **Retention & LTV**: Revenue cohorts, retention curves, CLR/LTV cohorts, repeat purchase rates
+  - **Customer Intelligence**: Customer composition, segments, profiles
+  - **Product Economics**: Product performance, concentration curve, discount usage, replenishment
+  - **Financials**: Revenue intelligence, LTV summary, forecasts
+  - **Settings**: Integrations, user settings, support & feedback
 - 🔌 **Integrations**: Shopify and Klaviyo connection placeholders
-- 🎨 **Modern UI**: Clean, responsive design with loading states
+- 🎨 **Modern UI**: Premium gradient design with consistent UX patterns
 
 ## Getting Started
 
@@ -82,9 +88,38 @@ The app uses Supabase for authentication with the following flow:
 - **6-Digit Code**: Enter the code sent to your email on the verify page
 
 ### Protected Routes
-- `/dashboard` - Main analytics dashboard
-- `/connect/shopify` - Shopify integration setup
-- `/connect/klaviyo` - Klaviyo integration setup
+
+**Executive Module:**
+- `/executive` - Home overview dashboard
+- `/executive/reconciliation` - Data reconciliation panel
+- `/executive/exports` - Export management
+
+**Retention & LTV Module:**
+- `/retention-ltv/revenue-cohorts` - Revenue cohort analysis
+- `/retention-ltv/curves` - Retention curves
+- `/retention-ltv/ltv-cohorts` - CLR & LTV cohorts
+- `/retention-ltv/repeat-rates` - Repeat purchase rates
+
+**Customer Intelligence Module:**
+- `/customer-intelligence/composition` - Customer composition
+- `/customer-intelligence/segments` - Customer segments
+- `/customer-intelligence/profiles` - Customer profiles
+
+**Product Economics Module:**
+- `/product-economics/performance` - Product performance
+- `/product-economics/concentration` - Concentration curve
+- `/product-economics/discounts` - Discount usage
+- `/product-economics/replenishment` - Replenishment frequency
+
+**Financials Module:**
+- `/financials/revenue` - Revenue intelligence
+- `/financials/ltv-summary` - LTV summary
+- `/financials/forecasts` - Forecasts & scenarios
+
+**Settings Module:**
+- `/settings` - User settings
+- `/settings/integrations` - Integrations management
+- `/settings/feedback` - Support & feedback
 
 ### Auth Components
 - **Header**: Shows user email and logout button (only on protected pages)

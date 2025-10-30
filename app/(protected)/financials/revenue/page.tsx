@@ -35,7 +35,7 @@ export default function RevenueIntelligencePage() {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
   };
 
-  if (loading) {
+  if (loading || !metrics) {
     return <div className="w-full px-4 py-8"><div className="animate-pulse h-96 bg-gray-200 rounded"></div></div>;
   }
 

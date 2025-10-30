@@ -13,6 +13,7 @@ import {
   Shield,
   Crown,
   MessageSquare,
+  DollarSign,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -43,107 +44,125 @@ const data = {
   ],
   navMain: [
     {
-      title: "Dashboard",
-      url: "/dashboard",
+      title: "Executive",
+      url: "/executive",
       icon: Home,
       isActive: true,
-    },
-    {
-      title: "Cohorts",
-      url: "#",
-      icon: BarChart3,
       items: [
         {
-          title: "Revenue Cohorts",
-          url: "/cohorts/revenue",
+          title: "Home Overview",
+          url: "/executive",
         },
         {
-          title: "Category Cohorts",
-          url: "/cohorts/category",
+          title: "Data Reconciliation",
+          url: "/executive/reconciliation",
         },
         {
-          title: "Composition Cohorts",
-          url: "/cohorts/composition",
+          title: "Exports",
+          url: "/executive/exports",
         },
       ],
     },
     {
-      title: "Customers",
+      title: "Retention & LTV",
+      url: "#",
+      icon: TrendingUp,
+      items: [
+        {
+          title: "Revenue Cohorts",
+          url: "/retention-ltv/revenue-cohorts",
+        },
+        {
+          title: "Retention Curves",
+          url: "/retention-ltv/curves",
+        },
+        {
+          title: "CLR & LTV Cohorts",
+          url: "/retention-ltv/ltv-cohorts",
+        },
+        {
+          title: "Repeat Purchase Rates",
+          url: "/retention-ltv/repeat-rates",
+        },
+      ],
+    },
+    {
+      title: "Customer Intelligence",
       url: "#",
       icon: Users,
       items: [
         {
-          title: "Customer List",
-          url: "/customers/list",
+          title: "Customer Composition",
+          url: "/customer-intelligence/composition",
         },
         {
-          title: "Customer Segments",
-          url: "/customers/segments",
+          title: "Segments",
+          url: "/customer-intelligence/segments",
         },
         {
-          title: "Customer Profile",
-          url: "/customers/profile",
+          title: "Customer Profiles",
+          url: "/customer-intelligence/profiles",
         },
       ],
     },
     {
-      title: "Products",
+      title: "Product Economics",
       url: "#",
       icon: Package,
       items: [
         {
           title: "Product Performance",
-          url: "/products/performance",
+          url: "/product-economics/performance",
         },
         {
-          title: "Cross-sell Analysis",
-          url: "/products/cross-sell",
+          title: "Concentration Curve",
+          url: "/product-economics/concentration",
         },
         {
-          title: "Replenishment",
-          url: "/products/replenishment",
+          title: "Discount Usage",
+          url: "/product-economics/discounts",
+        },
+        {
+          title: "Replenishment Frequency",
+          url: "/product-economics/replenishment",
         },
       ],
     },
     {
-      title: "Retention",
+      title: "Financials",
       url: "#",
-      icon: TrendingUp,
+      icon: DollarSign,
       items: [
         {
-          title: "Churn Analysis",
-          url: "/retention/churn",
+          title: "Revenue Intelligence",
+          url: "/financials/revenue",
         },
         {
-          title: "Retention Curve",
-          url: "/retention/curve",
+          title: "LTV Summary",
+          url: "/financials/ltv-summary",
         },
         {
-          title: "Reactivation",
-          url: "/retention/reactivation",
+          title: "Forecasts & Scenarios",
+          url: "/financials/forecasts",
         },
       ],
     },
     {
       title: "Settings",
-      url: "/settings",
+      url: "#",
       icon: Settings2,
       items: [
         {
           title: "Integrations",
-          url: "/integrations",
+          url: "/settings/integrations",
         },
         {
           title: "User Settings",
-          url: "/settings/user",
+          url: "/settings",
         },
         {
-          title: "API Keys",
-          url: "/settings/api",
-        },
-        {
-          title: "Feedback & Support",
-          url: "/feedback",
+          title: "Support & Feedback",
+          url: "/settings/feedback",
           icon: MessageSquare,
         },
       ],

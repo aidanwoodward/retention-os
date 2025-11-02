@@ -54,14 +54,14 @@ export default function CLRLTVCohortsPage() {
     <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
-        <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 rounded-2xl p-8 text-white">
+        <div className="bg-primary rounded-2xl p-8 text-primary-foreground">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold mb-2 flex items-center">
                 <LineChart className="w-10 h-10 mr-3" />
                 CLR & LTV Cohorts
               </h1>
-              <p className="text-purple-100 text-lg">Cumulative revenue per customer and lifetime value by cohort</p>
+              <p className="opacity-90 text-lg">Cumulative revenue per customer and lifetime value by cohort</p>
             </div>
           </div>
         </div>

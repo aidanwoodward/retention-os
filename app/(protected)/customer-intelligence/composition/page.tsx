@@ -78,12 +78,12 @@ export default function CustomerCompositionPage() {
     <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
-        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 rounded-2xl p-8 text-white">
+        <div className="bg-primary rounded-2xl p-8 text-primary-foreground">
           <h1 className="text-4xl font-bold mb-2 flex items-center">
             <Users className="w-10 h-10 mr-3" />
             Customer Composition
           </h1>
-          <p className="text-emerald-100 text-lg">Lifecycle stages, geography, and acquisition channel mix</p>
+          <p className="opacity-90 text-lg">Lifecycle stages, geography, and acquisition channel mix</p>
         </div>
       </div>
 

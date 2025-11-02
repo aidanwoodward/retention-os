@@ -87,14 +87,14 @@ export default function DataReconciliationPage() {
     <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
-        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl p-8 text-white">
+        <div className="bg-primary rounded-2xl p-8 text-primary-foreground">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold mb-2 flex items-center">
                 <DollarSign className="w-10 h-10 mr-3" />
                 Data Reconciliation
               </h1>
-              <p className="text-blue-100 text-lg">Compare Shopify totals vs internal calculations</p>
+              <p className="opacity-90 text-lg">Compare Shopify totals vs internal calculations</p>
             </div>
           </div>
         </div>

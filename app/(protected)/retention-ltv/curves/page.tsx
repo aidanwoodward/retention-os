@@ -187,18 +187,18 @@ export default function RetentionCurvePage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Premium Header with Gradient */}
       <div className="mb-8">
-        <div className="bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 rounded-2xl p-8 text-white">
+        <div className="bg-primary rounded-2xl p-8 text-primary-foreground">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold mb-2 flex items-center">
                 <TrendingUp className="w-10 h-10 mr-3" />
                 Retention Curve
               </h1>
-              <p className="text-cyan-100 text-lg">Analyze customer retention patterns and identify optimization opportunities</p>
+              <p className="opacity-90 text-lg">Analyze customer retention patterns and identify optimization opportunities</p>
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold">{curves.length}</div>
-              <div className="text-cyan-100">Retention Periods</div>
+              <div className="opacity-90">Retention Periods</div>
             </div>
           </div>
         </div>

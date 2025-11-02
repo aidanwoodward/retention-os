@@ -243,18 +243,18 @@ export default function RevenueCohortsPage() {
     <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8">
       {/* Premium Header with Gradient */}
       <div className="mb-8">
-        <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 rounded-2xl p-8 text-white">
+        <div className="bg-primary rounded-2xl p-8 text-primary-foreground">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold mb-2 flex items-center">
                 <DollarSign className="w-10 h-10 mr-3" />
                 Revenue Cohorts
               </h1>
-              <p className="text-green-100 text-lg">Analyze customer revenue patterns and lifetime value by acquisition cohort</p>
+              <p className="opacity-90 text-lg">Analyze customer revenue patterns and lifetime value by acquisition cohort</p>
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold">{cohorts.length}</div>
-              <div className="text-green-100">Active Cohorts</div>
+              <div className="opacity-90">Active Cohorts</div>
             </div>
           </div>
         </div>

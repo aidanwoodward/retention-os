@@ -434,18 +434,18 @@ export default function REDHomePage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Premium Header */}
       <div className="mb-8">
-        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl p-8 text-white">
+        <div className="bg-primary rounded-2xl p-8 text-primary-foreground">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold mb-2 flex items-center">
                 <Target className="w-10 h-10 mr-3" />
                 Executive Overview
               </h1>
-              <p className="text-blue-100 text-lg">Comprehensive business health and performance insights</p>
+              <p className="opacity-90 text-lg">Comprehensive business health and performance insights</p>
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold">{displayHealthScore.score}</div>
-              <div className="text-blue-100">Business Health Score</div>
+              <div className="opacity-90">Business Health Score</div>
             </div>
           </div>
         </div>
@@ -793,24 +793,24 @@ function SectionCard({ card }: { card: SectionCard }) {
 
 function ReportsCTACard() {
   return (
-    <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-2xl p-8 text-white">
+    <div className="bg-primary rounded-2xl p-8 text-primary-foreground">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold mb-2">Create executive reports faster</h2>
-          <p className="text-indigo-100 text-lg mb-6">
+          <p className="opacity-90 text-lg mb-6">
             Generate a tailored summary with charts and export as PDF or PowerPoint
           </p>
           <div className="flex items-center space-x-4">
             <Link 
               href="/reports"
-              className="bg-white text-indigo-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors flex items-center"
+              className="bg-primary-foreground text-primary px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition-colors flex items-center"
             >
               <FileText className="w-5 h-5 mr-2" />
               Executive Report
             </Link>
             <Link 
               href="/reports"
-              className="text-indigo-100 hover:text-white transition-colors flex items-center"
+              className="opacity-90 hover:opacity-100 transition-colors flex items-center"
             >
               Reports Overview
               <ExternalLink className="w-4 h-4 ml-1" />
@@ -818,8 +818,8 @@ function ReportsCTACard() {
           </div>
         </div>
         <div className="hidden md:block">
-          <div className="w-32 h-32 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-            <FileText className="w-16 h-16 text-white" />
+          <div className="w-32 h-32 bg-primary-foreground/20 rounded-full flex items-center justify-center">
+            <FileText className="w-16 h-16" />
           </div>
         </div>
       </div>

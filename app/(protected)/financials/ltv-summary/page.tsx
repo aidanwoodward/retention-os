@@ -39,12 +39,12 @@ export default function LTVSummaryPage() {
     <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
-        <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 rounded-2xl p-8 text-white">
+        <div className="bg-primary rounded-2xl p-8 text-primary-foreground">
           <h1 className="text-4xl font-bold mb-2 flex items-center">
             <TrendingUp className="w-10 h-10 mr-3" />
             LTV Summary
           </h1>
-          <p className="text-purple-100 text-lg">Historical LTV by cohort and time horizon</p>
+          <p className="opacity-90 text-lg">Historical LTV by cohort and time horizon</p>
         </div>
       </div>
 

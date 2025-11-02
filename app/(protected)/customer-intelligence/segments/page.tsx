@@ -48,12 +48,12 @@ export default function CustomerSegmentsPage() {
     <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
-        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-2xl p-8 text-white">
+        <div className="bg-primary rounded-2xl p-8 text-primary-foreground">
           <h1 className="text-4xl font-bold mb-2 flex items-center">
             <UserCheck className="w-10 h-10 mr-3" />
             Customer Segments
           </h1>
-          <p className="text-indigo-100 text-lg">VIP and At-Risk customer segments</p>
+          <p className="opacity-90 text-lg">VIP and At-Risk customer segments</p>
         </div>
       </div>
 

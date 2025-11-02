@@ -40,12 +40,12 @@ export default function DiscountUsagePage() {
     <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
-        <div className="bg-gradient-to-r from-yellow-600 via-amber-600 to-orange-600 rounded-2xl p-8 text-white">
+        <div className="bg-primary rounded-2xl p-8 text-primary-foreground">
           <h1 className="text-4xl font-bold mb-2 flex items-center">
             <Tag className="w-10 h-10 mr-3" />
             Discount Usage
           </h1>
-          <p className="text-yellow-100 text-lg">Top 10 discount codes by usage frequency</p>
+          <p className="opacity-90 text-lg">Top 10 discount codes by usage frequency</p>
         </div>
       </div>
 

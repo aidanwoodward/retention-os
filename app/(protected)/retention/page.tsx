@@ -1,5 +1,11 @@
-import { NotFoundPage } from "@/components/ui/not-found";
+import RetentionClient from "./RetentionClient"
 
-export default function RetentionPage() {
-  return <NotFoundPage />;
+type RetentionPageProps = {
+  searchParams?: {
+    [key: string]: string | string[] | undefined
+  }
+}
+
+export default function RetentionPage({ searchParams }: RetentionPageProps) {
+  return <RetentionClient initialSearchParams={searchParams} />
 }

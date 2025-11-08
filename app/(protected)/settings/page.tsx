@@ -14,6 +14,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
+import { useDemoMode } from "@/lib/demo-mode/context";
 
 interface UserSettings {
   id: string;
@@ -67,7 +68,12 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<SettingsResponse['data'] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'profile' | 'team' | 'security' | 'preferences'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'team' | 'security' | 'preferences' | 'workspace'>('profile');
+  const { demoMode, setDemoMode, isDemoModeAvailable } = useDemoMode();
+  const handleDemoToggle = () => {
+    if (!isDemoModeAvailable) return;
+    setDemoMode(!demoMode);
+  };
   const [showApiKey, setShowApiKey] = useState(false);
 
   useEffect(() => {
@@ -250,10 +256,11 @@ export default function SettingsPage() {
               { id: 'team', name: 'Team', icon: Users },
               { id: 'security', name: 'Security', icon: Shield },
               { id: 'preferences', name: 'Preferences', icon: Palette },
+              { id: 'workspace', name: 'Workspace', icon: SettingsIcon },
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as 'profile' | 'team' | 'security' | 'preferences')}
+                onClick={() => setActiveTab(tab.id as 'profile' | 'team' | 'security' | 'preferences' | 'workspace')}
                 className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600'
@@ -444,6 +451,50 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Workspace Tab */}
+          {activeTab === 'workspace' && (
+            <div className="space-y-6">
+              {!isDemoModeAvailable ? (
+                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-gray-900">Demo Mode</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Demo Mode is disabled for this workspace. Contact your administrator to enable it.
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Demo Mode</h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Show realistic sample data across the workspace and mark integrations as connected. No real data is read or written while this is on.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={demoMode}
+                      onClick={handleDemoToggle}
+                      className={`relative inline-flex h-9 w-16 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
+                        demoMode ? 'bg-blue-600' : 'bg-gray-300'
+                      }`}
+                    >
+                      <span className="sr-only">Toggle demo mode</span>
+                      <span
+                        className={`pointer-events-none inline-block h-8 w-8 transform rounded-full bg-white shadow transition ${
+                          demoMode ? 'translate-x-7' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  <p className="mt-4 text-sm text-gray-500">
+                    Your setting is saved on this device/workspace.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 

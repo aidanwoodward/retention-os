@@ -45,17 +45,6 @@ export default function ConcentrationCurvePage() {
 
   return (
     <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="bg-primary rounded-2xl p-8 text-primary-foreground">
-          <h1 className="text-4xl font-bold mb-2 flex items-center">
-            <TrendingUp className="w-10 h-10 mr-3" />
-            Concentration Curve
-          </h1>
-          <p className="opacity-90 text-lg">Pareto chart: Cumulative revenue share of top SKUs</p>
-        </div>
-      </div>
-
       {/* Summary */}
       <div className="bg-blue-50 rounded-lg p-4 mb-8 border border-blue-200">
         <div className="flex items-center">

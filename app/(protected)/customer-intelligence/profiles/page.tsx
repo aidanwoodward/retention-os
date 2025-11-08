@@ -49,17 +49,6 @@ export default function CustomerProfilesPage() {
 
   return (
     <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="bg-primary rounded-2xl p-8 text-primary-foreground">
-          <h1 className="text-4xl font-bold mb-2 flex items-center">
-            <User className="w-10 h-10 mr-3" />
-            Customer Profile
-          </h1>
-          <p className="opacity-90 text-lg">Individual customer insights and history</p>
-        </div>
-      </div>
-
       {/* Profile Card */}
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100">
         <div className="p-8">

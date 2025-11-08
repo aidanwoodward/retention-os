@@ -432,25 +432,6 @@ export default function REDHomePage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Premium Header */}
-      <div className="mb-8">
-        <div className="bg-primary rounded-2xl p-8 text-primary-foreground">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold mb-2 flex items-center">
-                <Target className="w-10 h-10 mr-3" />
-                Executive Overview
-              </h1>
-              <p className="opacity-90 text-lg">Comprehensive business health and performance insights</p>
-            </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold">{displayHealthScore.score}</div>
-              <div className="opacity-90">Business Health Score</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Global Filters */}
       <div className="mb-8">
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
@@ -497,10 +478,6 @@ export default function REDHomePage() {
         ))}
       </div>
 
-      {/* Reports CTA */}
-      <div className="mb-8">
-        <ReportsCTACard />
-      </div>
     </div>
   );
 }

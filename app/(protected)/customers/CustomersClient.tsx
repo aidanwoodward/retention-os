@@ -1,0 +1,116 @@
+'use client'
+
+import * as React from "react"
+
+import { Button } from "@/components/ui/button"
+import { DataState, EmptyState, ErrorState } from "@/components/ui/data-state"
+import { InsightPanel } from "@/components/ui/insight-panel"
+import { KpiSection } from "@/components/ui/kpi-section"
+import { PageHeader } from "@/components/ui/page-header"
+import { TableSection } from "@/components/ui/table-section"
+import { getPageContent } from "@/lib/content-map"
+import { useDemoMode } from "@/lib/demo-mode/context"
+import { generateCustomerDemoData } from "@/lib/demo-data/customers"
+import { resolveDemoSeed } from "@/lib/demo-data/seed"
+import { resolveDemoState } from "@/lib/demo-data/state"
+import { useMergedSearchParams, type SearchParamsRecord } from "@/hooks/use-merged-search-params"
+
+interface CustomersClientProps {
+  initialSearchParams?: SearchParamsRecord
+}
+
+export default function CustomersClient({
+  initialSearchParams,
+}: CustomersClientProps) {
+  const { demoMode, isDemoModeAvailable } = useDemoMode()
+  const mergedSearchParams = useMergedSearchParams(initialSearchParams)
+
+  const seed = React.useMemo(
+    () => resolveDemoSeed(mergedSearchParams),
+    [mergedSearchParams]
+  )
+  const baseState = React.useMemo(
+    () => resolveDemoState(mergedSearchParams),
+    [mergedSearchParams]
+  )
+  const demoModeActive = isDemoModeAvailable && demoMode
+  const status = baseState !== "ready" ? baseState : demoModeActive ? "ready" : "empty"
+
+  const demoData = React.useMemo(
+    () => (demoModeActive ? generateCustomerDemoData(seed) : null),
+    [demoModeActive, seed]
+  )
+
+  const content = getPageContent("customers")
+  const { title, summary, kpis, actions } = content
+  const kpiItems = kpis.map((kpi) => ({
+    id: kpi.key,
+    label: kpi.label,
+    metric: demoData?.metrics[kpi.key],
+  }))
+
+  return (
+    <DataState
+      status={status}
+      empty={
+        <EmptyState
+          title="Connect your data to get started"
+          description="Link Shopify to populate customer KPIs, segments, and reactivation insights."
+          action={{ label: "Connect Shopify", href: "/connect/shopify" }}
+        />
+      }
+      error={
+        <ErrorState
+          message="Customer sync failed. Try again or visit Sync to check job status."
+          action={{ label: "Retry sync", href: "/sync" }}
+        />
+      }
+    >
+      {demoData ? (
+        <div className="flex flex-col gap-6">
+          <PageHeader
+            title={title}
+            description={summary}
+            actions={
+              <div className="flex flex-wrap items-center gap-2">
+                {actions.secondary?.map((action) => (
+                  <Button
+                    key={action.label}
+                    size="sm"
+                    variant={action.variant ?? "outline"}
+                  >
+                    {action.label}
+                  </Button>
+                ))}
+                {actions.primary ? (
+                  <Button size="sm" variant={actions.primary.variant ?? "default"}>
+                    {actions.primary.label}
+                  </Button>
+                ) : null}
+              </div>
+            }
+          />
+
+          <KpiSection items={kpiItems} />
+
+          <InsightPanel
+            title={demoData.insight.title}
+            description={demoData.insight.description}
+            data={demoData.insight.data}
+            metricLabel={demoData.insight.metricLabel}
+            footer={demoData.insight.footer}
+          />
+
+          <TableSection
+            title="Segments on watch"
+            description="Track top lifecycle segments by retained revenue."
+            caption={demoData.table.caption}
+            columns={demoData.table.columns}
+            rows={demoData.table.rows}
+          />
+        </div>
+      ) : null}
+    </DataState>
+  )
+}
+

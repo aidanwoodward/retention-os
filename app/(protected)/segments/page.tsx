@@ -1,5 +1,11 @@
-import { NotFoundPage } from "@/components/ui/not-found";
+import SegmentsClient from "./SegmentsClient"
 
-export default function SegmentsPage() {
-  return <NotFoundPage />;
+type SegmentsPageProps = {
+  searchParams?: {
+    [key: string]: string | string[] | undefined
+  }
+}
+
+export default function SegmentsPage({ searchParams }: SegmentsPageProps) {
+  return <SegmentsClient initialSearchParams={searchParams} />
 }

@@ -64,21 +64,6 @@ export default function ExportsPage() {
 
   return (
     <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="bg-primary rounded-2xl p-8 text-primary-foreground">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold mb-2 flex items-center">
-                <DownloadIcon className="w-10 h-10 mr-3" />
-                Exports
-              </h1>
-              <p className="opacity-90 text-lg">Export your analytics data in multiple formats</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Export Options Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {exports.map((exportOption) => (

@@ -7,17 +7,6 @@ import { LoadingButton } from "@/components/ui/loading-buttons";
 export default function ForecastsScenariosPage() {
   return (
     <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="bg-primary rounded-2xl p-8 text-primary-foreground">
-          <h1 className="text-4xl font-bold mb-2 flex items-center">
-            <LineChart className="w-10 h-10 mr-3" />
-            Forecasts & Scenarios
-          </h1>
-          <p className="opacity-90 text-lg">LTV projections and scenario modeling (Coming Soon)</p>
-        </div>
-      </div>
-
       {/* Placeholder */}
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center">
         <LineChart className="w-24 h-24 text-gray-300 mx-auto mb-4" />

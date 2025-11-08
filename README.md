@@ -19,17 +19,14 @@ A Next.js 15 application for e-commerce retention analytics, built with Supabase
 
 ## Features
 
-- 🔐 **Authentication**: Magic link and 6-digit OTP via Supabase
-- 🛡️ **Protected Routes**: Middleware-based route protection
-- 📊 **MVP Navigation**: Complete PRD-based structure with 6 main modules
-  - **Executive**: Home overview, data reconciliation, exports
-  - **Retention & LTV**: Revenue cohorts, retention curves, CLR/LTV cohorts, repeat purchase rates
-  - **Customer Intelligence**: Customer composition, segments, profiles
-  - **Product Economics**: Product performance, concentration curve, discount usage, replenishment
-  - **Financials**: Revenue intelligence, LTV summary, forecasts
-  - **Settings**: Integrations, user settings, support & feedback
-- 🔌 **Integrations**: Shopify and Klaviyo connection placeholders
-- 🎨 **Modern UI**: Premium gradient design with consistent UX patterns
+- 🔐 **Flexible Auth**: Magic link and 6-digit OTP flows powered by Supabase
+- 🛡️ **Protected Workspace**: Middleware-enforced access with shared layout, navigation, and session-aware header
+- 📊 **Analytics Modules**: Executive dashboards, revenue cohorts, retention curves, LTV summaries, KPI snapshots, and downloadable reports
+- 🧠 **AI Insights**: Cohort analysis assistants in `components/ai/AIAnalysis.tsx` synthesize notable trends and suggested next steps
+- 🧭 **Customer & Product Intelligence**: Dedicated areas for customer lists, segments, profiles, product performance, cross-sell, and replenishment views
+- 🔄 **Data Operations**: Sync status, dummy-data generation endpoints, and canonical schema queries for customers/orders
+- 🔌 **Integrations**: Shopify OAuth flow, Klaviyo connection scaffold, and integration status surface
+- 🎨 **Modern UI**: Premium gradient design, responsive navigation, and consistent UX patterns built with Tailwind
 
 ## Getting Started
 
@@ -87,39 +84,63 @@ The app uses Supabase for authentication with the following flow:
 - **Magic Link**: Click the link in your email to sign in
 - **6-Digit Code**: Enter the code sent to your email on the verify page
 
-### Protected Routes
+### Protected Workspace Modules
 
-**Executive Module:**
-- `/executive` - Home overview dashboard
-- `/executive/reconciliation` - Data reconciliation panel
-- `/executive/exports` - Export management
-
-**Retention & LTV Module:**
-- `/retention-ltv/revenue-cohorts` - Revenue cohort analysis
-- `/retention-ltv/curves` - Retention curves
-- `/retention-ltv/ltv-cohorts` - CLR & LTV cohorts
-- `/retention-ltv/repeat-rates` - Repeat purchase rates
-
-**Customer Intelligence Module:**
-- `/customer-intelligence/composition` - Customer composition
-- `/customer-intelligence/segments` - Customer segments
-- `/customer-intelligence/profiles` - Customer profiles
-
-**Product Economics Module:**
-- `/product-economics/performance` - Product performance
-- `/product-economics/concentration` - Concentration curve
-- `/product-economics/discounts` - Discount usage
-- `/product-economics/replenishment` - Replenishment frequency
-
-**Financials Module:**
-- `/financials/revenue` - Revenue intelligence
-- `/financials/ltv-summary` - LTV summary
-- `/financials/forecasts` - Forecasts & scenarios
-
-**Settings Module:**
-- `/settings` - User settings
-- `/settings/integrations` - Integrations management
-- `/settings/feedback` - Support & feedback
+- **Executive**
+  - `/executive` – Home overview dashboard with high-level KPIs
+  - `/executive/reconciliation` – Data reconciliation panel
+  - `/executive/exports` – Export management
+- **Cohorts**
+  - `/cohorts` – Cohort explorer with filters and export actions
+  - `/cohorts/category` – Category-level cohort comparisons
+  - `/cohorts/composition` – Composition breakdowns
+  - `/cohorts/revenue` – Revenue retention heatmaps
+- **Retention & LTV**
+  - `/retention-ltv/revenue-cohorts` – Revenue cohort analysis
+  - `/retention-ltv/curves` – Retention curves
+  - `/retention-ltv/ltv-cohorts` – CLR & LTV cohorts
+  - `/retention-ltv/repeat-rates` – Repeat purchase rates
+- **Retention Strategies**
+  - `/retention` – Retention command center
+  - `/retention/churn` – Churn diagnostics (placeholder)
+  - `/retention/curve` – Curve visualization (placeholder)
+  - `/retention/reactivation` – Reactivation opportunities (placeholder)
+- **Customers**
+  - `/customers` – Customer overview (placeholder)
+  - `/customers/list` – Tabular customer listing
+  - `/customers/profile` – Customer profile drill-down
+  - `/customers/segments` – Segment membership view
+- **Customer Intelligence**
+  - `/customer-intelligence/composition` – Customer composition
+  - `/customer-intelligence/segments` – Segment breakdowns
+  - `/customer-intelligence/profiles` – Persona-style profiles
+- **Products**
+  - `/products` – Product overview
+  - `/products/performance` – Performance dashboard
+  - `/products/replenishment` – Replenishment planner
+  - `/products/cross-sell` – Cross-sell insights
+- **Product Economics**
+  - `/product-economics/performance` – Performance metrics
+  - `/product-economics/concentration` – Concentration curve
+  - `/product-economics/discounts` – Discount usage
+  - `/product-economics/replenishment` – Replenishment frequency
+- **Financials**
+  - `/financials/revenue` – Revenue intelligence
+  - `/financials/ltv-summary` – LTV summary
+  - `/financials/forecasts` – Forecasts & scenarios
+- **Reports & Guides**
+  - `/reports` – Reporting hub
+  - `/guides` – Best-practice guides
+- **Integrations & Sync**
+  - `/connect/shopify` – Shopify OAuth connection flow
+  - `/connect/klaviyo` – Klaviyo connection scaffold
+  - `/integrations` – Integration status board
+  - `/sync` – Sync job overview
+- **Feedback & Settings**
+  - `/feedback` – Feedback submission
+  - `/settings` – Account settings
+  - `/settings/integrations` – Integration management
+  - `/settings/feedback` – Support & feedback inbox
 
 ### Auth Components
 - **Header**: Shows user email and logout button (only on protected pages)
@@ -130,17 +151,30 @@ The app uses Supabase for authentication with the following flow:
 
 ```
 app/
-├── (protected)/           # Protected route group with header
-│   ├── layout.tsx        # Protected layout with Header component
-│   ├── dashboard/        # Analytics dashboard
-│   └── connect/          # Integration setup pages
-├── auth/
-│   ├── callback/         # OAuth callback handler
-│   └── signout/          # Server-side logout route
-├── components/           # Reusable UI components
-├── login/               # Login page with dual auth options
-├── verify/              # 6-digit code verification
-└── globals.css          # Global styles
+├── (protected)/              # Protected workspace layout, navigation, modules
+│   ├── cohorts/              # Cohort analytics surfaces
+│   ├── connect/              # Integration setup pages (Shopify, Klaviyo)
+│   ├── customer-intelligence/# Customer composition, segments, profiles
+│   ├── customers/            # Customer list, profile, and segments
+│   ├── dashboard/            # Executive dashboard shell
+│   ├── executive/            # Executive summaries and exports
+│   ├── financials/           # Revenue, LTV, and forecast views
+│   ├── guides/               # Guides library
+│   ├── integrations/         # Integration status surface
+│   ├── product-economics/    # Economics dashboards
+│   ├── products/             # Product performance + cross-sell
+│   ├── reports/              # Reporting hub
+│   ├── retention/            # Retention strategy workbench
+│   ├── retention-ltv/        # Retention cohorts + curves
+│   ├── segments/             # Segment explorer
+│   ├── settings/             # Settings + feedback
+│   └── sync/                 # Sync status + tooling
+├── api/                      # Edge routes for metrics, reports, integrations
+├── auth/                     # OAuth callback + signout
+├── components/               # Reusable UI components (including AI widgets)
+├── login/                    # Login page with dual auth options
+├── verify/                   # 6-digit code verification
+└── globals.css               # Global styles
 ```
 
 ## Deployment

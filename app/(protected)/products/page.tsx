@@ -1,5 +1,11 @@
-import { NotFoundPage } from "@/components/ui/not-found";
+import ProductsClient from "./ProductsClient"
 
-export default function ProductsPage() {
-  return <NotFoundPage />;
+type ProductsPageProps = {
+  searchParams?: {
+    [key: string]: string | string[] | undefined
+  }
+}
+
+export default function ProductsPage({ searchParams }: ProductsPageProps) {
+  return <ProductsClient initialSearchParams={searchParams} />
 }

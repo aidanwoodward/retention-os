@@ -572,21 +572,6 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Save Button */}
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <div className="flex items-center justify-end space-x-4">
-              <button className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveSettings}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                Save Changes
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>

@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import {
-  BarChart3,
   Users,
   Package,
   TrendingUp,

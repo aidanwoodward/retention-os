@@ -1,6 +1,7 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
+import { uiTokens } from "@/lib/ui-tokens"
 
 type Alignment = "left" | "center" | "right"
 
@@ -68,7 +69,7 @@ export function DemoTable({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm",
+        "overflow-hidden rounded-2xl border border-border/70 bg-card text-card-foreground shadow-sm",
         className
       )}
       {...rest}
@@ -76,7 +77,13 @@ export function DemoTable({
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-border">
           {caption ? (
-            <caption className="bg-muted/40 px-6 py-3 text-left text-sm text-muted-foreground">
+            <caption
+              className="bg-muted/40 px-4 py-3 text-left text-muted-foreground"
+              style={{
+                fontSize: uiTokens.typography.caption.fontSize,
+                lineHeight: uiTokens.typography.caption.lineHeight,
+              }}
+            >
               {caption}
             </caption>
           ) : null}
@@ -87,10 +94,15 @@ export function DemoTable({
                   key={column.key}
                   scope="col"
                   className={cn(
-                    "px-6 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground",
+                    "px-4 py-3 text-muted-foreground",
                     column.align === "center" && "text-center",
                     column.align === "right" && "text-right"
                   )}
+                  style={{
+                    fontSize: uiTokens.typography.caption.fontSize,
+                    lineHeight: uiTokens.typography.caption.lineHeight,
+                    fontWeight: 600,
+                  }}
                 >
                   {column.label}
                 </th>
@@ -104,10 +116,14 @@ export function DemoTable({
                   <td
                     key={column.key}
                     className={cn(
-                      "px-6 py-4 text-sm",
+                      "px-4 py-3.5 text-foreground",
                       column.align === "center" && "text-center",
                       column.align === "right" && "text-right"
                     )}
+                    style={{
+                      fontSize: uiTokens.typography.body.fontSize,
+                      lineHeight: uiTokens.typography.body.lineHeight,
+                    }}
                   >
                     {row.values[column.key]}
                   </td>

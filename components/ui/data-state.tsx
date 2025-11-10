@@ -28,22 +28,22 @@ const defaultSkeleton = (
     className="flex flex-col"
     aria-busy="true"
     data-testid="state-loading"
-    style={{ gap: uiTokens.spacing.section }}
+    style={{ gap: uiTokens.spacing.lg }}
   >
-    <Skeleton className="h-20 w-full rounded-xl" />
+    <Skeleton className="h-20 w-full rounded-2xl" />
     <div
-      className="grid md:grid-cols-2 xl:grid-cols-4"
-      style={{ gap: uiTokens.spacing.md }}
+      className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4"
+      style={{ gap: uiTokens.layout.gridGap }}
     >
       {Array.from({ length: 4 }).map((_, index) => (
         <Skeleton
           // biome-ignore lint/suspicious/noArrayIndexKey: deterministic placeholder only
           key={index}
-          className="h-32 rounded-xl"
+          className="h-32 rounded-2xl"
         />
       ))}
     </div>
-    <Skeleton className="h-64 w-full rounded-xl" />
+    <Skeleton className="h-64 w-full rounded-2xl" />
   </div>
 )
 
@@ -58,10 +58,25 @@ interface EmptyStateProps {
 
 export function EmptyState({ title, description, action }: EmptyStateProps) {
   return (
-    <Empty className="border-dashed border-muted/80">
+    <Empty className="rounded-2xl border-dashed border-muted/80 px-6 py-8">
       <EmptyHeader>
-        <EmptyTitle>{title}</EmptyTitle>
-        <EmptyDescription>{description}</EmptyDescription>
+        <EmptyTitle
+          style={{
+            fontSize: uiTokens.typography.h3.fontSize,
+            lineHeight: uiTokens.typography.h3.lineHeight,
+            fontWeight: uiTokens.typography.h3.fontWeight,
+          }}
+        >
+          {title}
+        </EmptyTitle>
+        <EmptyDescription
+          style={{
+            fontSize: uiTokens.typography.bodySm.fontSize,
+            lineHeight: uiTokens.typography.bodySm.lineHeight,
+          }}
+        >
+          {description}
+        </EmptyDescription>
       </EmptyHeader>
       {action ? (
         <EmptyContent>
@@ -95,7 +110,7 @@ export function ErrorState({
       role="alert"
       aria-live="polite"
       className={cn(
-        "border-destructive/40 bg-destructive/5 text-destructive flex flex-col gap-3 rounded-xl border p-6",
+        "border-destructive/40 bg-destructive/5 text-destructive flex flex-col gap-3 rounded-2xl border p-6",
         className
       )}
       data-testid="state-error"
@@ -103,8 +118,24 @@ export function ErrorState({
       <div className="flex items-start gap-3">
         <AlertTriangle className="mt-0.5 size-5 shrink-0" />
         <div className="space-y-1">
-          <p className="text-base font-semibold">{title}</p>
-          <p className="text-sm text-destructive/90">{message}</p>
+          <p
+            style={{
+              fontSize: uiTokens.typography.h3.fontSize,
+              lineHeight: uiTokens.typography.h3.lineHeight,
+              fontWeight: uiTokens.typography.h3.fontWeight,
+            }}
+          >
+            {title}
+          </p>
+          <p
+            className="text-destructive/90"
+            style={{
+              fontSize: uiTokens.typography.bodySm.fontSize,
+              lineHeight: uiTokens.typography.bodySm.lineHeight,
+            }}
+          >
+            {message}
+          </p>
         </div>
       </div>
       {action ? (

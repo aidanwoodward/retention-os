@@ -8,7 +8,6 @@ import {
   Palette,
   Database,
   Users,
-  Save,
   AlertTriangle,
   Settings as SettingsIcon,
   Eye,
@@ -171,11 +170,6 @@ export default function SettingsPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSaveSettings = async () => {
-    // Implementation for saving settings
-    console.log('Saving settings...');
   };
 
   const getRoleColor = (role: string) => {

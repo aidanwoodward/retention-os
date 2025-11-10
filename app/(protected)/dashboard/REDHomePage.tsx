@@ -15,11 +15,9 @@ import {
   AlertTriangle,
   CheckCircle,
   ArrowRight,
-  FileText,
   Package,
   Activity,
-  RefreshCw,
-  ExternalLink
+  RefreshCw
 } from "lucide-react";
 
 // =============================================================================
@@ -764,42 +762,3 @@ function SectionCard({ card }: { card: SectionCard }) {
   );
 }
 
-// =============================================================================
-// REPORTS CTA COMPONENT
-// =============================================================================
-
-function ReportsCTACard() {
-  return (
-    <div className="bg-primary rounded-2xl p-8 text-primary-foreground">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold mb-2">Create executive reports faster</h2>
-          <p className="opacity-90 text-lg mb-6">
-            Generate a tailored summary with charts and export as PDF or PowerPoint
-          </p>
-          <div className="flex items-center space-x-4">
-            <Link 
-              href="/reports"
-              className="bg-primary-foreground text-primary px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition-colors flex items-center"
-            >
-              <FileText className="w-5 h-5 mr-2" />
-              Executive Report
-            </Link>
-            <Link 
-              href="/reports"
-              className="opacity-90 hover:opacity-100 transition-colors flex items-center"
-            >
-              Reports Overview
-              <ExternalLink className="w-4 h-4 ml-1" />
-            </Link>
-          </div>
-        </div>
-        <div className="hidden md:block">
-          <div className="w-32 h-32 bg-primary-foreground/20 rounded-full flex items-center justify-center">
-            <FileText className="w-16 h-16" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}

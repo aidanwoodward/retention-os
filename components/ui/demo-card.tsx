@@ -4,6 +4,7 @@ import { TrendingDown, TrendingUp, Minus } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { uiTokens } from "@/lib/ui-tokens"
 
 type Trend = "up" | "down" | "flat"
 
@@ -42,27 +43,65 @@ export function DemoCard({
   const TrendIcon = trendIcon[trend]
 
   return (
-    <Card className={cn("min-h-[160px]", className)} {...rest}>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+    <Card
+      className={cn(
+        "min-h-[160px] rounded-2xl border border-border/70 bg-card/95 shadow-sm transition duration-200",
+        "ease-[cubic-bezier(.2,.8,.2,1)] hover:-translate-y-0.5 hover:shadow-md focus-within:-translate-y-0.5 focus-within:shadow-md",
+        className
+      )}
+      style={{ boxShadow: uiTokens.shadow.card }}
+      {...rest}
+    >
+      <CardHeader className="pb-0">
+        <CardTitle
+          className="text-muted-foreground"
+          style={{
+            fontSize: uiTokens.typography.caption.fontSize,
+            lineHeight: uiTokens.typography.caption.lineHeight,
+            fontWeight: uiTokens.typography.caption.fontWeight,
+          }}
+        >
           {title}
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        <div className="text-3xl font-semibold tracking-tight">{value}</div>
+      <CardContent className="flex flex-col gap-3 pt-3">
+        <div
+          className="tracking-tight text-foreground"
+          style={{
+            fontSize: "1.5rem",
+            lineHeight: uiTokens.typography.h2.lineHeight,
+            fontWeight: 600,
+          }}
+        >
+          {value}
+        </div>
         {change ? (
-          <div className="flex items-center gap-2 text-sm font-medium">
+          <div
+            className="flex items-center gap-2 text-muted-foreground"
+            style={{
+              fontSize: uiTokens.typography.caption.fontSize,
+              lineHeight: uiTokens.typography.caption.lineHeight,
+            }}
+          >
             <TrendIcon className={cn("size-4", trendColor[trend])} />
             <span className={trendColor[trend]}>{change.value}</span>
             {change.label ? (
-              <span className="text-muted-foreground font-normal">
+              <span className="font-normal">
                 {change.label}
               </span>
             ) : null}
           </div>
         ) : null}
         {hint ? (
-          <p className="text-muted-foreground text-xs leading-relaxed">{hint}</p>
+          <p
+            className="text-muted-foreground"
+            style={{
+              fontSize: uiTokens.typography.caption.fontSize,
+              lineHeight: uiTokens.typography.caption.lineHeight,
+            }}
+          >
+            {hint}
+          </p>
         ) : null}
       </CardContent>
     </Card>

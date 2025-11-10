@@ -1,7 +1,5 @@
 'use client'
 
-'use client'
-
 import * as React from "react"
 
 import { uiTokens } from "@/lib/ui-tokens"
@@ -44,7 +42,14 @@ export function PageHeader({
     >
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          <h1
+            className="text-foreground"
+            style={{
+              fontSize: uiTokens.typography.h1.fontSize,
+              lineHeight: uiTokens.typography.h1.lineHeight,
+              fontWeight: uiTokens.typography.h1.fontWeight,
+            }}
+          >
             {title}
           </h1>
           {showDemoBadge ? (
@@ -70,13 +75,27 @@ export function PageHeader({
           ) : null}
         </div>
         {description ? (
-          <p className="text-muted-foreground text-sm sm:text-base">
+          <p
+            className="text-muted-foreground"
+            style={{
+              fontSize: uiTokens.typography.bodySm.fontSize,
+              lineHeight: uiTokens.typography.bodySm.lineHeight,
+              fontWeight: uiTokens.typography.bodySm.fontWeight,
+            }}
+          >
             {description}
           </p>
         ) : null}
         {children}
       </div>
-      {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+      {actions ? (
+        <div
+          className="flex flex-wrap items-center"
+          style={{ gap: uiTokens.spacing.sm }}
+        >
+          {actions}
+        </div>
+      ) : null}
     </div>
   )
 }

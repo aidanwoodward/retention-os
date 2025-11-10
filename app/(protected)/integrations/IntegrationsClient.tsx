@@ -61,7 +61,7 @@ export default function IntegrationsClient({
       }
     >
       {demoData ? (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col">
           <PageHeader
             title="Integrations"
             description="Connect the stack powering retention insights, sync cadence, and automation."
@@ -83,7 +83,7 @@ export default function IntegrationsClient({
             }
           />
 
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
             {demoData.integrations.map((integration) => (
               <IntegrationCard key={integration.id} integration={integration} />
             ))}

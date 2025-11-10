@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ShoppingCart, TrendingUp, Users, Download, BarChart3, AlertTriangle } from "lucide-react";
+import { TrendingUp, Users, Download, BarChart3 } from "lucide-react";
 import { LoadingButton } from "@/components/ui/loading-buttons";
 
 interface RepeatRateData {

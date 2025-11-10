@@ -67,7 +67,7 @@ export default function SegmentsClient({
       }
     >
       {demoData ? (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col">
           <PageHeader
             title={title}
             description={summary}
@@ -91,23 +91,29 @@ export default function SegmentsClient({
             }
           />
 
-          <KpiSection items={kpiItems} />
+          <div className="mt-4">
+            <KpiSection items={kpiItems} />
+          </div>
 
-          <InsightPanel
-            title={demoData.insight.title}
-            description={demoData.insight.description}
-            metricLabel={demoData.insight.metricLabel}
-            data={demoData.insight.data}
-            footer={demoData.insight.footer}
-          />
+          <div className="mt-6">
+            <InsightPanel
+              title={demoData.insight.title}
+              description={demoData.insight.description}
+              metricLabel={demoData.insight.metricLabel}
+              data={demoData.insight.data}
+              footer={demoData.insight.footer}
+            />
+          </div>
 
-          <TableSection
-            title="Lifecycle segment health"
-            description="Monitor coverage and value across priority lifecycle cohorts."
-            caption={demoData.table.caption}
-            columns={demoData.table.columns}
-            rows={demoData.table.rows}
-          />
+          <div className="mt-6">
+            <TableSection
+              title="Lifecycle segment health"
+              description="Monitor coverage and value across priority lifecycle cohorts."
+              caption={demoData.table.caption}
+              columns={demoData.table.columns}
+              rows={demoData.table.rows}
+            />
+          </div>
         </div>
       ) : null}
     </DataState>

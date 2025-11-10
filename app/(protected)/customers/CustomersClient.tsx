@@ -67,7 +67,7 @@ export default function CustomersClient({
       }
     >
       {demoData ? (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col">
           <PageHeader
             title={title}
             description={summary}
@@ -91,23 +91,29 @@ export default function CustomersClient({
             }
           />
 
-          <KpiSection items={kpiItems} />
+          <div className="mt-4">
+            <KpiSection items={kpiItems} />
+          </div>
 
-          <InsightPanel
-            title={demoData.insight.title}
-            description={demoData.insight.description}
-            data={demoData.insight.data}
-            metricLabel={demoData.insight.metricLabel}
-            footer={demoData.insight.footer}
-          />
+          <div className="mt-6">
+            <InsightPanel
+              title={demoData.insight.title}
+              description={demoData.insight.description}
+              data={demoData.insight.data}
+              metricLabel={demoData.insight.metricLabel}
+              footer={demoData.insight.footer}
+            />
+          </div>
 
-          <TableSection
-            title="Segments on watch"
-            description="Track top lifecycle segments by retained revenue."
-            caption={demoData.table.caption}
-            columns={demoData.table.columns}
-            rows={demoData.table.rows}
-          />
+          <div className="mt-6">
+            <TableSection
+              title="Segments on watch"
+              description="Track top lifecycle segments by retained revenue."
+              caption={demoData.table.caption}
+              columns={demoData.table.columns}
+              rows={demoData.table.rows}
+            />
+          </div>
         </div>
       ) : null}
     </DataState>

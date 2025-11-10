@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TrendingUp, Users, DollarSign, Download, BarChart3, LineChart, AlertTriangle } from "lucide-react";
+import { TrendingUp, Users, DollarSign, Download, BarChart3 } from "lucide-react";
 import { LoadingButton } from "@/components/ui/loading-buttons";
 
 interface LTVData {

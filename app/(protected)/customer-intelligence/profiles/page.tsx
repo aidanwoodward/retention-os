@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User, ShoppingBag, Calendar, DollarSign, TrendingUp, Mail, MapPin } from "lucide-react";
+import { ShoppingBag, Calendar, DollarSign, TrendingUp, Mail, MapPin } from "lucide-react";
 
 interface CustomerProfile {
   id: string;

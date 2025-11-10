@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { DollarSign, TrendingUp, TrendingDown, Download, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, Download, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
 import { LoadingButton } from "@/components/ui/loading-buttons";
 
 interface ReconciliationData {
@@ -15,7 +15,6 @@ interface ReconciliationData {
 
 export default function DataReconciliationPage() {
   const [data, setData] = useState<ReconciliationData[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Mock data for MVP
@@ -53,7 +52,6 @@ export default function DataReconciliationPage() {
         status: 'error'
       }
     ]);
-    setLoading(false);
   }, []);
 
   const getStatusColor = (status: string) => {

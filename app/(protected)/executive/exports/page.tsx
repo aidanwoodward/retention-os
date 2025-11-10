@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, FileText, Database, Calendar, Download as DownloadIcon } from "lucide-react";
+import { Download, FileText, Database } from "lucide-react";
 
 interface ExportOption {
   id: string;
@@ -12,7 +12,7 @@ interface ExportOption {
 }
 
 export default function ExportsPage() {
-  const [exports, setExports] = useState<ExportOption[]>([
+  const [exports] = useState<ExportOption[]>([
     {
       id: 'executive_summary',
       title: 'Executive Summary',

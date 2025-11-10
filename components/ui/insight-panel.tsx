@@ -33,16 +33,33 @@ export function InsightPanel({
   return (
     <section
       className={cn(
-        "bg-card text-card-foreground flex flex-col rounded-xl border p-6 shadow-sm",
+        "bg-card text-card-foreground flex flex-col rounded-2xl border border-border/70 p-4 shadow-sm transition duration-200 ease-[cubic-bezier(.2,.8,.2,1)]",
         className
       )}
-      style={{ gap: uiTokens.spacing.md, borderRadius: uiTokens.radii.lg }}
+      style={{ gap: uiTokens.spacing.md, boxShadow: uiTokens.shadow.card }}
       {...rest}
     >
       <header className="flex flex-col gap-2" style={{ gap: uiTokens.spacing.sm }}>
-        <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+        <h2
+          className="text-foreground"
+          style={{
+            fontSize: uiTokens.typography.h2.fontSize,
+            lineHeight: uiTokens.typography.h2.lineHeight,
+            fontWeight: uiTokens.typography.h2.fontWeight,
+          }}
+        >
+          {title}
+        </h2>
         {description ? (
-          <p className="text-muted-foreground text-sm">{description}</p>
+          <p
+            className="text-muted-foreground"
+            style={{
+              fontSize: uiTokens.typography.bodySm.fontSize,
+              lineHeight: uiTokens.typography.bodySm.lineHeight,
+            }}
+          >
+            {description}
+          </p>
         ) : null}
       </header>
 
@@ -70,13 +87,27 @@ export function InsightPanel({
           })}
         </div>
         <dl
-          className="grid grid-cols-2 text-xs text-muted-foreground sm:grid-cols-4"
+          className="grid grid-cols-2 text-muted-foreground sm:grid-cols-4"
           style={{ gap: uiTokens.spacing.md }}
         >
           {data.map((datum) => (
             <div key={datum.label} className="flex flex-col gap-1">
-              <dt className="font-medium text-foreground">{datum.label}</dt>
-              <dd>
+              <dt
+                className="font-medium text-foreground"
+                style={{
+                  fontSize: uiTokens.typography.caption.fontSize,
+                  lineHeight: uiTokens.typography.caption.lineHeight,
+                }}
+              >
+                {datum.label}
+              </dt>
+              <dd
+                className="text-foreground"
+                style={{
+                  fontSize: uiTokens.typography.body.fontSize,
+                  lineHeight: uiTokens.typography.body.lineHeight,
+                }}
+              >
                 {datum.value.toLocaleString("en-GB")}
                 {metricLabel ? ` ${metricLabel}` : ""}
               </dd>
@@ -87,7 +118,7 @@ export function InsightPanel({
 
       {footer ? (
         <footer
-          className="text-sm text-muted-foreground"
+          className="text-muted-foreground"
           style={{ marginTop: uiTokens.spacing.sm }}
         >
           {footer}

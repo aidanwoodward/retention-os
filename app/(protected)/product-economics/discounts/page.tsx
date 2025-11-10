@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Tag, TrendingDown, Download, BarChart } from "lucide-react";
+import { Download, BarChart } from "lucide-react";
 import { LoadingButton } from "@/components/ui/loading-buttons";
 
 interface DiscountData {

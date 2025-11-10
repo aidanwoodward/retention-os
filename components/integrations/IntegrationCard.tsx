@@ -38,11 +38,15 @@ export function IntegrationCard({ integration }: IntegrationCardProps) {
   const statusStyle = statusStyles[integration.status]
 
   return (
-    <Card className="h-full">
-      <CardHeader className="flex flex-row items-start justify-between">
+    <Card className="h-full rounded-2xl border border-border/70 bg-card/95 shadow-sm transition duration-200 ease-[cubic-bezier(.2,.8,.2,1)] hover:-translate-y-0.5 hover:shadow-md focus-within:-translate-y-0.5 focus-within:shadow-md">
+      <CardHeader className="flex flex-row items-start justify-between gap-4 pb-3">
         <div className="space-y-1">
-          <CardTitle>{integration.name}</CardTitle>
-          <CardDescription>{integration.description}</CardDescription>
+          <CardTitle className="text-foreground text-lg font-semibold leading-tight">
+            {integration.name}
+          </CardTitle>
+          <CardDescription className="text-muted-foreground text-sm leading-relaxed">
+            {integration.description}
+          </CardDescription>
         </div>
         <Badge
           variant="outline"
@@ -53,8 +57,8 @@ export function IntegrationCard({ integration }: IntegrationCardProps) {
         </Badge>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2 text-foreground">
+        <div className="flex flex-col gap-2 text-muted-foreground">
+          <div className="flex items-center gap-2 text-foreground text-sm">
             <ShieldCheck className="size-4" />
             <span>{integration.statusDetail}</span>
           </div>
@@ -69,7 +73,7 @@ export function IntegrationCard({ integration }: IntegrationCardProps) {
           <dl className="grid grid-cols-2 gap-3 rounded-lg bg-muted/40 p-3 text-xs sm:grid-cols-3">
             {integration.highlights.map((highlight) => (
               <div key={highlight.label} className="space-y-1">
-                <dt className="text-muted-foreground uppercase tracking-wide">
+                <dt className="text-muted-foreground text-[0.75rem] font-medium leading-snug">
                   {highlight.label}
                 </dt>
                 <dd className="text-base font-semibold text-foreground">

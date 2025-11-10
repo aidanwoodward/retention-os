@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TrendingUp, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { LoadingButton } from "@/components/ui/loading-buttons";
 
 interface LTVSummaryData {

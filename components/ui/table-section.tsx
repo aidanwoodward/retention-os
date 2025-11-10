@@ -27,9 +27,28 @@ export function TableSection({
           className="flex flex-col"
           style={{ gap: uiTokens.spacing.xs, marginBottom: uiTokens.spacing.sm }}
         >
-          {title ? <h3 className="text-lg font-semibold">{title}</h3> : null}
+          {title ? (
+            <h3
+              className="text-foreground"
+              style={{
+                fontSize: uiTokens.typography.h3.fontSize,
+                lineHeight: uiTokens.typography.h3.lineHeight,
+                fontWeight: uiTokens.typography.h3.fontWeight,
+              }}
+            >
+              {title}
+            </h3>
+          ) : null}
           {description ? (
-            <p className="text-muted-foreground text-sm">{description}</p>
+            <p
+              className="text-muted-foreground"
+              style={{
+                fontSize: uiTokens.typography.bodySm.fontSize,
+                lineHeight: uiTokens.typography.bodySm.lineHeight,
+              }}
+            >
+              {description}
+            </p>
           ) : null}
         </header>
       )}

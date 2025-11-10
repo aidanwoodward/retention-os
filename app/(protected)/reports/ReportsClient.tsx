@@ -67,7 +67,7 @@ export default function ReportsClient({
       }
     >
       {demoData ? (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col">
           <PageHeader
             title={title}
             description={summary}
@@ -91,27 +91,33 @@ export default function ReportsClient({
             }
           />
 
-          <KpiSection items={kpiItems} />
+          <div className="mt-4">
+            <KpiSection items={kpiItems} />
+          </div>
 
-          <InsightPanel
-            title={demoData.insight.title}
-            description={demoData.insight.description}
-            metricLabel={demoData.insight.metricLabel}
-            data={demoData.insight.data}
-            footer={demoData.insight.footer}
-          />
+          <div className="mt-6">
+            <InsightPanel
+              title={demoData.insight.title}
+              description={demoData.insight.description}
+              metricLabel={demoData.insight.metricLabel}
+              data={demoData.insight.data}
+              footer={demoData.insight.footer}
+            />
+          </div>
 
-          <TableSection
-            title="Latest reports"
-            description={`Weekly summary generated ${demoData.weeklySummary.generatedAt}.`}
-            caption={demoData.table.caption}
-            columns={demoData.table.columns}
-            rows={demoData.table.rows}
-          />
+          <div className="mt-6">
+            <TableSection
+              title="Latest reports"
+              description={`Weekly summary generated ${demoData.weeklySummary.generatedAt}.`}
+              caption={demoData.table.caption}
+              columns={demoData.table.columns}
+              rows={demoData.table.rows}
+            />
+          </div>
 
-          <section className="rounded-xl border border-dashed border-muted/60 bg-muted/20 p-6 text-sm text-muted-foreground">
+          <section className="mt-6 rounded-2xl border border-dashed border-muted/60 bg-muted/20 p-4 text-sm text-muted-foreground">
             <h3 className="text-base font-semibold text-foreground">Key insights this week</h3>
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-3 space-y-2 text-sm leading-relaxed">
               {demoData.weeklySummary.keyInsights.map((item, index) => (
                 <li key={index} className="flex gap-2">
                   <span aria-hidden="true">•</span>

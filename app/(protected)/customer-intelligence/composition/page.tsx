@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, Globe, TrendingUp, Download, PieChart, BarChart, MapPin } from "lucide-react";
+import { Globe, Download, PieChart, BarChart, MapPin } from "lucide-react";
 import { LoadingButton } from "@/components/ui/loading-buttons";
 
 interface CompositionData {

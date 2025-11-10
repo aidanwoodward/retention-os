@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TrendingUp, Download, AlertTriangle } from "lucide-react";
+import { Download, AlertTriangle } from "lucide-react";
 import { LoadingButton } from "@/components/ui/loading-buttons";
 
 interface ConcentrationData {

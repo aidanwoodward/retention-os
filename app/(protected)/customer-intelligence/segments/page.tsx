@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserCheck, Crown, AlertTriangle, Users, Download, TrendingDown } from "lucide-react";
+import { Crown, AlertTriangle, Download, TrendingDown } from "lucide-react";
 import { LoadingButton } from "@/components/ui/loading-buttons";
 
 interface SegmentData {

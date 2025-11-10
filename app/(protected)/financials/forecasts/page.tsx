@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { TrendingUp, LineChart, Download } from "lucide-react";
-import { LoadingButton } from "@/components/ui/loading-buttons";
+import { LineChart } from "lucide-react";
 
 export default function ForecastsScenariosPage() {
   return (

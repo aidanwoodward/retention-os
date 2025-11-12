@@ -57,7 +57,11 @@ export function DemoModeProvider({ children }: { children: React.ReactNode }) {
     }
 
     const stored = readStoredDemoMode(storageKey)
-    const defaultValue = stored ?? (!IS_PROD && !DISABLE_DEMO_MODE)
+    // Default to ON in production, OFF in development (unless disabled)
+    // In production, always default to ON unless explicitly stored as false
+    const defaultValue = IS_PROD 
+      ? (stored ?? true)  // Production: default ON, respect stored preference
+      : (stored ?? !DISABLE_DEMO_MODE)  // Development: respect stored or default based on DISABLE_DEMO_MODE
 
     if (!DISABLE_DEMO_MODE) {
       setDemoModeState(defaultValue)

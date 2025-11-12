@@ -49,7 +49,7 @@ export default function IntegrationsClient({
       empty={
         <EmptyState
           title="No integrations connected yet"
-          description="Connect Shopify or Klaviyo to start syncing data into Retention OS."
+          description="Set up integrations to see live data. Connect Shopify or Klaviyo to start syncing data into Retention OS."
           action={{ label: "Add integration", href: "/connect/shopify" }}
         />
       }

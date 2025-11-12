@@ -54,8 +54,8 @@ export default function FinancialsClient({
       status={status}
       empty={
         <EmptyState
-          title="Connect financial data to unlock insights"
-          description="Link your revenue source to monitor net revenue, margin, and retention-adjusted forecasts."
+          title="Connect your data to unlock financial insights"
+          description="Set up integrations to see live financial data. Link your revenue source to monitor net revenue, margin, and retention-adjusted forecasts."
           action={{ label: "Connect Shopify", href: "/connect/shopify" }}
         />
       }

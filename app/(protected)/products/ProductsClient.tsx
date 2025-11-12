@@ -54,8 +54,8 @@ export default function ProductsClient({
       status={status}
       empty={
         <EmptyState
-          title="Connect Shopify to unlock product analytics"
-          description="Once your store syncs, you’ll see SKU performance, replenishment signals, and retention insights here."
+          title="Connect your data to unlock product analytics"
+          description="Set up integrations to see live product data. Once your store syncs, you'll see SKU performance, replenishment signals, and retention insights here."
           action={{ label: "Connect Shopify", href: "/connect/shopify" }}
         />
       }

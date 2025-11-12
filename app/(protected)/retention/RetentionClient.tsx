@@ -54,8 +54,8 @@ export default function RetentionClient({
       status={status}
       empty={
         <EmptyState
-          title="Retention insights arrive once data flows"
-          description="Connect your store to monitor cohorts, payback, and reactivation opportunities."
+          title="Connect your data to see retention insights"
+          description="Set up integrations to see live retention data. Connect your store to monitor cohorts, payback, and reactivation opportunities."
           action={{ label: "Connect Shopify", href: "/connect/shopify" }}
         />
       }

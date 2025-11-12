@@ -54,8 +54,8 @@ export default function ReportsClient({
       status={status}
       empty={
         <EmptyState
-          title="Connect data sources to enable reporting"
-          description="Weekly recaps and executive decks will appear here once your store data flows in."
+          title="Connect your data to enable reporting"
+          description="Set up integrations to see live reports. Weekly recaps and executive decks will appear here once your store data flows in."
           action={{ label: "Connect Shopify", href: "/connect/shopify" }}
         />
       }

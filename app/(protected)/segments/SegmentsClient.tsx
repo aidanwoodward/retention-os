@@ -54,8 +54,8 @@ export default function SegmentsClient({
       status={status}
       empty={
         <EmptyState
-          title="Connect customer data to build segments"
-          description="Once customer sync completes, segments will populate with retention insights."
+          title="Connect your data to build segments"
+          description="Set up integrations to see live segment data. Once customer sync completes, segments will populate with retention insights."
           action={{ label: "Connect Shopify", href: "/connect/shopify" }}
         />
       }

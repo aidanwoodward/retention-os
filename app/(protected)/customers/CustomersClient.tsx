@@ -55,7 +55,7 @@ export default function CustomersClient({
       empty={
         <EmptyState
           title="Connect your data to get started"
-          description="Link Shopify to populate customer KPIs, segments, and reactivation insights."
+          description="Set up integrations to see live customer data. Link Shopify to populate customer KPIs, segments, and reactivation insights."
           action={{ label: "Connect Shopify", href: "/connect/shopify" }}
         />
       }

@@ -18,8 +18,8 @@ export function KpiSection({ items }: KpiSectionProps) {
 
   return (
     <section
-      className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4"
-      style={{ gap: uiTokens.layout.gridGap }}
+      className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+      style={{ gap: uiTokens.spacing.md }}
     >
       {items.map((item) =>
         item.metric ? (

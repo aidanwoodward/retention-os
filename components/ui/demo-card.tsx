@@ -3,7 +3,7 @@ import * as React from "react"
 import { TrendingDown, TrendingUp, Minus } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { uiTokens } from "@/lib/ui-tokens"
 
 type Trend = "up" | "down" | "flat"
@@ -42,67 +42,103 @@ export function DemoCard({
   const trend = change?.trend ?? "flat"
   const TrendIcon = trendIcon[trend]
 
+  // Extract percentage from value if it contains a percentage
+  const percentageMatch = value.match(/([\d.]+)%/)
+  const percentage = percentageMatch ? parseFloat(percentageMatch[1]) : null
+
   return (
     <Card
       className={cn(
-        "min-h-[160px] rounded-2xl border border-border/70 bg-card/95 shadow-sm transition duration-200",
-        "ease-[cubic-bezier(.2,.8,.2,1)] hover:-translate-y-0.5 hover:shadow-md focus-within:-translate-y-0.5 focus-within:shadow-md",
+        "rounded-xl border border-border/70 bg-card/95 shadow-sm transition duration-200",
+        "hover:shadow-md focus-within:shadow-md",
         className
       )}
       style={{ boxShadow: uiTokens.shadow.card }}
       {...rest}
     >
-      <CardHeader className="pb-0">
-        <CardTitle
-          className="text-muted-foreground"
-          style={{
-            fontSize: uiTokens.typography.caption.fontSize,
-            lineHeight: uiTokens.typography.caption.lineHeight,
-            fontWeight: uiTokens.typography.caption.fontWeight,
-          }}
-        >
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3 pt-3">
-        <div
-          className="tracking-tight text-foreground"
-          style={{
-            fontSize: "1.5rem",
-            lineHeight: uiTokens.typography.h2.lineHeight,
-            fontWeight: 600,
-          }}
-        >
-          {value}
-        </div>
-        {change ? (
-          <div
-            className="flex items-center gap-2 text-muted-foreground"
+      <CardContent className="p-4">
+        <div className="flex flex-col gap-2">
+          {/* Title */}
+          <CardTitle
+            className="text-muted-foreground text-xs font-medium"
             style={{
               fontSize: uiTokens.typography.caption.fontSize,
               lineHeight: uiTokens.typography.caption.lineHeight,
             }}
           >
-            <TrendIcon className={cn("size-4", trendColor[trend])} />
-            <span className={trendColor[trend]}>{change.value}</span>
-            {change.label ? (
-              <span className="font-normal">
-                {change.label}
-              </span>
-            ) : null}
+            {title}
+          </CardTitle>
+
+          {/* Value and change inline */}
+          <div className="flex items-baseline justify-between gap-3">
+            <div className="flex flex-col gap-0.5">
+              <div
+                className="tracking-tight text-foreground font-semibold"
+                style={{
+                  fontSize: "1rem",
+                  lineHeight: 1.2,
+                }}
+              >
+                {value}
+              </div>
+              {change ? (
+                <div
+                  className="flex items-center gap-1.5 text-muted-foreground"
+                  style={{
+                    fontSize: "0.75rem",
+                    lineHeight: 1.2,
+                  }}
+                >
+                  <TrendIcon className={cn("size-3", trendColor[trend])} />
+                  <span className={trendColor[trend]}>{change.value}</span>
+                  {change.label ? (
+                    <span className="font-normal text-muted-foreground/80">
+                      {change.label}
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+
+            {/* Visual progress indicator */}
+            {percentage !== null && (
+              <div className="flex items-center gap-0.5 shrink-0">
+                {Array.from({ length: 5 }, (_, i) => {
+                  const filled = Math.round((percentage / 100) * 5)
+                  const isFilled = i < filled
+                  return (
+                    <div
+                      key={i}
+                      className={cn(
+                        "w-1.5 h-4 rounded-sm transition-colors",
+                        isFilled
+                          ? trend === "up"
+                            ? "bg-emerald-500"
+                            : trend === "down"
+                              ? "bg-rose-500"
+                              : "bg-blue-500"
+                          : "bg-muted/30"
+                      )}
+                    />
+                  )
+                })}
+              </div>
+            )}
           </div>
-        ) : null}
-        {hint ? (
-          <p
-            className="text-muted-foreground"
-            style={{
-              fontSize: uiTokens.typography.caption.fontSize,
-              lineHeight: uiTokens.typography.caption.lineHeight,
-            }}
-          >
-            {hint}
-          </p>
-        ) : null}
+
+          {/* Hint */}
+          {hint ? (
+            <p
+              className="text-muted-foreground mt-1"
+              style={{
+                fontSize: "0.7rem",
+                lineHeight: 1.3,
+              }}
+            >
+              {hint}
+            </p>
+          ) : null}
+        </div>
       </CardContent>
     </Card>
   )

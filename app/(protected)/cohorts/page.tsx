@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { FilterDemo } from "@/components/ui/filter-demo";
+import { CohortRetentionTable } from "@/components/charts/CohortRetentionTable";
 
 interface CohortData {
   cohort_month: string;
@@ -54,19 +55,6 @@ export default function CohortsPage() {
     }
   };
 
-  const formatMonth = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short'
-    });
-  };
-
-  const getRetentionColor = (rate: number) => {
-    if (rate >= 80) return 'bg-green-100 text-green-800';
-    if (rate >= 60) return 'bg-yellow-100 text-yellow-800';
-    if (rate >= 40) return 'bg-orange-100 text-orange-800';
-    return 'bg-red-100 text-red-800';
-  };
 
   if (loading) {
     return (
@@ -209,88 +197,16 @@ export default function CohortsPage() {
           </div>
         </div>
 
-        {/* Cohort Matrix */}
+        {/* Cohort Retention Table */}
         <div className="bg-white rounded-xl shadow overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">Retention Matrix</h2>
             <p className="text-sm text-gray-600 mt-1">
-              Customer retention rates by cohort and period
+              Customer retention rates by cohort and week
             </p>
           </div>
           
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Cohort Month
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Cohort Size
-                  </th>
-                  {Array.from({ length: maxPeriods }, (_, i) => (
-                    <th key={i} className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Month {i}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {cohorts.map((cohort, index) => (
-                  <tr key={cohort.cohort_month} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {formatMonth(cohort.cohort_month)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {cohort.cohort_size}
-                    </td>
-                    {Array.from({ length: maxPeriods }, (_, i) => {
-                      const period = cohort.periods.find(p => p.period_number === i);
-                      return (
-                        <td key={i} className="px-6 py-4 whitespace-nowrap text-center">
-                          {period ? (
-                            <div className="flex flex-col items-center">
-                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRetentionColor(period.retention_rate_percent)}`}>
-                                {period.retention_rate_percent.toFixed(0)}%
-                              </span>
-                              <span className="text-xs text-gray-500 mt-1">
-                                {period.active_customers} customers
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Legend */}
-        <div className="bg-blue-50 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">Retention Rate Legend</h3>
-          <div className="flex flex-wrap gap-4 text-sm">
-            <div className="flex items-center">
-              <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 mr-2">80%+</span>
-              <span className="text-blue-700">Excellent</span>
-            </div>
-            <div className="flex items-center">
-              <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 mr-2">60-79%</span>
-              <span className="text-blue-700">Good</span>
-            </div>
-            <div className="flex items-center">
-              <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800 mr-2">40-59%</span>
-              <span className="text-blue-700">Fair</span>
-            </div>
-            <div className="flex items-center">
-              <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 mr-2">&lt;40%</span>
-              <span className="text-blue-700">Poor</span>
-            </div>
-          </div>
+          <CohortRetentionTable cohorts={cohorts} maxWeeks={maxPeriods} />
         </div>
       </div>
     </div>

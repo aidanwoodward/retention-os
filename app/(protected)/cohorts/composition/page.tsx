@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   Filter,
 } from "lucide-react";
+import { CompositionChart } from "@/components/charts/CompositionChart";
 
 interface CompositionData {
   segment: string;
@@ -299,17 +300,12 @@ export default function CustomerCompositionPage() {
         </div>
         
         <div className="p-6">
-          {/* Composition Chart Placeholder */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Customer Type Distribution</h3>
-            <div className="h-80 bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl flex items-center justify-center border-2 border-dashed border-purple-200">
-              <div className="text-center">
-                <PieChart className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-                <p className="text-purple-600 font-medium">Customer Composition Chart</p>
-                <p className="text-purple-500 text-sm">Interactive visualization coming soon</p>
-              </div>
+          {/* Composition Chart */}
+          {compositions.length > 0 && (
+            <div className="mb-8">
+              <CompositionChart data={compositions} />
             </div>
-          </div>
+          )}
 
           {/* Composition Table */}
           <div className="overflow-x-auto">

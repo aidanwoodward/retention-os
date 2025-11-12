@@ -13,6 +13,7 @@ import {
   User,
   Zap as ZapIcon,
 } from "lucide-react";
+import { ChurnRiskChart } from "@/components/charts/ChurnRiskChart";
 
 interface ChurnRiskData {
   customer_id: string;
@@ -309,17 +310,12 @@ export default function ChurnRiskPage() {
         </div>
         
         <div className="p-6">
-          {/* Churn Risk Chart Placeholder */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Churn Risk Distribution</h3>
-            <div className="h-80 bg-gradient-to-br from-red-50 to-rose-50 rounded-xl flex items-center justify-center border-2 border-dashed border-red-200">
-              <div className="text-center">
-                <BarChart3 className="w-16 h-16 text-red-400 mx-auto mb-4" />
-                <p className="text-red-600 font-medium">Churn Risk Chart</p>
-                <p className="text-red-500 text-sm">Interactive visualization coming soon</p>
-              </div>
+          {/* Churn Risk Chart */}
+          {churnRisks.length > 0 && (
+            <div className="mb-8">
+              <ChurnRiskChart data={churnRisks} />
             </div>
-          </div>
+          )}
 
           {/* Churn Risk Table */}
           <div className="overflow-x-auto">

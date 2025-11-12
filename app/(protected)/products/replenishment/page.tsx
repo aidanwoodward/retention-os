@@ -16,6 +16,7 @@ import {
   Box,
   CheckCircle,
 } from "lucide-react";
+import { ReplenishmentChart } from "@/components/charts/ReplenishmentChart";
 
 interface ReplenishmentData {
   product_id: string;
@@ -314,17 +315,12 @@ export default function ReplenishmentMetricsPage() {
         </div>
         
         <div className="p-6">
-          {/* Replenishment Chart Placeholder */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Inventory Risk Analysis</h3>
-            <div className="h-80 bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl flex items-center justify-center border-2 border-dashed border-teal-200">
-              <div className="text-center">
-                <BarChart3 className="w-16 h-16 text-teal-400 mx-auto mb-4" />
-                <p className="text-teal-600 font-medium">Replenishment Metrics Chart</p>
-                <p className="text-teal-500 text-sm">Interactive visualization coming soon</p>
-              </div>
+          {/* Replenishment Chart */}
+          {replenishments.length > 0 && (
+            <div className="mb-8">
+              <ReplenishmentChart data={replenishments} />
             </div>
-          </div>
+          )}
 
           {/* Replenishment Table */}
           <div className="overflow-x-auto">

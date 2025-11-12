@@ -14,6 +14,7 @@ import {
   RefreshCw,
   Download,
 } from "lucide-react";
+import { SegmentPerformanceChart } from "@/components/charts/SegmentPerformanceChart";
 
 interface CustomerSegmentData {
   segment_name: string;
@@ -308,17 +309,12 @@ export default function CustomerSegmentsPage() {
         </div>
         
         <div className="p-6">
-          {/* Segment Performance Chart Placeholder */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Segment Performance Trends</h3>
-            <div className="h-80 bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl flex items-center justify-center border-2 border-dashed border-violet-200">
-              <div className="text-center">
-                <BarChart3 className="w-16 h-16 text-violet-400 mx-auto mb-4" />
-                <p className="text-violet-600 font-medium">Customer Segment Chart</p>
-                <p className="text-violet-500 text-sm">Interactive visualization coming soon</p>
-              </div>
+          {/* Segment Performance Chart */}
+          {segments.length > 0 && (
+            <div className="mb-8">
+              <SegmentPerformanceChart data={segments} />
             </div>
-          </div>
+          )}
 
           {/* Segment Performance Table */}
           <div className="overflow-x-auto">

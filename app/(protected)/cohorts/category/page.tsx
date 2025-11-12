@@ -18,6 +18,7 @@ import {
   Heart,
   Star,
 } from "lucide-react";
+import { CategoryCohortsChart } from "@/components/charts/CategoryCohortsChart";
 
 interface CategoryCohortData {
   category: string;
@@ -310,17 +311,12 @@ export default function CategoryCohortsPage() {
         </div>
         
         <div className="p-6">
-          {/* Category Performance Chart Placeholder */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Category Performance Trends</h3>
-            <div className="h-80 bg-gradient-to-br from-orange-50 to-red-50 rounded-xl flex items-center justify-center border-2 border-dashed border-orange-200">
-              <div className="text-center">
-                <BarChart3 className="w-16 h-16 text-orange-400 mx-auto mb-4" />
-                <p className="text-orange-600 font-medium">Category Cohort Chart</p>
-                <p className="text-orange-500 text-sm">Interactive visualization coming soon</p>
-              </div>
+          {/* Category Performance Chart */}
+          {cohorts.length > 0 && (
+            <div className="mb-8">
+              <CategoryCohortsChart data={cohorts} />
             </div>
-          </div>
+          )}
 
           {/* Category Performance Table */}
           <div className="overflow-x-auto">

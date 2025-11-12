@@ -17,6 +17,7 @@ import {
   DollarSign,
   Package,
 } from "lucide-react";
+import { CrossSellChart } from "@/components/charts/CrossSellChart";
 
 interface CrossSellData {
   product_id: string;
@@ -311,17 +312,12 @@ export default function CrossSellAnalysisPage() {
         </div>
         
         <div className="p-6">
-          {/* Cross-sell Performance Chart Placeholder */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Cross-sell Performance Trends</h3>
-            <div className="h-80 bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl flex items-center justify-center border-2 border-dashed border-pink-200">
-              <div className="text-center">
-                <BarChart3 className="w-16 h-16 text-pink-400 mx-auto mb-4" />
-                <p className="text-pink-600 font-medium">Cross-sell Analysis Chart</p>
-                <p className="text-pink-500 text-sm">Interactive visualization coming soon</p>
-              </div>
+          {/* Cross-sell Performance Chart */}
+          {crossSells.length > 0 && (
+            <div className="mb-8">
+              <CrossSellChart data={crossSells} />
             </div>
-          </div>
+          )}
 
           {/* Cross-sell Performance Table */}
           <div className="overflow-x-auto">

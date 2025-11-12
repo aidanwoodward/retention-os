@@ -10,9 +10,10 @@ import {
   Download,
   Users,
   DollarSign,
-  LineChart,
+  LineChart as LineChartIcon,
   Crown,
 } from "lucide-react";
+import { RetentionCurveChart } from "@/components/charts/RetentionCurveChart";
 
 interface RetentionCurveData {
   period: string;
@@ -280,7 +281,7 @@ export default function RetentionCurvePage() {
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-              <LineChart className="w-6 h-6 mr-2 text-cyan-600" />
+              <LineChartIcon className="w-6 h-6 mr-2 text-cyan-600" />
               Retention Curve Analysis
             </h2>
             <div className="flex items-center space-x-2">
@@ -293,17 +294,12 @@ export default function RetentionCurvePage() {
         </div>
         
         <div className="p-6">
-          {/* Retention Curve Chart Placeholder */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Retention Curve Visualization</h3>
-            <div className="h-80 bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl flex items-center justify-center border-2 border-dashed border-cyan-200">
-              <div className="text-center">
-                <LineChart className="w-16 h-16 text-cyan-400 mx-auto mb-4" />
-                <p className="text-cyan-600 font-medium">Retention Curve Chart</p>
-                <p className="text-cyan-500 text-sm">Interactive visualization coming soon</p>
-              </div>
+          {/* Retention Curve Chart */}
+          {curves.length > 0 && (
+            <div className="mb-8">
+              <RetentionCurveChart data={curves} />
             </div>
-          </div>
+          )}
 
           {/* Retention Curve Table */}
           <div className="overflow-x-auto">

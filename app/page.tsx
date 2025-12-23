@@ -1,4 +1,11 @@
+import { redirect } from "next/navigation";
+
 export default function Home() {
+  // Redirect to dashboard in development, or show login page in production
+  if (process.env.NODE_ENV === 'development') {
+    redirect('/cohorts/revenue');
+  }
+  
   return (
     <main className="min-h-screen grid place-items-center bg-gray-50">
       <div className="text-center">

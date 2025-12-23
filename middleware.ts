@@ -5,6 +5,12 @@ import { createServerClient } from "@supabase/ssr";
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
 
+  // Skip authentication in development mode
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  if (isDevelopment) {
+    return res;
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

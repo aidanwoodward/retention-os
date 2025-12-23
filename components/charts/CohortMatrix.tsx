@@ -9,14 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  TrendingUp,
-  TrendingDown,
-  Minus,
   Download,
-  Share2,
-  Palette,
-  Target,
-  CalendarIcon,
   Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,10 +19,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 interface CohortMatrixProps {
   cohorts: unknown[];
-  viewMode: 'monthly' | 'quarterly' | 'annual';
+  viewMode: 'monthly' | 'quarterly' | 'half-year' | 'annual';
   onCellClick?: (cohort: string, period: number, data: MatrixCell) => void;
 }
 
@@ -39,162 +33,25 @@ interface MatrixCell {
   period: number;
   cohort: string;
   percentile?: number;
-  deltaFromTarget?: number;
-  color?: string;
-}
-
-type ColorMode = 'relative' | 'goal-based';
-
-interface ColorThresholds {
-  red: number;
-  amber: number;
-  green: number;
 }
 
 export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixProps) {
   const [selectedCell, setSelectedCell] = useState<MatrixCell | null>(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [colorMode, setColorMode] = useState<ColorMode>('relative');
 
-  // Advanced adaptive color calculation functions
-  const calculateQuantiles = (values: number[]): ColorThresholds => {
-    if (values.length === 0) {
-      return { red: 0, amber: 0, green: 0 };
-    }
-    
-    const sorted = [...values].sort((a, b) => a - b);
-    const len = sorted.length;
-    
-    // Use more sophisticated quantile calculation
-    const getQuantile = (p: number) => {
-      const index = (len - 1) * p;
-      const lower = Math.floor(index);
-      const upper = Math.ceil(index);
-      const weight = index - lower;
-      
-      if (upper >= len) return sorted[len - 1];
-      return sorted[lower] * (1 - weight) + sorted[upper] * weight;
-    };
-    
-    return {
-      red: getQuantile(0.25),    // 25th percentile
-      amber: getQuantile(0.5),   // 50th percentile (median)
-      green: getQuantile(0.75)   // 75th percentile
-    };
-  };
-
-  // Convert RGB to HCL for perceptually uniform color interpolation
-  const rgbToHcl = (r: number, g: number, b: number) => {
-    // Convert RGB to XYZ
-    const rNorm = r / 255;
-    const gNorm = g / 255;
-    const bNorm = b / 255;
-    
-    // Apply gamma correction
-    const rLin = rNorm > 0.04045 ? Math.pow((rNorm + 0.055) / 1.055, 2.4) : rNorm / 12.92;
-    const gLin = gNorm > 0.04045 ? Math.pow((gNorm + 0.055) / 1.055, 2.4) : gNorm / 12.92;
-    const bLin = bNorm > 0.04045 ? Math.pow((bNorm + 0.055) / 1.055, 2.4) : bNorm / 12.92;
-    
-    // Convert to XYZ
-    const x = rLin * 0.4124564 + gLin * 0.3575761 + bLin * 0.1804375;
-    const y = rLin * 0.2126729 + gLin * 0.7151522 + bLin * 0.0721750;
-    const z = rLin * 0.0193339 + gLin * 0.1191920 + bLin * 0.9503041;
-    
-    // Convert XYZ to LAB
-    const xn = x / 0.95047;
-    const yn = y / 1.00000;
-    const zn = z / 1.08883;
-    
-    const fx = xn > 0.008856 ? Math.pow(xn, 1/3) : (7.787 * xn + 16/116);
-    const fy = yn > 0.008856 ? Math.pow(yn, 1/3) : (7.787 * yn + 16/116);
-    const fz = zn > 0.008856 ? Math.pow(zn, 1/3) : (7.787 * zn + 16/116);
-    
-    const L = 116 * fy - 16;
-    const a = 500 * (fx - fy);
-    const bLab = 200 * (fy - fz);
-    
-    // Convert LAB to HCL
-    const C = Math.sqrt(a * a + bLab * bLab);
-    let H = Math.atan2(bLab, a) * 180 / Math.PI;
-    if (H < 0) H += 360;
-    
-    return { H, C, L };
-  };
-
-  // Convert HCL back to RGB
-  const hclToRgb = (H: number, C: number, L: number) => {
-    // Convert HCL to LAB
-    const aLab = C * Math.cos(H * Math.PI / 180);
-    const bLab = C * Math.sin(H * Math.PI / 180);
-    
-    // Convert LAB to XYZ
-    const fy = (L + 16) / 116;
-    const fx = aLab / 500 + fy;
-    const fz = fy - bLab / 200;
-    
-    const xn = fx > 0.206897 ? Math.pow(fx, 3) : (fx - 16/116) / 7.787;
-    const yn = fy > 0.206897 ? Math.pow(fy, 3) : (fy - 16/116) / 7.787;
-    const zn = fz > 0.206897 ? Math.pow(fz, 3) : (fz - 16/116) / 7.787;
-    
-    const x = xn * 0.95047;
-    const y = yn * 1.00000;
-    const z = zn * 1.08883;
-    
-    // Convert XYZ to RGB
-    const rLin = x * 3.2404542 + y * -1.5371385 + z * -0.4985314;
-    const gLin = x * -0.9692660 + y * 1.8760108 + z * 0.0415560;
-    const bLin = x * 0.0556434 + y * -0.2040259 + z * 1.0572252;
-    
-    // Apply gamma correction
-    const r = rLin > 0.0031308 ? 1.055 * Math.pow(rLin, 1/2.4) - 0.055 : 12.92 * rLin;
-    const g = gLin > 0.0031308 ? 1.055 * Math.pow(gLin, 1/2.4) - 0.055 : 12.92 * gLin;
-    const b = bLin > 0.0031308 ? 1.055 * Math.pow(bLin, 1/2.4) - 0.055 : 12.92 * bLin;
-    
-    return {
-      r: Math.max(0, Math.min(255, Math.round(r * 255))),
-      g: Math.max(0, Math.min(255, Math.round(g * 255))),
-      b: Math.max(0, Math.min(255, Math.round(b * 255)))
-    };
-  };
-
-  const interpolateColor = (value: number, thresholds: ColorThresholds): string => {
-    const { red, amber, green } = thresholds;
-    
-    // Define color stops in HCL space for perceptually uniform interpolation
-    const redHcl = rgbToHcl(220, 38, 38);    // #DC2626
-    const amberHcl = rgbToHcl(245, 158, 11); // #F59E0B
-    const greenHcl = rgbToHcl(22, 163, 74);  // #16A34A
-    
-    let color;
-    
-    if (value <= red) {
-      // Below 25th percentile - pure red
-      color = { r: 220, g: 38, b: 38 };
-    } else if (value <= amber) {
-      // Between 25th and 50th percentile - interpolate red to amber
-      const ratio = (value - red) / (amber - red);
-      const interpolatedHcl = {
-        H: redHcl.H + (amberHcl.H - redHcl.H) * ratio,
-        C: redHcl.C + (amberHcl.C - redHcl.C) * ratio,
-        L: redHcl.L + (amberHcl.L - redHcl.L) * ratio
-      };
-      color = hclToRgb(interpolatedHcl.H, interpolatedHcl.C, interpolatedHcl.L);
-    } else if (value <= green) {
-      // Between 50th and 75th percentile - interpolate amber to green
-      const ratio = (value - amber) / (green - amber);
-      const interpolatedHcl = {
-        H: amberHcl.H + (greenHcl.H - amberHcl.H) * ratio,
-        C: amberHcl.C + (greenHcl.C - amberHcl.C) * ratio,
-        L: amberHcl.L + (greenHcl.L - amberHcl.L) * ratio
-      };
-      color = hclToRgb(interpolatedHcl.H, interpolatedHcl.C, interpolatedHcl.L);
-    } else {
-      // Above 75th percentile - pure green
-      color = { r: 22, g: 163, b: 74 };
-    }
-    
-    return `rgb(${color.r}, ${color.g}, ${color.b})`;
-  };
+  // Premium blue scale for retention visualization - 10-step smooth scale
+  const BLUE_SCALE = [
+    'bg-blue-900',   // 90-100% retention
+    'bg-blue-800',   // 80-90% retention
+    'bg-blue-700',   // 70-80% retention
+    'bg-blue-600',   // 60-70% retention
+    'bg-blue-500',   // 50-60% retention
+    'bg-blue-400',   // 40-50% retention
+    'bg-blue-300',   // 30-40% retention
+    'bg-blue-200',   // 20-30% retention
+    'bg-blue-100',   // 10-20% retention
+    'bg-blue-50',    // 0-10% retention
+  ];
 
   const calculatePercentile = (value: number, values: number[]): number => {
     if (values.length === 0) return 0;
@@ -205,7 +62,6 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
     if (index === -1) return 100;
     if (index === 0) return 0;
     
-    // More accurate percentile calculation
     const lowerIndex = index - 1;
     const upperIndex = index;
     const lowerValue = sorted[lowerIndex];
@@ -215,214 +71,209 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
       return (lowerIndex / sorted.length) * 100;
     }
     
-    // Linear interpolation between adjacent values
     const ratio = (value - lowerValue) / (upperValue - lowerValue);
     const interpolatedIndex = lowerIndex + ratio;
     
     return (interpolatedIndex / sorted.length) * 100;
   };
 
-  const getTargetRetention = (period: number): number => {
-    // Industry-standard retention curve (can be customized per client)
-    // This is a typical SaaS/subscription retention curve
-    const targets = {
-      0: 100,   // Original value
-      1: 80,    // After 1 period
-      2: 65,    // After 2 periods
-      3: 55,    // After 3 periods
-      4: 48,    // After 4 periods
-      5: 42,    // After 5 periods
-      6: 38,    // After 6 periods
-      7: 35,    // After 7 periods
-      8: 32,    // After 8 periods
-      9: 30,    // After 9 periods
-      10: 28,   // After 10 periods
-      11: 26,   // After 11 periods
-      12: 24    // After 12 periods
-    };
-    return targets[period as keyof typeof targets] || 20;
-  };
-
   // Generate matrix data from cohorts
   const generateMatrixData = () => {
     const matrix: Record<string, Record<number, MatrixCell>> = {};
     
-    // Define the years we want to show in annual view
-    const years = ['2020', '2021', '2022', '2023', '2024', '2025'];
-    const maxPeriods = viewMode === 'annual' ? years.length : viewMode === 'quarterly' ? 20 : 24;
+    const maxPeriods = viewMode === 'annual' ? 10 : viewMode === 'quarterly' ? 20 : viewMode === 'half-year' ? 10 : 24;
 
-    // Process each cohort individually
     cohorts.forEach((cohort) => {
       const cohortData = cohort as Record<string, unknown>;
       const cohortMonth = cohortData.cohort_month as string;
       const periods = cohortData.periods as Array<Record<string, unknown>>;
       
-      // Create cohort key based on view mode
       let cohortKey: string;
-      if (viewMode === 'annual') {
-        const cohortYear = new Date(cohortMonth).getFullYear();
-        cohortKey = `${cohortYear} Cohort`;
+      const cohortYear = new Date(cohortMonth).getFullYear();
+      
+      if (cohortYear < 2020) {
+        cohortKey = 'Pre-2020';
+      } else if (viewMode === 'annual') {
+        cohortKey = `${cohortYear}`;
       } else if (viewMode === 'quarterly') {
-        const cohortYear = new Date(cohortMonth).getFullYear();
         const cohortQuarter = Math.floor(new Date(cohortMonth).getMonth() / 3) + 1;
-        cohortKey = `${cohortYear}-Q${cohortQuarter} Cohort`;
+        cohortKey = `${cohortYear}-Q${cohortQuarter}`;
+      } else if (viewMode === 'half-year') {
+        const cohortHalf = new Date(cohortMonth).getMonth() < 6 ? 'H1' : 'H2';
+        cohortKey = `${cohortYear} ${cohortHalf}`;
       } else {
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const month = new Date(cohortMonth).getMonth();
-        const year = new Date(cohortMonth).getFullYear();
-        cohortKey = `${monthNames[month]}-${year}`;
+        cohortKey = `${monthNames[month]}-${cohortYear}`;
       }
       
-      matrix[cohortKey] = {};
+      if (!matrix[cohortKey]) {
+        matrix[cohortKey] = {};
+      }
       
-      // Process each period for this cohort
-      for (let periodIndex = 0; periodIndex < maxPeriods; periodIndex++) {
+      const originalPeriod = periods.find(p => (p.period_number as number) === 0);
+      const originalRevenue = originalPeriod ? (originalPeriod.total_revenue as number) : 0;
+      
+      const cohortDataForOriginal = matrix[cohortKey] as Record<number, MatrixCell> & { _originalRevenue?: number };
+      if (!cohortDataForOriginal._originalRevenue) {
+        cohortDataForOriginal._originalRevenue = originalRevenue;
+      } else {
+        cohortDataForOriginal._originalRevenue += originalRevenue;
+      }
+      
+      const currentDate = new Date();
+      const cohortDate = new Date(cohortMonth);
+      let maxPossiblePeriods = maxPeriods;
+      
+      if (viewMode === 'annual') {
+        const yearsSinceAcquisition = currentDate.getFullYear() - cohortDate.getFullYear();
+        maxPossiblePeriods = Math.min(maxPeriods, Math.max(0, yearsSinceAcquisition));
+      } else if (viewMode === 'quarterly') {
+        const monthsSinceAcquisition = (currentDate.getFullYear() - cohortDate.getFullYear()) * 12 + 
+                                       (currentDate.getMonth() - cohortDate.getMonth());
+        const quartersSinceAcquisition = Math.floor(monthsSinceAcquisition / 3);
+        maxPossiblePeriods = Math.min(maxPeriods, Math.max(0, quartersSinceAcquisition));
+      } else if (viewMode === 'half-year') {
+        const monthsSinceAcquisition = (currentDate.getFullYear() - cohortDate.getFullYear()) * 12 + 
+                                       (currentDate.getMonth() - cohortDate.getMonth());
+        const halfYearsSinceAcquisition = Math.floor(monthsSinceAcquisition / 6);
+        maxPossiblePeriods = Math.min(maxPeriods, Math.max(0, halfYearsSinceAcquisition));
+      } else {
+        const monthsSinceAcquisition = (currentDate.getFullYear() - cohortDate.getFullYear()) * 12 + 
+                                       (currentDate.getMonth() - cohortDate.getMonth());
+        maxPossiblePeriods = Math.min(maxPeriods, Math.max(0, monthsSinceAcquisition));
+      }
+      
+      for (let periodIndex = 0; periodIndex <= maxPossiblePeriods; periodIndex++) {
         let totalRevenue = 0;
-        let originalRevenue = 0;
         
-        if (viewMode === 'annual') {
-          // For annual view, find periods that fall within the target year
-          const targetYear = years[periodIndex];
-          if (!targetYear) continue;
-          
-          // Find all periods for this cohort that fall within the target year
-          const periodsInYear = periods.filter(period => {
-            const orderMonth = period.order_month as string;
-            return orderMonth.startsWith(targetYear);
-          });
-          
-          // Sum up revenue for all periods in this year
-          periodsInYear.forEach(period => {
-            totalRevenue += period.total_revenue as number;
-          });
-          
-          // Get original revenue (period 0) for retention calculation
-          const originalPeriod = periods.find(p => (p.period_number as number) === 0);
-          if (originalPeriod) {
-            originalRevenue = originalPeriod.total_revenue as number;
-          }
-          
-        } else if (viewMode === 'quarterly') {
-          // For quarterly view, find the period that corresponds to periodIndex quarters after the cohort start
-          const targetPeriod = periods.find(period => {
-            const periodNumber = period.period_number as number;
-            return periodNumber === periodIndex;
-          });
-          
-          if (targetPeriod) {
-            totalRevenue = targetPeriod.total_revenue as number;
-          }
-          
-          // Get original revenue (period 0) for retention calculation
-          const originalPeriod = periods.find(p => (p.period_number as number) === 0);
-          if (originalPeriod) {
-            originalRevenue = originalPeriod.total_revenue as number;
-          }
-          
-        } else {
-          // For monthly view, find the period that corresponds to periodIndex months after the cohort start
-          const targetPeriod = periods.find(period => {
-            const periodNumber = period.period_number as number;
-            return periodNumber === periodIndex;
-          });
-          
-          if (targetPeriod) {
-            totalRevenue = targetPeriod.total_revenue as number;
-          }
-          
-          // Get original revenue (period 0) for retention calculation
-          const originalPeriod = periods.find(p => (p.period_number as number) === 0);
-          if (originalPeriod) {
-            originalRevenue = originalPeriod.total_revenue as number;
-          }
+        const targetPeriod = periods.find(period => {
+          const periodNumber = period.period_number as number;
+          return periodNumber === periodIndex;
+        });
+        
+        if (targetPeriod) {
+          totalRevenue = targetPeriod.total_revenue as number;
         }
         
-        // Store the data if we have revenue
-        if (totalRevenue > 0 || periodIndex === 0) { // Always show Original Value (period 0)
-          const retentionRate = originalRevenue > 0 ? (totalRevenue / originalRevenue) * 100 : 0;
+        if (periodIndex === 0 || totalRevenue > 0) {
+          const cohortData = matrix[cohortKey] as Record<number, MatrixCell> & { _originalRevenue?: number };
+          const aggregatedOriginalRevenue = cohortData._originalRevenue || originalRevenue;
+          const retentionRate = periodIndex === 0 ? 100 : (aggregatedOriginalRevenue > 0 ? (totalRevenue / aggregatedOriginalRevenue) * 100 : 0);
           
-          matrix[cohortKey][periodIndex] = {
-            revenue: totalRevenue,
-            retention: retentionRate,
-            period: periodIndex,
-            cohort: cohortKey
-          };
+          const cellData = cohortData[periodIndex];
+          if (cellData) {
+            cellData.revenue += totalRevenue;
+            if (periodIndex === 0) {
+              cellData.retention = 100;
+            } else {
+              const updatedRetention = aggregatedOriginalRevenue > 0 ? (cellData.revenue / aggregatedOriginalRevenue) * 100 : 0;
+              cellData.retention = updatedRetention;
+            }
+          } else {
+            cohortData[periodIndex] = {
+              revenue: totalRevenue,
+              retention: retentionRate,
+              period: periodIndex,
+              cohort: cohortKey
+            };
+          }
         }
       }
     });
 
-    // Calculate colors based on the selected mode
-    if (colorMode === 'relative') {
-      // Calculate quantiles for each period
-      const periodQuantiles: Record<number, ColorThresholds> = {};
-      
-      // Collect all retention values for each period
-      const periodValues: Record<number, number[]> = {};
-      Object.values(matrix).forEach(cohortData => {
-        Object.entries(cohortData).forEach(([periodStr, cell]) => {
-          const period = parseInt(periodStr);
-          if (!periodValues[period]) periodValues[period] = [];
-          periodValues[period].push(cell.retention);
-        });
-      });
-      
-      // Calculate quantiles for each period
-      Object.entries(periodValues).forEach(([periodStr, values]) => {
+    // Calculate percentile for each cell (for color mapping)
+    const periodValues: Record<number, number[]> = {};
+    Object.values(matrix).forEach(cohortData => {
+      Object.entries(cohortData).forEach(([periodStr, cell]) => {
+        if (periodStr === '_originalRevenue') return;
         const period = parseInt(periodStr);
-        periodQuantiles[period] = calculateQuantiles(values);
+        if (isNaN(period)) return;
+        if (!periodValues[period]) periodValues[period] = [];
+        periodValues[period].push(cell.retention);
       });
-      
-      // Apply colors based on quantiles
-      Object.values(matrix).forEach(cohortData => {
-        Object.entries(cohortData).forEach(([periodStr, cell]) => {
-          const period = parseInt(periodStr);
-          const thresholds = periodQuantiles[period];
-          if (thresholds) {
-            const percentile = calculatePercentile(cell.retention, periodValues[period]);
-            cell.percentile = percentile;
-            cell.color = interpolateColor(cell.retention, thresholds);
-          }
-        });
+    });
+    
+    Object.values(matrix).forEach(cohortData => {
+      Object.entries(cohortData).forEach(([periodStr, cell]) => {
+        if (periodStr === '_originalRevenue') return;
+        const period = parseInt(periodStr);
+        if (isNaN(period)) return;
+        if (periodValues[period]) {
+          cell.percentile = calculatePercentile(cell.retention, periodValues[period]);
+        }
       });
-    } else {
-      // Goal-based mode
-      Object.values(matrix).forEach(cohortData => {
-        Object.entries(cohortData).forEach(([periodStr, cell]) => {
-          const period = parseInt(periodStr);
-          const target = getTargetRetention(period);
-          const delta = cell.retention - target;
-          cell.deltaFromTarget = delta;
-          
-          // Color based on delta from target
-          const thresholds: ColorThresholds = {
-            red: target - 10,    // More than 10% below target
-            amber: target,       // At target
-            green: target + 10   // More than 10% above target
-          };
-          cell.color = interpolateColor(cell.retention, thresholds);
-        });
-      });
-    }
+    });
+    
+    Object.keys(matrix).forEach(cohortKey => {
+      const cohortData = matrix[cohortKey] as Record<number, MatrixCell> & { _originalRevenue?: number };
+      delete cohortData._originalRevenue;
+    });
 
     return matrix;
   };
 
   const matrixData = generateMatrixData();
-  const cohortMonths = Object.keys(matrixData).sort();
+  
+  // Sort cohorts chronologically
+  const cohortMonths = Object.keys(matrixData).sort((a, b) => {
+    if (a.includes('Pre-2020') || a.startsWith('≤')) return -1;
+    if (b.includes('Pre-2020') || b.startsWith('≤')) return 1;
+    
+    const extractYear = (key: string): number => {
+      const annualMatch = key.match(/^(\d{4})$/);
+      if (annualMatch) return parseInt(annualMatch[1]);
+      
+      const quarterlyMatch = key.match(/^(\d{4})-Q\d+$/);
+      if (quarterlyMatch) return parseInt(quarterlyMatch[1]);
+      
+      const halfYearMatch = key.match(/^(\d{4})\s+H[12]$/);
+      if (halfYearMatch) return parseInt(halfYearMatch[1]);
+      
+      const monthlyMatch = key.match(/(\d{4})/);
+      if (monthlyMatch) return parseInt(monthlyMatch[1]);
+      
+      return 0;
+    };
+    
+    const yearA = extractYear(a);
+    const yearB = extractYear(b);
+    
+    if (yearA !== yearB) {
+      return yearA - yearB;
+    }
+    
+    if (viewMode === 'quarterly') {
+      const quarterA = parseInt(a.match(/-Q(\d+)/)?.[1] || '0');
+      const quarterB = parseInt(b.match(/-Q(\d+)/)?.[1] || '0');
+      return quarterA - quarterB;
+    } else if (viewMode === 'half-year') {
+      const halfA = a.includes('H1') ? 1 : 2;
+      const halfB = b.includes('H1') ? 1 : 2;
+      return halfA - halfB;
+    } else if (viewMode === 'monthly') {
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthA = monthNames.findIndex(m => a.startsWith(m));
+      const monthB = monthNames.findIndex(m => b.startsWith(m));
+      if (monthA !== -1 && monthB !== -1) return monthA - monthB;
+    }
+    
+    return a.localeCompare(b);
+  });
+
   const maxPeriods = Math.max(...cohortMonths.map(month => 
-    Object.keys(matrixData[month]).length
+    Object.keys(matrixData[month]).filter(k => k !== '_originalRevenue').length
   ));
 
-  // Calculate actual periods with data to avoid empty trailing columns
   const getActualMaxPeriods = () => {
     let maxPeriodsWithData = 0;
     cohortMonths.forEach(cohort => {
       const cohortData = matrixData[cohort];
       if (cohortData) {
-        // Find the highest period index that has data
         const periodsWithData = Object.keys(cohortData)
+          .filter(k => k !== '_originalRevenue')
           .map(Number)
-          .filter(period => cohortData[period] && cohortData[period].revenue > 0)
+          .filter(period => !isNaN(period) && cohortData[period] && cohortData[period].revenue > 0)
           .sort((a, b) => b - a);
         
         if (periodsWithData.length > 0) {
@@ -430,42 +281,92 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
         }
       }
     });
-    return Math.min(maxPeriodsWithData, maxPeriods);
+    return Math.max(1, Math.min(maxPeriodsWithData, maxPeriods));
   };
 
   const actualMaxPeriods = getActualMaxPeriods();
 
-  const getRetentionColor = (cell: MatrixCell) => {
-    if (!cell.color) return 'bg-gray-100 text-gray-800 border-gray-200';
+  /**
+   * Maps retention ratio (0-1) directly to blue scale color class
+   * Higher retention ratio → darker blue
+   * Lower retention ratio → lighter blue
+   * 
+   * Uses absolute mapping:
+   * - retentionRatio >= 0.9 (90%+) → darkest blues (blue-900, blue-800)
+   * - retentionRatio <= 0.2 (20%-) → lightest blues (blue-100, blue-50)
+   * - retentionRatio ~0.4-0.6 (40-60%) → mid blues (blue-500, blue-400)
+   * 
+   * @param retentionRatio - Retention percentage / 100 (e.g., 0.5 for 50%)
+   * @returns Tailwind color class from BLUE_SCALE
+   */
+  const getColorForRetention = (retentionRatio: number): string => {
+    // Clamp retentionRatio to [0, 1]
+    const clampedRatio = Math.max(0, Math.min(1, retentionRatio));
     
-    // Determine text color based on background brightness
-    const rgb = cell.color.match(/\d+/g);
-    if (!rgb) return 'bg-gray-100 text-gray-800 border-gray-200';
+    // Map retention ratio directly to blue scale index (0-9)
+    // Higher retention = darker blue (lower index)
+    // Lower retention = lighter blue (higher index)
     
-    const [r, g, b] = rgb.map(Number);
-    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-    const textColor = brightness > 128 ? 'text-gray-900' : 'text-white';
+    let scaleIndex: number;
     
-    return `border-2 ${textColor}`;
+    if (clampedRatio >= 0.9) {
+      // 90-100% retention → darkest blues (blue-900, blue-800)
+      scaleIndex = clampedRatio >= 0.95 ? 0 : 1;
+    } else if (clampedRatio >= 0.7) {
+      // 70-90% retention → dark blues (blue-700, blue-600)
+      scaleIndex = clampedRatio >= 0.8 ? 2 : 3;
+    } else if (clampedRatio >= 0.5) {
+      // 50-70% retention → medium blues (blue-500, blue-400)
+      scaleIndex = clampedRatio >= 0.6 ? 4 : 5;
+    } else if (clampedRatio >= 0.3) {
+      // 30-50% retention → medium-light blues (blue-300, blue-200)
+      scaleIndex = clampedRatio >= 0.4 ? 6 : 7;
+    } else if (clampedRatio >= 0.1) {
+      // 10-30% retention → light blues (blue-100)
+      scaleIndex = 8;
+    } else {
+      // 0-10% retention → lightest blue (blue-50)
+      scaleIndex = 9;
+    }
+    
+    return BLUE_SCALE[scaleIndex];
   };
 
-  const getRetentionIcon = (cell: MatrixCell) => {
-    if (cell.percentile !== undefined) {
-      if (cell.percentile >= 75) return <TrendingUp className="w-3 h-3" />;
-      if (cell.percentile >= 25) return <Minus className="w-3 h-3" />;
-      return <TrendingDown className="w-3 h-3" />;
-    }
+  // Map retention to blue scale using retention ratio
+  const getBlueColorClass = (retention: number): string => {
+    // retentionRatio = retention percentage / 100
+    const retentionRatio = retention / 100;
+    return getColorForRetention(retentionRatio);
+  };
+
+  // Determine text color based on retention ratio
+  const getTextColor = (retention: number): string => {
+    const retentionRatio = retention / 100;
     
-    if (cell.deltaFromTarget !== undefined) {
-      if (cell.deltaFromTarget > 5) return <TrendingUp className="w-3 h-3" />;
-      if (cell.deltaFromTarget > -5) return <Minus className="w-3 h-3" />;
-      return <TrendingDown className="w-3 h-3" />;
+    // Use white text for darker shades (retentionRatio >= 0.7, i.e., 70%+ retention)
+    if (retentionRatio >= 0.7) {
+      return 'text-white';
     }
-    
-    return <Minus className="w-3 h-3" />;
+    return 'text-foreground';
   };
 
   const formatCurrency = (amount: number) => {
+    // Abbreviate large numbers for better readability in matrix cells
+    if (amount >= 1000000) {
+      const millions = amount / 1000000;
+      // Show 1 decimal place for millions, but only if needed
+      if (millions >= 10) {
+        return `$${millions.toFixed(0)}m`;
+      }
+      return `$${millions.toFixed(1)}m`;
+    } else if (amount >= 1000) {
+      const thousands = amount / 1000;
+      // Show 1 decimal place for thousands, but only if needed
+      if (thousands >= 10) {
+        return `$${thousands.toFixed(0)}k`;
+      }
+      return `$${thousands.toFixed(1)}k`;
+    }
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -474,31 +375,54 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
     }).format(amount);
   };
 
-  const formatCohortLabel = (cohortKey: string) => {
+  const formatCohortLabel = (cohortKey: string): string => {
+    if (cohortKey.includes('Pre-2020') || cohortKey.startsWith('≤')) {
+      return 'Pre-2020';
+    }
+    
+    // For annual view, just return the year
+    if (viewMode === 'annual' && cohortKey.match(/^\d{4}$/)) {
+      return cohortKey;
+    }
+    
+    // For other views, return as-is (already formatted)
+    return cohortKey;
+  };
+
+  const formatPeriodHeader = (period: number): { line1: string; line2: string } => {
+    if (period === 0) {
+      return { line1: 'Original', line2: 'Value' };
+    }
+    
     if (viewMode === 'annual') {
-      // cohortKey is already the year (e.g., "2020")
-      return `${cohortKey} Cohort`;
-    } else if (viewMode === 'quarterly') {
-      // cohortKey is already in format "2020-Q1"
-      return `${cohortKey} Cohort`;
+      return { line1: 'Year', line2: period.toString() };
     } else {
-      // For monthly, cohortKey is "YYYY-MM", convert to "Month-YYYY"
-      const [year, month] = cohortKey.split('-');
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const monthIndex = parseInt(month) - 1;
-      return `${monthNames[monthIndex]}-${year}`;
+      // For monthly, quarterly, and half-year: show as "After X months"
+      let months: number;
+      if (viewMode === 'quarterly') {
+        months = period * 3; // Each quarter = 3 months
+      } else if (viewMode === 'half-year') {
+        months = period * 6; // Each half-year = 6 months
+      } else {
+        months = period; // Monthly view
+      }
+      return { line1: 'After', line2: `${months} month${months === 1 ? '' : 's'}` };
     }
   };
 
-  const formatPeriod = (period: number) => {
-    const currentYear = new Date().getFullYear();
+  const formatPeriodTooltip = (period: number): string => {
+    if (period === 0) {
+      return 'Revenue from new customers in their acquisition period';
+    }
+    
     if (viewMode === 'annual') {
-      return `${currentYear - maxPeriods + period + 1}`;
+      return `Revenue after ${period} year${period === 1 ? '' : 's'}`;
     } else if (viewMode === 'quarterly') {
-      return `After ${period + 1} quarter${period + 1 === 1 ? '' : 's'}`;
+      return `Revenue after ${period} quarter${period === 1 ? '' : 's'}`;
+    } else if (viewMode === 'half-year') {
+      return `Revenue after ${period} half-year${period === 1 ? '' : 's'}`;
     } else {
-      return `After ${period + 1} month${period + 1 === 1 ? '' : 's'}`;
+      return `Revenue after ${period} month${period === 1 ? '' : 's'}`;
     }
   };
 
@@ -511,19 +435,19 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
   const exportMatrix = () => {
     const csvData = [];
     
-    // Header row
-    const header = ['Cohort', 'Original Value', ...Array.from({ length: actualMaxPeriods }, (_, i) => formatPeriod(i))];
+    const header = ['Cohort', 'Original Value', ...Array.from({ length: actualMaxPeriods - 1 }, (_, i) => {
+      const headerObj = formatPeriodHeader(i + 1);
+      return `${headerObj.line1} ${headerObj.line2}`;
+    })];
     csvData.push(header);
     
-    // Data rows
     cohortMonths.forEach(cohort => {
       const row = [cohort];
-      // Add original value
       const originalValue = matrixData[cohort][0] ? formatCurrency(matrixData[cohort][0].revenue) : '';
       row.push(originalValue);
       
-      for (let i = 0; i < actualMaxPeriods; i++) {
-        const cell = matrixData[cohort][i + 1]; // Start from period 1, not period 0
+      for (let i = 0; i < actualMaxPeriods - 1; i++) {
+        const cell = matrixData[cohort][i + 1];
         if (cell) {
           row.push(`${formatCurrency(cell.revenue)} (${cell.retention.toFixed(1)}%)`);
         } else {
@@ -543,182 +467,227 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
     URL.revokeObjectURL(url);
   };
 
+  // Empty cell pattern style - wider stripes for subtlety
+  const emptyCellPattern = {
+    backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(0,0,0,0.01) 6px, rgba(0,0,0,0.01) 12px)',
+  };
+
   return (
-    <div className="space-y-6">
-      <Card className="w-full">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Cohort Revenue Matrix</CardTitle>
-              <CardDescription>
-                {colorMode === 'relative' 
-                  ? "🎨 Adaptive Quantile Scaling: Colors represent performance relative to this account's own cohort distribution. Green = top 25% performers, Amber = middle 50%, Red = bottom 25%. This ensures fair visualization across all industries - low-retention industries (camera gear) and high-retention industries (vitamins) both show meaningful variation."
-                  : "🎯 Goal-Based Scaling: Colors reflect variance from industry-standard retention targets. Green = +10% above target, Amber = ±5% of target, Red = -10% below target. Based on typical SaaS/subscription retention curves."
-                }
+    <div className="space-y-6 w-full max-w-full overflow-hidden">
+      <Card className="w-full max-w-full overflow-hidden">
+        <CardHeader className="pb-3 p-4 md:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="flex-1">
+              <CardTitle className="text-base md:text-lg font-semibold">Cohort Revenue Matrix</CardTitle>
+              <CardDescription className="text-xs md:text-sm text-muted-foreground mt-1">
+                Colors represent performance relative to this account's own cohort distribution. Darker blues = top performers, lighter blues = weaker performance.
               </CardDescription>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant={colorMode === 'relative' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setColorMode('relative')}
-                  className="flex items-center"
-                >
-                  <Palette className="w-4 h-4 mr-1" />
-                  Relative
-                </Button>
-                <Button
-                  variant={colorMode === 'goal-based' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setColorMode('goal-based')}
-                  className="flex items-center"
-                >
-                  <Target className="w-4 h-4 mr-1" />
-                  Goal-Based
-                </Button>
-              </div>
-              <button
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={exportMatrix}
-                className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center"
+                className="flex items-center gap-2"
+                aria-label="Export matrix data to CSV"
               >
-                <Download className="w-4 h-4 mr-2" />
+                <Download className="w-4 h-4" />
                 Export CSV
-              </button>
-              <button className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center">
-                <Share2 className="w-4 h-4 mr-2" />
-                Share
-              </button>
+              </Button>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="p-3">
-          <div className="overflow-x-auto">
-            <div className="min-w-max">
-              {/* Header */}
-              <div className="flex gap-1 mb-3">
-                <div className="w-24 font-semibold text-gray-700 flex-shrink-0 text-sm sticky left-0 bg-white z-10 px-1">Cohort</div>
-                <div className="w-20 font-semibold text-gray-700 flex-shrink-0 text-xs text-center">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="flex items-center justify-center gap-1 cursor-help hover:text-blue-600 transition-colors">
-                          Original Value
-                          <Info className="w-3 h-3" />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <CalendarIcon className="w-4 h-4 text-blue-600" />
-                            <h4 className="text-sm font-semibold">Original Value</h4>
-                          </div>
-                          <p className="text-sm text-gray-600">
-                            {viewMode === 'annual' 
-                              ? "Period 0 represents the same year as the cohort's first purchase. This is the initial revenue generated by new customers in their acquisition year."
-                              : viewMode === 'quarterly'
-                              ? "Period 0 represents the same quarter as the cohort's first purchase. This is the initial revenue generated by new customers in their acquisition quarter."
-                              : "Period 0 represents the same month as the cohort's first purchase. This is the initial revenue generated by new customers in their acquisition month."
-                            }
-                          </p>
-                          <div className="text-xs text-gray-500">
-                            All subsequent periods show retention revenue from returning customers.
-                          </div>
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                {Array.from({ length: actualMaxPeriods }, (_, i) => (
-                  <div key={i} className="w-20 text-center font-semibold text-gray-700 text-xs flex-shrink-0">
+        <CardContent className="p-4 md:p-6 overflow-hidden">
+          <div className="overflow-x-auto w-full" style={{ scrollBehavior: 'smooth' }}>
+            <div className="min-w-max pl-4 md:pl-6 pr-4 md:pr-6">
+              {/* Sticky Header Row */}
+              <div className="sticky top-0 z-[40] bg-white border-b-2 border-gray-200">
+                <div className="flex gap-2">
+                  <div className="w-28 font-medium text-xs md:text-sm text-foreground flex-shrink-0 sticky left-0 bg-white z-[50] px-3 py-4 border-r-2 border-gray-200 shadow-[2px_0_4px_rgba(0,0,0,0.05)]">
+                    Cohort
+                  </div>
+                  <div className="w-28 font-medium text-xs md:text-sm text-foreground flex-shrink-0 text-center px-3 py-4 bg-gray-50">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="flex items-center justify-center gap-1 cursor-help hover:text-blue-600 transition-colors">
-                            {formatPeriod(i)}
-                            <Info className="w-3 h-3" />
+                          <div className="flex flex-col items-center gap-0.5 cursor-help" role="button" tabIndex={0} aria-label="Original Value column">
+                            <div className="flex items-center gap-0.5 text-xs md:text-sm">
+                              <span>Original</span>
+                              <Info className="w-3 h-3 text-gray-600 opacity-80" />
+                            </div>
+                            <div className="text-xs md:text-sm">Value</div>
                           </div>
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <CalendarIcon className="w-4 h-4 text-blue-600" />
-                              <h4 className="text-sm font-semibold">{formatPeriod(i)}</h4>
-                            </div>
-                            <p className="text-sm text-gray-600">
-                              {viewMode === 'annual' 
-                                ? `Revenue generated by returning customers ${i + 1} year${i + 1 > 1 ? 's' : ''} after their first purchase. Shows how well the cohort retains and generates repeat revenue over time.`
-                                : viewMode === 'quarterly'
-                                ? `Revenue generated by returning customers ${i + 1} quarter${i + 1 > 1 ? 's' : ''} after their first purchase. Shows how well the cohort retains and generates repeat revenue over time.`
-                                : `Revenue generated by returning customers ${i + 1} month${i + 1 > 1 ? 's' : ''} after their first purchase. Shows how well the cohort retains and generates repeat revenue over time.`
-                              }
-                            </p>
-                            <div className="text-xs text-gray-500">
-                              Higher values indicate better customer retention and repeat purchase behavior.
-                            </div>
-                          </div>
+                          <p className="text-sm">{formatPeriodTooltip(0)}</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-                ))}
+                  {Array.from({ length: actualMaxPeriods - 1 }, (_, i) => {
+                    const periodIndex = i + 1;
+                    const header = formatPeriodHeader(periodIndex);
+                    return (
+                      <div key={periodIndex} className="w-28 font-medium text-xs md:text-sm text-foreground flex-shrink-0 text-center px-3 py-4 bg-gray-50">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex flex-col items-center gap-0.5 cursor-help" role="button" tabIndex={0} aria-label={`Period ${periodIndex} column`}>
+                                <div className="flex items-center gap-0.5 text-xs md:text-sm">
+                                  <span>{header.line1}</span>
+                                  <Info className="w-3 h-3 text-gray-600 opacity-80" />
+                                </div>
+                                <div className="text-xs md:text-sm">{header.line2}</div>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <p className="text-sm">{formatPeriodTooltip(periodIndex)}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
               
-              {/* Matrix Rows */}
-              <div className="space-y-1">
-                {cohortMonths.map((cohort) => (
-                  <div key={cohort} className="flex gap-1">
-                    <div className="w-24 text-xs font-medium text-gray-900 py-1 flex-shrink-0 sticky left-0 bg-white z-10 px-1">
-                      {formatCohortLabel(cohort)}
+              {/* Matrix Rows with Alternating Striping */}
+              <div className="divide-y divide-gray-200">
+                {cohortMonths.map((cohort, cohortIndex) => (
+                  <div 
+                    key={cohort} 
+                    className={cn(
+                      "flex gap-2 transition-colors",
+                      cohortIndex % 2 === 0 ? "bg-white" : "bg-gray-50"
+                    )}
+                    role="row"
+                    aria-label={`Cohort ${formatCohortLabel(cohort)}`}
+                  >
+                    <div className="w-28 text-xs md:text-sm font-medium text-foreground py-4 flex-shrink-0 sticky left-0 z-[30] px-3 border-r-2 border-gray-200 bg-white shadow-[2px_0_4px_rgba(0,0,0,0.05)]">
+                      <div className="leading-tight">
+                        <div>{formatCohortLabel(cohort)}</div>
+                        <div className="text-[11px] text-muted-foreground font-normal">Cohort</div>
+                      </div>
                     </div>
                     {/* Original Value Column */}
-                    <div className="w-20 text-center py-1 text-gray-900 flex-shrink-0 text-xs font-semibold">
-                      {matrixData[cohort][0] ? formatCurrency(matrixData[cohort][0].revenue) : '-'}
+                    <div className="w-28 flex-shrink-0 relative z-0">
+                      {matrixData[cohort][0] ? (
+                        <div className={cn(
+                          "w-28 rounded-lg md:rounded-xl border-2 border-gray-200 px-3 py-4 text-center transition-all duration-150 hover:shadow-md hover:ring-2 hover:ring-blue-400/20 flex flex-col justify-center items-center min-h-[64px] relative z-0 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+                          getBlueColorClass(matrixData[cohort][0].retention),
+                          getTextColor(matrixData[cohort][0].retention)
+                        )}
+                        tabIndex={0}
+                        role="cell"
+                        aria-label={`Original value: ${formatCurrency(matrixData[cohort][0].revenue)}, Retention: ${matrixData[cohort][0].retention.toFixed(1)}%`}
+                        >
+                          <div className="text-xs font-semibold leading-tight break-words max-w-full px-1">
+                            {formatCurrency(matrixData[cohort][0].revenue)}
+                          </div>
+                          <div className={cn(
+                            "text-[10px] font-normal mt-1",
+                            getTextColor(matrixData[cohort][0].retention) === 'text-white' 
+                              ? 'text-blue-100' 
+                              : 'text-muted-foreground'
+                          )}>
+                            {matrixData[cohort][0].retention.toFixed(1)}%
+                          </div>
+                        </div>
+                      ) : (
+                        <div 
+                          className="w-28 rounded-lg md:rounded-xl border-2 border-gray-200 px-3 py-4 text-center flex flex-col justify-center items-center min-h-[64px] relative z-0"
+                          style={emptyCellPattern}
+                          role="cell"
+                          aria-label="No data"
+                        >
+                          <div className="text-xs font-semibold leading-tight opacity-0">$0</div>
+                          <div className="text-[10px] font-normal mt-1 opacity-0">0%</div>
+                        </div>
+                      )}
                     </div>
-                    {Array.from({ length: actualMaxPeriods }, (_, i) => {
-                      const cell = matrixData[cohort][i + 1]; // Start from period 1, not period 0
+                    {/* Period Columns */}
+                    {Array.from({ length: actualMaxPeriods - 1 }, (_, i) => {
+                      const periodIndex = i + 1;
+                      const cell = matrixData[cohort][periodIndex];
+                      
                       if (!cell) {
                         return (
-                          <div key={i} className="w-20 text-center py-1 text-gray-400 flex-shrink-0 text-xs">
-                            -
+                          <div key={periodIndex} className="w-28 flex-shrink-0 relative z-0">
+                            <div 
+                              className="w-28 rounded-lg md:rounded-xl border-2 border-gray-200 px-3 py-4 text-center flex flex-col justify-center items-center min-h-[64px] relative z-0"
+                              style={emptyCellPattern}
+                              role="cell"
+                              aria-label="No data"
+                            >
+                              <div className="text-xs font-semibold leading-tight opacity-0">$0</div>
+                              <div className="text-[10px] font-normal mt-1 opacity-0">0%</div>
+                            </div>
                           </div>
                         );
                       }
                       
+                      const blueColorClass = getBlueColorClass(cell.retention);
+                      const textColor = getTextColor(cell.retention);
+                      
                       return (
-                        <button
-                          key={i}
-                          onClick={() => handleCellClick(cohort, i + 1, cell)}
-                          className={`w-20 p-1 rounded text-center hover:shadow-md transition-all flex-shrink-0 ${getRetentionColor(cell)}`}
-                          style={{ backgroundColor: cell.color }}
-                          title={
-                            colorMode === 'relative' 
-                              ? `${cell.retention.toFixed(1)}% retention at Period ${i + 1}\n${cell.percentile?.toFixed(0)}th percentile of all cohorts at this period\nAdaptive scaling based on account's data distribution`
-                              : `${cell.retention.toFixed(1)}% retention at Period ${i + 1}\n${cell.deltaFromTarget && cell.deltaFromTarget > 0 ? '+' : ''}${cell.deltaFromTarget?.toFixed(1)}% vs industry target\nGoal-based scaling mode`
-                          }
-                        >
-                          <div className="font-bold text-xs">
-                            {formatCurrency(cell.revenue)}
-                          </div>
-                          <div className="text-xs flex items-center justify-center mt-0.5">
-                            {getRetentionIcon(cell)}
-                            <span className="ml-0.5">
-                              {cell.retention.toFixed(0)}%
-                            </span>
-                          </div>
-                        </button>
+                        <TooltipProvider key={periodIndex}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                onClick={() => handleCellClick(cohort, periodIndex, cell)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    handleCellClick(cohort, periodIndex, cell);
+                                  }
+                                }}
+                                className={cn(
+                                  "w-28 rounded-lg md:rounded-xl border-2 border-gray-200 px-3 py-4 text-center transition-all duration-150 hover:shadow-md hover:ring-1 hover:ring-blue-300/20 flex-shrink-0 flex flex-col justify-center items-center min-h-[64px] relative z-0 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+                                  blueColorClass,
+                                  textColor
+                                )}
+                                role="cell"
+                                aria-label={`Period ${periodIndex}: Revenue ${formatCurrency(cell.revenue)}, Retention ${cell.retention.toFixed(1)}%`}
+                              >
+                                <div className="text-xs font-semibold leading-tight break-words max-w-full px-1">
+                                  {formatCurrency(cell.revenue)}
+                                </div>
+                                <div className={cn(
+                                  "text-[10px] font-normal mt-1",
+                                  textColor === 'text-white' 
+                                    ? 'text-blue-100' 
+                                    : 'text-muted-foreground'
+                                )}>
+                                  {cell.retention.toFixed(1)}%
+                                </div>
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-popover text-popover-foreground border border-border max-w-xs">
+                              <div className="space-y-1">
+                                <div className="font-semibold text-sm">
+                                  {formatCohortLabel(cohort)} – {formatPeriodTooltip(periodIndex)}
+                                </div>
+                                <div className="text-sm space-y-0.5">
+                                  <div>Revenue: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(cell.revenue)}</div>
+                                  <div>Retention: {cell.retention.toFixed(1)}% of original revenue</div>
+                                </div>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       );
                     })}
                   </div>
                 ))}
-                
-                {/* Total Revenue Row */}
-                <div className="flex gap-1 border-t-2 border-gray-300 pt-2 mt-2">
-                  <div className="w-24 text-xs font-bold text-gray-900 py-1 flex-shrink-0 sticky left-0 bg-white z-10 px-1">
-                    Total Revenue
-                  </div>
-                  {/* Original Value Total */}
-                  <div className="w-20 text-center py-1 text-gray-900 flex-shrink-0 text-xs font-bold">
+              </div>
+              
+              {/* Sticky Total Revenue Row */}
+              <div className="sticky bottom-0 mt-6 flex gap-2 border-t border-gray-200 pt-4 bg-gray-50 shadow-[0_-1px_2px_rgba(0,0,0,0.03)] z-[35]">
+                <div className="w-28 text-xs md:text-sm font-semibold text-foreground py-4 flex-shrink-0 sticky left-0 bg-gray-50 z-[50] px-3 border-r-2 border-gray-200 shadow-[2px_0_4px_rgba(0,0,0,0.05)]">
+                  Total Revenue
+                </div>
+                <div className="w-28 py-4 flex-shrink-0 flex items-center justify-center">
+                  <div className="text-xs font-semibold text-gray-900">
                     {formatCurrency(
                       cohortMonths.reduce((sum, cohort) => {
                         const originalValue = matrixData[cohort][0]?.revenue || 0;
@@ -726,58 +695,23 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
                       }, 0)
                     )}
                   </div>
-                  {/* Period Totals */}
-                  {Array.from({ length: actualMaxPeriods }, (_, i) => {
-                    const totalRevenue = cohortMonths.reduce((sum, cohort) => {
-                      const cell = matrixData[cohort][i + 1];
-                      return sum + (cell?.revenue || 0);
-                    }, 0);
-                    
-                    return (
-                      <div key={i} className="w-20 text-center py-1 text-gray-900 flex-shrink-0 text-xs font-bold bg-gray-100 rounded">
+                </div>
+                {Array.from({ length: actualMaxPeriods - 1 }, (_, i) => {
+                  const periodIndex = i + 1;
+                  const totalRevenue = cohortMonths.reduce((sum, cohort) => {
+                    const cell = matrixData[cohort][periodIndex];
+                    return sum + (cell?.revenue || 0);
+                  }, 0);
+                  
+                  return (
+                    <div key={periodIndex} className="w-28 py-4 flex-shrink-0 flex items-center justify-center">
+                      <div className="text-xs font-semibold text-gray-900">
                         {formatCurrency(totalRevenue)}
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Color Legend */}
-      <Card className="bg-gradient-to-r from-red-50 via-amber-50 to-green-50 border-gray-200">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="text-sm font-medium text-gray-700">
-                {colorMode === 'relative' ? 'Adaptive Quantile Scale' : 'Goal-Based Scale'}
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-4 rounded" style={{ backgroundColor: '#DC2626' }}></div>
-                <span className="text-xs text-gray-600">
-                  {colorMode === 'relative' ? 'Bottom 25%' : 'Below Target'}
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-4 rounded" style={{ backgroundColor: '#F59E0B' }}></div>
-                <span className="text-xs text-gray-600">
-                  {colorMode === 'relative' ? 'Middle 50%' : 'At Target'}
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-4 rounded" style={{ backgroundColor: '#16A34A' }}></div>
-                <span className="text-xs text-gray-600">
-                  {colorMode === 'relative' ? 'Top 25%' : 'Above Target'}
-                </span>
-              </div>
-            </div>
-            <div className="text-xs text-gray-500">
-              {colorMode === 'relative' 
-                ? '🎨 Smooth HCL interpolation ensures perceptually uniform color transitions'
-                : '🎯 Based on industry-standard retention curves'
-              }
             </div>
           </div>
         </CardContent>
@@ -785,55 +719,36 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
 
       {/* Detail Panel */}
       {showDetails && selectedCell && (
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className="border-border bg-muted/20">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-lg">
-                  Cohort {selectedCell.cohort} - {formatPeriod(selectedCell.period)}
+                  {formatCohortLabel(selectedCell.cohort)} – {formatPeriodTooltip(selectedCell.period)}
                 </CardTitle>
                 <CardDescription>
                   Detailed breakdown for this cohort period
                 </CardDescription>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowDetails(false)}
-                className="text-gray-500 hover:text-gray-700"
               >
                 ×
-              </button>
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-white p-4 rounded-lg">
-                <div className="text-sm text-gray-600">Revenue</div>
+              <div className="bg-background p-4 rounded-lg border border-border">
+                <div className="text-sm text-muted-foreground">Revenue</div>
                 <div className="text-xl font-bold">{formatCurrency(selectedCell.revenue)}</div>
               </div>
-              <div className="bg-white p-4 rounded-lg">
-                <div className="text-sm text-gray-600">Retention</div>
+              <div className="bg-background p-4 rounded-lg border border-border">
+                <div className="text-sm text-muted-foreground">Retention</div>
                 <div className="text-xl font-bold">{selectedCell.retention.toFixed(1)}%</div>
               </div>
-              <div className="bg-white p-4 rounded-lg">
-                <div className="text-sm text-gray-600">Top Products</div>
-                <div className="text-sm font-medium">Skincare (32%)</div>
-              </div>
-              <div className="bg-white p-4 rounded-lg">
-                <div className="text-sm text-gray-600">Top Geography</div>
-                <div className="text-sm font-medium">UK (68%)</div>
-              </div>
-            </div>
-            
-            <div className="mt-4 flex space-x-2">
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
-                View Products Analysis
-              </button>
-              <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
-                View Retention Curve
-              </button>
-              <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm">
-                Generate Report
-              </button>
             </div>
           </CardContent>
         </Card>

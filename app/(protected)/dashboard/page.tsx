@@ -26,17 +26,24 @@ export default async function DashboardPage() {
 
   // Refresh session if expired - required for Server Components
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) redirect("/login");
+  
+  // Skip auth check in development mode
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  if (!isDevelopment && !session) redirect("/login");
 
-  // Check for Shopify connection
-  const { data: shopifyConnections } = await supabase
-    .from("shopify_connections")
-    .select("*")
-    .eq("user_id", session.user.id)
-    .eq("is_active", true)
-    .limit(1);
-
-  const shopifyConnected = Boolean(shopifyConnections && shopifyConnections.length > 0);
+  // Check for Shopify connection (skip in dev mode)
+  let shopifyConnected = false;
+  let shopifyConnections: Array<{ shop_domain: string }> | null = null;
+  if (!isDevelopment && session) {
+    const { data: connections } = await supabase
+      .from("shopify_connections")
+      .select("*")
+      .eq("user_id", session.user.id)
+      .eq("is_active", true)
+      .limit(1);
+    shopifyConnections = connections;
+    shopifyConnected = Boolean(connections && connections.length > 0);
+  }
   // const klaviyoConnected = false; // TODO: Implement Klaviyo connection check
 
   // Show the retention dashboard (with dummy data if no connection)
@@ -48,7 +55,7 @@ export default async function DashboardPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Retention Dashboard</h1>
             <p className="text-gray-600">
-              {shopifyConnected && shopifyConnections 
+              {shopifyConnected && shopifyConnections && shopifyConnections.length > 0
                 ? `Connected to ${shopifyConnections[0].shop_domain}`
                 : "Demo Mode - Showing sample data"
               }

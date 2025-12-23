@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import EnhancedFilters, { FilterConfig, FilterState } from "@/components/ui/enhanced-filters";
+import { FilterBar } from "@/components/filters/FilterBar";
+import { customersListFilters, customersListSearch } from "@/lib/filters/config";
+import { FilterValue } from "@/lib/filters/types";
+import { useSearchParams } from "next/navigation";
 import {
   UserCheck,
   BarChart3,
@@ -9,10 +12,8 @@ import {
   Activity,
   AlertTriangle,
   Users,
-  RefreshCw,
   Download,
   User,
-  Filter,
 } from "lucide-react";
 
 interface CustomerData {
@@ -50,80 +51,16 @@ export default function CustomerListPage() {
   const [customers, setCustomers] = useState<CustomerData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filterState, setFilterState] = useState<FilterState>({});
-  // const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
-
-  // Define filter configuration
-  const filterConfig: FilterConfig[] = [
-    {
-      id: 'dateRange',
-      label: 'Date Range',
-      type: 'date',
-      placeholder: 'Select date range',
-      autoRefresh: true,
-    },
-    {
-      id: 'timePeriod',
-      label: 'Time Period',
-      type: 'select',
-      placeholder: 'Select time period',
-      autoRefresh: true,
-      options: [
-        { id: '7d', label: 'Last 7 days', value: '7d' },
-        { id: '30d', label: 'Last 30 days', value: '30d' },
-        { id: '90d', label: 'Last 90 days', value: '90d' },
-        { id: '1y', label: 'Last year', value: '1y' },
-        { id: 'all', label: 'All time', value: 'all' },
-      ],
-    },
-    {
-      id: 'customerType',
-      label: 'Customer Type',
-      type: 'multiselect',
-      placeholder: 'Select customer types',
-      autoRefresh: false,
-      options: [
-        { id: 'new', label: 'New Customers', value: 'new' },
-        { id: 'returning', label: 'Returning Customers', value: 'returning' },
-        { id: 'vip', label: 'VIP Customers', value: 'vip' },
-        { id: 'at-risk', label: 'At-Risk Customers', value: 'at-risk' },
-      ],
-    },
-    {
-      id: 'valueSegment',
-      label: 'Value Segment',
-      type: 'select',
-      placeholder: 'Select value segment',
-      autoRefresh: false,
-      options: [
-        { id: 'all', label: 'All Value Segments', value: 'all' },
-        { id: 'vip', label: 'VIP', value: 'vip' },
-        { id: 'high', label: 'High Value', value: 'high' },
-        { id: 'medium', label: 'Medium Value', value: 'medium' },
-        { id: 'low', label: 'Low Value', value: 'low' },
-      ],
-    },
-  ];
+  const [filterState, setFilterState] = useState<Record<string, FilterValue>>({});
+  const searchParams = useSearchParams();
 
   const fetchCustomers = useCallback(async () => {
     try {
       setLoading(true);
-      // Build query string from filter state
-      const queryParams = new URLSearchParams();
-      Object.entries(filterState).forEach(([key, value]) => {
-        if (value !== undefined && value !== '') {
-          if (Array.isArray(value)) {
-            queryParams.append(key, value.join(','));
-          } else if (typeof value === 'object' && 'from' in value && 'to' in value) {
-            queryParams.append(`${key}_from`, value.from);
-            queryParams.append(`${key}_to`, value.to);
-          } else {
-            queryParams.append(key, String(value));
-          }
-        }
-      });
+      // Use URL params directly since FilterBar syncs to URL
+      const queryString = searchParams.toString();
       
-      const response = await fetch(`/api/customers/list?${queryParams.toString()}`);
+      const response = await fetch(`/api/customers/list?${queryString}`);
       const data: CustomerListResponse = await response.json();
 
       if (!response.ok) {
@@ -136,7 +73,7 @@ export default function CustomerListPage() {
     } finally {
       setLoading(false);
     }
-  }, [filterState]);
+  }, [searchParams]);
 
   useEffect(() => {
     fetchCustomers();
@@ -222,26 +159,18 @@ export default function CustomerListPage() {
         </div>
       </div>
 
-      {/* Enhanced Filters */}
+      {/* Filter Bar */}
       <div className="mb-8">
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center">
-              <Filter className="w-6 h-6 text-emerald-600 mr-2" />
-              <h3 className="text-xl font-semibold text-gray-900">Customer List Filters</h3>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RefreshCw className="w-4 h-4 text-gray-400" />
-              <span className="text-sm text-gray-500">Real-time updates</span>
-            </div>
-          </div>
-          <EnhancedFilters
-            filters={filterConfig}
-            onFiltersChange={setFilterState}
-            onApplyFilters={fetchCustomers}
-            loading={loading}
-          />
-        </div>
+        <FilterBar
+          filters={customersListFilters}
+          search={customersListSearch}
+          onFiltersChange={(filters) => {
+            setFilterState(filters);
+          }}
+          onSearchChange={() => {
+            // URL sync handled by FilterBar
+          }}
+        />
       </div>
 
       {/* Premium Summary Cards */}

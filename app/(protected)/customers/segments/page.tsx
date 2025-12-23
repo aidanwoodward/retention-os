@@ -1,17 +1,18 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import EnhancedFilters, { FilterConfig, FilterState } from "@/components/ui/enhanced-filters";
+import { FilterBar } from "@/components/filters/FilterBar";
+import { customerSegmentsFilters, customerSegmentsSearch } from "@/lib/filters/config";
+import { FilterValue } from "@/lib/filters/types";
+import { useSearchParams } from "next/navigation";
 import {
   Activity,
   TrendingUp,
   BarChart3,
   Target,
   Crown,
-  Filter,
   AlertTriangle,
   DollarSign,
-  RefreshCw,
   Download,
 } from "lucide-react";
 import { SegmentPerformanceChart } from "@/components/charts/SegmentPerformanceChart";
@@ -47,79 +48,16 @@ export default function CustomerSegmentsPage() {
   const [segments, setSegments] = useState<CustomerSegmentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filterState, setFilterState] = useState<FilterState>({});
-  // const [selectedSegment, setSelectedSegment] = useState<string | null>(null);
-
-  // Define filter configuration
-  const filterConfig: FilterConfig[] = [
-    {
-      id: 'dateRange',
-      label: 'Date Range',
-      type: 'date',
-      placeholder: 'Select date range',
-      autoRefresh: true,
-    },
-    {
-      id: 'timePeriod',
-      label: 'Time Period',
-      type: 'select',
-      placeholder: 'Select time period',
-      autoRefresh: true,
-      options: [
-        { id: '7d', label: 'Last 7 days', value: '7d' },
-        { id: '30d', label: 'Last 30 days', value: '30d' },
-        { id: '90d', label: 'Last 90 days', value: '90d' },
-        { id: '1y', label: 'Last year', value: '1y' },
-        { id: 'all', label: 'All time', value: 'all' },
-      ],
-    },
-    {
-      id: 'segmentType',
-      label: 'Segment Type',
-      type: 'multiselect',
-      placeholder: 'Select segment types',
-      autoRefresh: false,
-      options: [
-        { id: 'value', label: 'Value Segments', value: 'value' },
-        { id: 'activity', label: 'Activity Segments', value: 'activity' },
-        { id: 'frequency', label: 'Frequency Segments', value: 'frequency' },
-        { id: 'aov', label: 'AOV Segments', value: 'aov' },
-      ],
-    },
-    {
-      id: 'performance',
-      label: 'Performance Level',
-      type: 'select',
-      placeholder: 'Select performance level',
-      autoRefresh: false,
-      options: [
-        { id: 'all', label: 'All Performance Levels', value: 'all' },
-        { id: 'high', label: 'High Performance (>80% retention)', value: 'high' },
-        { id: 'medium', label: 'Medium Performance (50-80% retention)', value: 'medium' },
-        { id: 'low', label: 'Low Performance (<50% retention)', value: 'low' },
-      ],
-    },
-  ];
+  const [filterState, setFilterState] = useState<Record<string, FilterValue>>({});
+  const searchParams = useSearchParams();
 
   const fetchSegments = useCallback(async () => {
     try {
       setLoading(true);
-      // Build query string from filter state
-      const queryParams = new URLSearchParams();
-      Object.entries(filterState).forEach(([key, value]) => {
-        if (value !== undefined && value !== '') {
-          if (Array.isArray(value)) {
-            queryParams.append(key, value.join(','));
-          } else if (typeof value === 'object' && 'from' in value && 'to' in value) {
-            queryParams.append(`${key}_from`, value.from);
-            queryParams.append(`${key}_to`, value.to);
-          } else {
-            queryParams.append(key, String(value));
-          }
-        }
-      });
+      // Use URL params directly since FilterBar syncs to URL
+      const queryString = searchParams.toString();
       
-      const response = await fetch(`/api/customers/segments?${queryParams.toString()}`);
+      const response = await fetch(`/api/customers/segments?${queryString}`);
       const data: CustomerSegmentsResponse = await response.json();
 
       if (!response.ok) {
@@ -132,7 +70,7 @@ export default function CustomerSegmentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [filterState]);
+  }, [searchParams]);
 
   useEffect(() => {
     fetchSegments();
@@ -220,26 +158,18 @@ export default function CustomerSegmentsPage() {
         </div>
       </div>
 
-      {/* Enhanced Filters */}
+      {/* Filter Bar */}
       <div className="mb-8">
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center">
-              <Filter className="w-6 h-6 text-violet-600 mr-2" />
-              <h3 className="text-xl font-semibold text-gray-900">Customer Segment Filters</h3>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RefreshCw className="w-4 h-4 text-gray-400" />
-              <span className="text-sm text-gray-500">Real-time updates</span>
-            </div>
-          </div>
-          <EnhancedFilters
-            filters={filterConfig}
-            onFiltersChange={setFilterState}
-            onApplyFilters={fetchSegments}
-            loading={loading}
-          />
-        </div>
+        <FilterBar
+          filters={customerSegmentsFilters}
+          search={customerSegmentsSearch}
+          onFiltersChange={(filters) => {
+            setFilterState(filters);
+          }}
+          onSearchChange={() => {
+            // URL sync handled by FilterBar
+          }}
+        />
       </div>
 
       {/* Premium Summary Cards */}

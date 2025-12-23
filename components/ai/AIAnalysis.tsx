@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Brain,
   RefreshCw,
   Copy,
   Download,
   Clock,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 interface AIAnalysisProps {
@@ -28,17 +30,42 @@ export function AIAnalysis({ filters, cohorts }: AIAnalysisProps) {
   const [insights, setInsights] = useState<AIInsight[]>([]);
   const [loading, setLoading] = useState(false);
   const [lastGenerated, setLastGenerated] = useState<Date | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const generateInsights = async () => {
+    if (loading) return;
+    
     setLoading(true);
+    setIsExpanded(true);
+    
     try {
-      // Simulate AI analysis with realistic insights based on cohort data
+      // Generate insights based on current filters
+      const geographyFilter = Array.isArray(filters.geography) ? filters.geography : [];
+      const hasGeographyFilter = geographyFilter.length > 0;
+      const geographyLabels = hasGeographyFilter 
+        ? geographyFilter.map((g: string) => {
+            const labels: Record<string, string> = {
+              'uk': 'UK',
+              'germany': 'Germany',
+              'france': 'France',
+              'spain': 'Spain',
+              'emea': 'EMEA',
+              'amer': 'AMER',
+              'apac': 'APAC',
+            };
+            return labels[g] || g;
+          }).join(', ')
+        : 'all regions';
+
+      // Simulate AI analysis with realistic insights based on cohort data and filters
       const mockInsights: AIInsight[] = [
         {
           id: '1',
           type: 'improvement',
           title: 'Revenue retention improved +12% QoQ',
-          description: 'Led by skincare and apparel categories showing strongest cohort performance',
+          description: hasGeographyFilter 
+            ? `Led by ${geographyLabels} showing strongest cohort performance`
+            : 'Led by skincare and apparel categories showing strongest cohort performance',
           metric: '+12%',
           trend: 'up'
         },
@@ -53,15 +80,21 @@ export function AIAnalysis({ filters, cohorts }: AIAnalysisProps) {
         {
           id: '3',
           type: 'improvement',
-          title: 'UK and Germany cohorts compounding fastest',
-          description: 'European expansion showing strong retention patterns with 15% YoY growth',
+          title: hasGeographyFilter 
+            ? `${geographyLabels} cohorts compounding fastest`
+            : 'UK and Germany cohorts compounding fastest',
+          description: hasGeographyFilter
+            ? `${geographyLabels} showing strong retention patterns with 15% YoY growth`
+            : 'European expansion showing strong retention patterns with 15% YoY growth',
           metric: '15%',
           trend: 'up'
         },
         {
           id: '4',
           type: 'decline',
-          title: 'Spain shows declining repeat orders',
+          title: hasGeographyFilter && geographyFilter.includes('spain')
+            ? 'Spain shows declining repeat orders'
+            : 'Some regions show declining repeat orders',
           description: 'Consider reviewing discount intensity and expanding replenishment campaigns',
           metric: '-8%',
           trend: 'down'
@@ -69,7 +102,7 @@ export function AIAnalysis({ filters, cohorts }: AIAnalysisProps) {
         {
           id: '5',
           type: 'anomaly',
-          title: 'Cohort Mar-24 outperformed all previous cohorts',
+          title: 'Recent cohorts outperformed historical averages',
           description: 'Day-90 revenue per customer +22% vs historical average',
           metric: '+22%',
           trend: 'up'
@@ -87,10 +120,6 @@ export function AIAnalysis({ filters, cohorts }: AIAnalysisProps) {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    generateInsights();
-  }, [filters, cohorts]);
 
   // const getInsightIcon = (type: string, trend?: string) => {
   //   switch (type) {
@@ -145,97 +174,127 @@ export function AIAnalysis({ filters, cohorts }: AIAnalysisProps) {
     URL.revokeObjectURL(url);
   };
 
+  const handleToggle = () => {
+    if (!isExpanded && insights.length === 0) {
+      // First click - generate insights
+      generateInsights();
+    } else {
+      // Toggle expanded state
+      setIsExpanded(!isExpanded);
+    }
+  };
+
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 mb-8">
-      <div className="p-6 border-b border-gray-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <Brain className="w-6 h-6 text-purple-600 mr-3" />
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">AI Analysis</h2>
-              <p className="text-sm text-gray-600">Automated insights from the latest cohort data</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            
-            {/* Actions */}
-            <button
-              onClick={copyToClipboard}
-              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Copy to clipboard"
-            >
-              <Copy className="w-4 h-4" />
-            </button>
-            <button
-              onClick={exportAsText}
-              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Export as text"
-            >
-              <Download className="w-4 h-4" />
-            </button>
-            <button
-              onClick={generateInsights}
-              disabled={loading}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Regenerate
-            </button>
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-5">
+      {/* Button Header - Always Visible */}
+      <button
+        onClick={handleToggle}
+        disabled={loading}
+        className="w-full p-3 flex items-center justify-between hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <div className="flex items-center gap-3">
+          <Brain className="w-5 h-5 text-blue-600 flex-shrink-0" />
+          <div className="text-left">
+            <p className="text-sm font-medium text-gray-900">AI Analysis</p>
+            {lastGenerated && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                <Clock className="w-3 h-3" />
+                Last generated {lastGenerated.toLocaleTimeString()}
+              </p>
+            )}
+            {!lastGenerated && !loading && (
+              <p className="text-xs text-muted-foreground mt-0.5">Click to generate insights</p>
+            )}
           </div>
         </div>
-        
-        {/* Timestamp */}
-        {lastGenerated && (
-          <div className="flex items-center mt-2 text-sm text-gray-500">
-            <Clock className="w-4 h-4 mr-1" />
-            Last generated {lastGenerated.toLocaleTimeString()}
-          </div>
-        )}
-      </div>
+        <div className="flex items-center gap-2">
+          {loading && (
+            <RefreshCw className="w-4 h-4 text-blue-600 animate-spin" />
+          )}
+          {isExpanded ? (
+            <ChevronUp className="w-4 h-4 text-gray-400" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-gray-400" />
+          )}
+        </div>
+      </button>
 
-      <div className="p-6">
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="flex items-center">
-              <RefreshCw className="w-6 h-6 text-purple-600 animate-spin mr-3" />
-              <span className="text-gray-600">Analysing latest cohort data...</span>
+      {/* Expanded Content */}
+      {isExpanded && (
+        <div className="border-t border-gray-200">
+          {loading ? (
+            <div className="p-6 flex items-center justify-center">
+              <div className="flex items-center gap-3">
+                <RefreshCw className="w-5 h-5 text-blue-600 animate-spin" />
+                <span className="text-sm text-gray-600">Analysing latest cohort data...</span>
+              </div>
             </div>
-          </div>
-        ) : insights.length > 0 ? (
-          <div className="space-y-4">
-            {/* High-level Summary */}
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200">
-              <p className="text-gray-800 leading-relaxed">
-                Revenue retention has shown strong improvement with a 12% quarter-over-quarter increase, 
-                driven primarily by high-value customer segments and successful European market expansion. 
-                While UK and Germany cohorts are performing exceptionally well, Spain requires attention 
-                due to declining repeat orders, suggesting a need for strategic discount and campaign adjustments.
-              </p>
+          ) : insights.length > 0 ? (
+            <div className="p-6 space-y-4">
+              {/* High-level Summary */}
+              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                <p className="text-sm text-gray-800 leading-relaxed">
+                  Revenue retention has shown strong improvement with a 12% quarter-over-quarter increase, 
+                  driven primarily by high-value customer segments and successful European market expansion. 
+                  While UK and Germany cohorts are performing exceptionally well, Spain requires attention 
+                  due to declining repeat orders, suggesting a need for strategic discount and campaign adjustments.
+                </p>
+              </div>
+              
+              {/* Detailed Insights */}
+              <div>
+                <h4 className="text-xs font-semibold text-gray-700 mb-3">Key Insights:</h4>
+                <ul className="space-y-2">
+                  {insights.map((insight) => (
+                    <li key={insight.id} className="flex items-start">
+                      <span className="flex-shrink-0 w-1.5 h-1.5 bg-gray-400 rounded-full mt-2 mr-3"></span>
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-gray-900">{insight.title}:</span>
+                        <span className="text-sm text-gray-700 ml-1">{insight.description}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-200">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    copyToClipboard();
+                  }}
+                  className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Copy to clipboard"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    exportAsText();
+                  }}
+                  className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Export as text"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    generateInsights();
+                  }}
+                  disabled={loading}
+                  className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                  Regenerate
+                </button>
+              </div>
             </div>
-            
-            {/* Detailed Insights */}
-            <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">Key Insights:</h4>
-              <ul className="space-y-2">
-                {insights.map((insight) => (
-                  <li key={insight.id} className="flex items-start">
-                    <span className="flex-shrink-0 w-2 h-2 bg-gray-400 rounded-full mt-2 mr-3"></span>
-                    <div className="flex-1">
-                      <span className="font-medium text-gray-900">{insight.title}:</span>
-                      <span className="text-gray-700 ml-1">{insight.description}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <Brain className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">Generating insights based on your latest data...</p>
-          </div>
-        )}
-      </div>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }

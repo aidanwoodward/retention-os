@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import EnhancedFilters, { FilterConfig, FilterState } from "@/components/ui/enhanced-filters";
+import { FilterBar } from "@/components/filters/FilterBar";
+import { revenueCohortsFilters, revenueCohortsSearch } from "@/lib/filters/config";
 import { RevenueCohortsChart } from "@/components/charts/RevenueCohortsChart";
 import { CohortMatrix } from "@/components/charts/CohortMatrix";
 import { AIAnalysis } from "@/components/ai/AIAnalysis";
 import { LoadingButton } from "@/components/ui/loading-buttons";
+import { useSearchParams } from "next/navigation";
 import {
   DollarSign,
   TrendingUp,
@@ -15,6 +17,7 @@ import {
   Crown,
   AlertTriangle,
 } from "lucide-react";
+import { FilterValue } from "@/lib/filters/types";
 
 interface CohortData {
   cohort_month: string;
@@ -43,107 +46,19 @@ export default function RevenueCohortsPage() {
   const [cohorts, setCohorts] = useState<CohortData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filterState, setFilterState] = useState<FilterState>({});
+  const [filterState, setFilterState] = useState<Record<string, FilterValue>>({});
   const [viewMode, setViewMode] = useState<'monthly' | 'quarterly' | 'annual'>('monthly');
+  const searchParams = useSearchParams();
   // const [cagr, setCagr] = useState<number>(0);
   // const [selectedCohort, setSelectedCohort] = useState<string | null>(null);
-
-  // Define enhanced filter configuration
-  const filterConfig: FilterConfig[] = [
-    {
-      id: 'dateRange',
-      label: 'Date Range',
-      type: 'date',
-      placeholder: 'Select date range',
-      autoRefresh: true,
-    },
-    {
-      id: 'cohortType',
-      label: 'Cohort Type',
-      type: 'select',
-      placeholder: 'Select granularity',
-      autoRefresh: true,
-      options: [
-        { id: 'monthly', label: 'Monthly', value: 'monthly' },
-        { id: 'quarterly', label: 'Quarterly', value: 'quarterly' },
-        { id: 'annual', label: 'Annual', value: 'annual' },
-      ],
-    },
-    {
-      id: 'geography',
-      label: 'Geography',
-      type: 'multiselect',
-      placeholder: 'Select countries',
-      autoRefresh: false,
-      options: [
-        { id: 'uk', label: 'United Kingdom', value: 'uk' },
-        { id: 'de', label: 'Germany', value: 'de' },
-        { id: 'fr', label: 'France', value: 'fr' },
-        { id: 'es', label: 'Spain', value: 'es' },
-        { id: 'us', label: 'United States', value: 'us' },
-      ],
-    },
-    {
-      id: 'customerSegment',
-      label: 'Customer Segment',
-      type: 'select',
-      placeholder: 'Select segment',
-      autoRefresh: false,
-      options: [
-        { id: 'all', label: 'All Customers', value: 'all' },
-        { id: 'high-value', label: 'High Value (Top 30%)', value: 'high-value' },
-        { id: 'repeat', label: 'Repeat Buyers Only', value: 'repeat' },
-        { id: 'one-time', label: 'One Time Buyers', value: 'one-time' },
-        { id: 'at-risk', label: 'At Risk', value: 'at-risk' },
-        { id: 'lapsed', label: 'Lapsed', value: 'lapsed' },
-      ],
-    },
-    {
-      id: 'productCategory',
-      label: 'Product Category',
-      type: 'multiselect',
-      placeholder: 'Select categories',
-      autoRefresh: false,
-      options: [
-        { id: 'skincare', label: 'Skincare', value: 'skincare' },
-        { id: 'apparel', label: 'Apparel', value: 'apparel' },
-        { id: 'accessories', label: 'Accessories', value: 'accessories' },
-        { id: 'home', label: 'Home & Living', value: 'home' },
-      ],
-    },
-    {
-      id: 'customerType',
-      label: 'Customer Type',
-      type: 'select',
-      placeholder: 'Select type',
-      autoRefresh: false,
-      options: [
-        { id: 'all', label: 'All', value: 'all' },
-        { id: 'new', label: 'New Customers', value: 'new' },
-        { id: 'returning', label: 'Returning Customers', value: 'returning' },
-      ],
-    },
-  ];
 
   const fetchCohorts = useCallback(async () => {
     try {
       setLoading(true);
-      // Build query string from filter state
-      const queryParams = new URLSearchParams();
-      Object.entries(filterState).forEach(([key, value]) => {
-        if (value !== undefined && value !== '') {
-          if (Array.isArray(value)) {
-            queryParams.append(key, value.join(','));
-          } else if (typeof value === 'object' && 'from' in value && 'to' in value) {
-            queryParams.append(`${key}_from`, value.from);
-            queryParams.append(`${key}_to`, value.to);
-          } else {
-            queryParams.append(key, String(value));
-          }
-        }
-      });
+      // Use URL params directly since FilterBar syncs to URL
+      const queryString = searchParams.toString();
       
-      const response = await fetch(`/api/metrics/cohorts?${queryParams.toString()}`);
+      const response = await fetch(`/api/metrics/cohorts?${queryString}`);
       const data: RevenueCohortsResponse = await response.json();
 
       if (!response.ok) {
@@ -156,7 +71,7 @@ export default function RevenueCohortsPage() {
     } finally {
       setLoading(false);
     }
-  }, [filterState]);
+  }, [searchParams]);
 
   useEffect(() => {
     fetchCohorts();
@@ -170,12 +85,13 @@ export default function RevenueCohortsPage() {
   //   }
   // }, [cohorts]);
 
-  // Handle view mode changes
+  // Handle view mode changes - check URL params
   useEffect(() => {
-    if (filterState.cohortType) {
-      setViewMode(filterState.cohortType as 'monthly' | 'quarterly' | 'annual');
+    const cohortType = searchParams.get('cohortType');
+    if (cohortType && ['monthly', 'quarterly', 'annual'].includes(cohortType)) {
+      setViewMode(cohortType as 'monthly' | 'quarterly' | 'annual');
     }
-  }, [filterState.cohortType]);
+  }, [searchParams]);
 
   const formatCurrency = (amount: number) => {
     if (amount >= 1000000) {
@@ -241,8 +157,10 @@ export default function RevenueCohortsPage() {
 
   return (
     <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8">
+      {/* Universal left anchor - consistent 32px (lg:px-8) */}
+      
       {/* Premium Header with Gradient */}
-      <div className="mb-8">
+      <div className="mb-6">
         <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 rounded-2xl p-8 text-white">
           <div className="flex items-center justify-between">
             <div>
@@ -260,74 +178,83 @@ export default function RevenueCohortsPage() {
         </div>
       </div>
 
-            {/* Enhanced Filters */}
-            <div className="mb-8">
-              <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-                <EnhancedFilters
-                  filters={filterConfig}
-                  onFiltersChange={setFilterState}
-                  onApplyFilters={fetchCohorts}
-                  loading={loading}
-                />
-              </div>
-            </div>
+      {/* Filter Bar */}
+      <div className="mb-6">
+        <FilterBar
+          filters={revenueCohortsFilters}
+          search={revenueCohortsSearch}
+          onFiltersChange={(filters) => {
+            setFilterState(filters);
+            // URL sync handled by FilterBar, fetchCohorts will trigger via useEffect when searchParams changes
+          }}
+          onSearchChange={() => {
+            // URL sync handled by FilterBar, fetchCohorts will trigger via useEffect when searchParams changes
+          }}
+        />
+      </div>
 
       {/* AI Analysis Section */}
-      <AIAnalysis 
-        filters={filterState}
-        cohorts={cohorts}
-        onRegenerate={fetchCohorts}
-      />
+      <div className="mb-6">
+        <AIAnalysis 
+          filters={filterState}
+          cohorts={cohorts}
+          onRegenerate={fetchCohorts}
+        />
+      </div>
 
-      {/* Premium Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 border border-green-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-600 text-sm font-medium">Total Revenue</p>
-              <p className="text-3xl font-bold text-green-900">
+      {/* Premium Summary Cards - KPI Section */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {/* Primary KPI - Total Revenue with accent border */}
+        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 border-l-4 border-green-600 border border-green-200 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02]">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <p className="text-green-600 text-sm font-medium mb-1">Total Revenue</p>
+              <p className="text-3xl font-bold text-green-900 leading-tight">
                 {formatCurrency(cohorts.reduce((sum, c) => sum + c.periods.reduce((pSum, p) => pSum + p.total_revenue, 0), 0))}
               </p>
-              <p className="text-sm text-green-700 mt-1">+18.7% YoY</p>
+              <p className="text-sm text-green-700 mt-2">+18.7% YoY</p>
             </div>
-            <DollarSign className="w-8 h-8 text-green-600" />
+            <DollarSign className="w-8 h-8 text-green-600 flex-shrink-0 mt-1" />
           </div>
         </div>
         
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-600 text-sm font-medium">Average LTV (2024)</p>
-              <p className="text-3xl font-bold text-blue-900">
+        {/* Secondary KPI - Average LTV */}
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200 shadow-sm hover:shadow-md transition-all duration-200">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <p className="text-blue-600 text-sm font-medium mb-1">Average LTV (2024)</p>
+              <p className="text-3xl font-bold text-blue-900 leading-tight">
                 {formatCurrency(cohorts.reduce((sum, c) => {
                   const totalRevenue = c.periods.reduce((pSum, p) => pSum + p.total_revenue, 0);
                   return sum + (totalRevenue / c.cohort_size);
                 }, 0) / cohorts.length || 0)}
               </p>
-              <p className="text-sm text-blue-700 mt-1">+12.3% YoY</p>
+              <p className="text-sm text-blue-700 mt-2">+12.3% YoY</p>
             </div>
-            <TrendingUp className="w-8 h-8 text-blue-600" />
+            <TrendingUp className="w-8 h-8 text-blue-600 flex-shrink-0 mt-1" />
           </div>
         </div>
         
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 border border-purple-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-purple-600 text-sm font-medium">Total Customers</p>
-              <p className="text-3xl font-bold text-purple-900">
+        {/* Secondary KPI - Total Customers */}
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 border border-purple-200 shadow-sm hover:shadow-md transition-all duration-200">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <p className="text-purple-600 text-sm font-medium mb-1">Total Customers</p>
+              <p className="text-3xl font-bold text-purple-900 leading-tight">
                 {formatNumber(cohorts.reduce((sum, c) => sum + c.cohort_size, 0))}
               </p>
-              <p className="text-sm text-purple-700 mt-1">+15.2% YoY</p>
+              <p className="text-sm text-purple-700 mt-2">+15.2% YoY</p>
             </div>
-            <Users className="w-8 h-8 text-purple-600" />
+            <Users className="w-8 h-8 text-purple-600 flex-shrink-0 mt-1" />
           </div>
         </div>
         
-        <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-6 border border-orange-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-orange-600 text-sm font-medium">Best Cohort</p>
-              <p className="text-3xl font-bold text-orange-900">
+        {/* Secondary KPI - Best Cohort */}
+        <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-6 border border-orange-200 shadow-sm hover:shadow-md transition-all duration-200">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <p className="text-orange-600 text-sm font-medium mb-1">Best Cohort</p>
+              <p className="text-3xl font-bold text-orange-900 leading-tight">
                 {cohorts.length > 0 ? cohorts.reduce((best, c) => {
                   const cLtv = c.periods.reduce((pSum, p) => pSum + p.total_revenue, 0) / c.cohort_size;
                   const bestLtv = best.periods.reduce((pSum, p) => pSum + p.total_revenue, 0) / best.cohort_size;
@@ -335,13 +262,16 @@ export default function RevenueCohortsPage() {
                 }).cohort_month : 'N/A'}
               </p>
             </div>
-            <Crown className="w-8 h-8 text-orange-600" />
+            <Crown className="w-8 h-8 text-orange-600 flex-shrink-0 mt-1" />
           </div>
         </div>
       </div>
 
+      {/* Section Divider */}
+      <div className="border-t border-gray-200 my-6"></div>
+
       {/* Premium Cohort Analysis */}
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 mb-8">
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100">
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center">
@@ -363,8 +293,14 @@ export default function RevenueCohortsPage() {
         </div>
         
         <div className="p-6">
+          {/* Section Header: Cohort Trends */}
+          <div className="mb-4">
+            <h3 className="text-xl font-semibold text-gray-900 mb-1">Cohort Trends</h3>
+            <p className="text-sm text-gray-600">Revenue contribution by cohort over time</p>
+          </div>
+
           {/* Revenue Cohort Chart with Composition */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
             <div className="lg:col-span-3">
               <RevenueCohortsChart cohorts={cohorts} viewMode={viewMode} />
             </div>
@@ -402,6 +338,15 @@ export default function RevenueCohortsPage() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Section Divider before Matrix */}
+          <div className="border-t border-gray-200 my-6"></div>
+
+          {/* Section Header: Revenue Matrix */}
+          <div className="mb-4">
+            <h3 className="text-xl font-semibold text-gray-900 mb-1">Revenue Matrix</h3>
+            <p className="text-sm text-gray-600">Detailed cohort performance breakdown</p>
           </div>
 
           {/* Cohort Matrix */}

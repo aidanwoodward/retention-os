@@ -27,7 +27,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer } from "recharts";
+import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
 import { ChartErrorBoundary } from "@/components/charts/ChartErrorBoundary";
 
 interface CohortData {
@@ -1305,57 +1305,180 @@ export default function RetentionCurvesPage() {
     );
   }, []);
 
-  // Calculate KPI metrics
+  // =============================================================================
+  // SINGLE SOURCE OF TRUTH: Benchmark Retention Calculation
+  // =============================================================================
+  // This function ensures KPIs, charts, and tables all use the same calculation
+  // It reads directly from retentionCurveData (aggregated chart source)
+  const getBenchmarkRetention = React.useCallback((
+    retentionType: 'customer' | 'revenue',
+    periodNum: number
+  ): number | null => {
+    if (retentionCurveData.length === 0) return null;
+    
+    const periodData = retentionCurveData.find(d => d.period === periodNum);
+    if (!periodData) return null;
+    
+    return retentionType === 'customer' 
+      ? periodData.retentionRate 
+      : periodData.revenueRetention;
+  }, [retentionCurveData]);
+
+  // Determine Year 1 period number based on cohort type
+  const year1PeriodNum = React.useMemo(() => {
+    if (cohortType === 'monthly') {
+      return 12; // Month 12 = Year 1
+    } else if (cohortType === 'quarterly') {
+      return 4; // Quarter 4 = Year 1 (12 months / 3 = 4 quarters)
+    } else if (cohortType === 'half-year') {
+      return 2; // Half-year 2 = Year 1 (12 months / 6 = 2 half-years)
+    } else {
+      return 1; // Year 1
+    }
+  }, [cohortType]);
+
+  // Calculate KPI metrics using single source of truth
   const kpiMetrics = React.useMemo(() => {
     if (retentionCurveData.length === 0) {
       return {
-        avgRetention: null, // Use null to indicate "N/A"
-        revenueRetention: null,
-        totalCohorts: 0,
-        bestPeriod: 'N/A',
+        year1Retention: null,
+        year1RevenueRetention: null,
+        dataCoverage: {
+          cohortCount: 0,
+          yearsObserved: 0,
+          dateRange: '',
+          periodsAvailable: '',
+        },
+        maxDrop: {
+          fromPeriod: '',
+          toPeriod: '',
+          dropPct: null,
+        },
       };
     }
 
-    // Determine benchmark period based on cohort type
-    let benchmarkPeriod = 0;
-    if (cohortType === 'monthly') {
-      benchmarkPeriod = 3; // Month 3
-    } else if (cohortType === 'quarterly' || cohortType === 'half-year') {
-      benchmarkPeriod = 2; // Quarter 2 / Half-year 2
-    } else {
-      benchmarkPeriod = 1; // Year 1
-    }
+    // Use single source of truth - read directly from aggregated chart data
+    const year1Retention = getBenchmarkRetention('customer', year1PeriodNum);
+    const year1RevenueRetention = getBenchmarkRetention('revenue', year1PeriodNum);
 
-    const benchmarkData = retentionCurveData.find(d => d.period === benchmarkPeriod);
-    const avgRetention = benchmarkData?.retentionRate ?? null;
+    // Calculate data coverage from filtered cohorts (same source as aggregated chart)
+    const cohortDates = filteredCohorts.map(c => {
+      // cohort_month is in YYYY-MM format, parse it correctly
+      const [year, month] = c.cohort_month.split('-').map(Number);
+      return new Date(year, (month || 1) - 1, 1); // Month is 0-indexed in Date
+    });
+    const earliestDate = new Date(Math.min(...cohortDates.map(d => d.getTime())));
+    const latestDate = new Date(Math.max(...cohortDates.map(d => d.getTime())));
+    const yearsObserved = Math.ceil((latestDate.getTime() - earliestDate.getTime()) / (1000 * 60 * 60 * 24 * 365));
+    
+    // Find max periods available from aggregated chart data
+    const maxPeriods = Math.max(...retentionCurveData.map(d => d.period), 0);
+    
+    // Generate period label helper (reuse getPeriodLabel logic)
+    const getPeriodLabelForCoverage = (periodNum: number): string => {
+      if (cohortType === 'annual') {
+        return periodNum === 0 ? 'Y0' : `Y${periodNum}`;
+      } else if (cohortType === 'quarterly') {
+        return `Q${periodNum}`;
+      } else if (cohortType === 'half-year') {
+        return periodNum === 0 ? 'H1' : `H${periodNum + 1}`;
+      } else {
+        return `M${periodNum}`;
+      }
+    };
+    const periodsAvailable = `Y0–${getPeriodLabelForCoverage(maxPeriods)}`;
 
-    // Revenue retention at last measurable period
-    const lastPeriod = retentionCurveData[retentionCurveData.length - 1];
-    const revenueRetention = lastPeriod?.revenueRetention ?? null;
+    // Format date range
+    const formatDateRange = (date: Date) => {
+      if (cohortType === 'annual') {
+        return date.getFullYear().toString();
+      } else if (cohortType === 'quarterly') {
+        const quarter = Math.floor(date.getMonth() / 3) + 1;
+        return `${date.getFullYear()} Q${quarter}`;
+      } else if (cohortType === 'half-year') {
+        const half = date.getMonth() < 6 ? 1 : 2;
+        return `${date.getFullYear()} H${half}`;
+      } else {
+        return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      }
+    };
 
-    // Best period (highest retention, excluding P0 which is always 100%)
-    const periodsExcludingP0 = retentionCurveData.filter(d => d.period > 0);
-    let bestPeriod = 'N/A';
-    if (periodsExcludingP0.length > 0) {
-      // Find highest retention, if tie use earliest period
-      const bestPeriodData = periodsExcludingP0.reduce((best, current) => {
-        if (current.retentionRate > best.retentionRate) {
-          return current;
-        } else if (current.retentionRate === best.retentionRate && current.period < best.period) {
-          return current; // Tie-breaker: use earlier period
-        }
-        return best;
-      });
-      bestPeriod = bestPeriodData.periodLabel;
+    const dateRange = `${formatDateRange(earliestDate)}–${formatDateRange(latestDate)}`;
+
+    // Calculate max drop period (Year 1 → Year 2) using aggregated chart data
+    let maxDrop = { fromPeriod: '', toPeriod: '', dropPct: null as number | null };
+    const year2PeriodNum = year1PeriodNum + 1; // Next period after Year 1
+    
+    const year1Data = retentionCurveData.find(d => d.period === year1PeriodNum);
+    const year2Data = retentionCurveData.find(d => d.period === year2PeriodNum);
+    
+    if (year1Data && year2Data) {
+      const year1Value = retentionType === 'customer' 
+        ? year1Data.retentionRate 
+        : year1Data.revenueRetention;
+      const year2Value = retentionType === 'customer'
+        ? year2Data.retentionRate
+        : year2Data.revenueRetention;
+      
+      // Only calculate drop if both values are valid
+      if (year1Value > 0 && year2Value >= 0) {
+        const drop = year1Value - year2Value;
+        maxDrop = {
+          fromPeriod: year1Data.periodLabel,
+          toPeriod: year2Data.periodLabel,
+          dropPct: drop,
+        };
+      }
     }
 
     return {
-      avgRetention,
-      revenueRetention,
-      totalCohorts: filteredCohorts.length,
-      bestPeriod,
+      year1Retention,
+      year1RevenueRetention,
+      dataCoverage: {
+        cohortCount: filteredCohorts.length,
+        yearsObserved,
+        dateRange,
+        periodsAvailable,
+      },
+      maxDrop,
     };
-  }, [retentionCurveData, cohortType, filteredCohorts.length]);
+  }, [retentionCurveData, getBenchmarkRetention, year1PeriodNum, cohortType, retentionType, filteredCohorts]);
+
+  // =============================================================================
+  // DEV-ONLY PARITY GUARD: Ensure KPI values match aggregated chart values
+  // =============================================================================
+  React.useEffect(() => {
+    if (process.env.NODE_ENV !== 'production' && retentionCurveData.length > 0) {
+      const year1ChartValue = retentionType === 'customer'
+        ? retentionCurveData.find(d => d.period === year1PeriodNum)?.retentionRate
+        : retentionCurveData.find(d => d.period === year1PeriodNum)?.revenueRetention;
+      
+      const year1KPIValue = retentionType === 'customer'
+        ? kpiMetrics.year1Retention
+        : kpiMetrics.year1RevenueRetention;
+      
+      if (year1ChartValue !== null && year1ChartValue !== undefined && 
+          year1KPIValue !== null && year1KPIValue !== undefined) {
+        const diff = Math.abs(year1ChartValue - year1KPIValue);
+        if (diff > 0.1) {
+          console.error('❌ PARITY MISMATCH DETECTED:', {
+            retentionType,
+            periodNum: year1PeriodNum,
+            kpiValue: year1KPIValue,
+            chartValue: year1ChartValue,
+            difference: diff,
+            message: 'KPI value does not match aggregated chart value at benchmark period',
+          });
+        } else {
+          console.log('✅ Parity check passed:', {
+            retentionType,
+            periodNum: year1PeriodNum,
+            value: year1KPIValue,
+          });
+        }
+      }
+    }
+  }, [retentionCurveData, kpiMetrics.year1Retention, kpiMetrics.year1RevenueRetention, retentionType, year1PeriodNum]);
 
   // DEBUG STEP 2: DOM inspection - count recharts-curve elements
   React.useEffect(() => {
@@ -1393,15 +1516,43 @@ export default function RetentionCurvesPage() {
     }));
   }, [retentionCurveData, retentionType]);
 
+  // Calculate max value in chart data to determine Y-axis domain
+  const maxChartValue = React.useMemo(() => {
+    if (chartData.length === 0) return 100;
+    const maxValue = Math.max(...chartData.map(d => d.value || 0));
+    // Only allow >100% if actual data exceeds 100%, otherwise cap at 100%
+    return maxValue > 100 ? Math.ceil((maxValue + 5) / 10) * 10 : 100;
+  }, [chartData]);
+
+  // Calculate max value in cohort chart data to determine Y-axis domain
+  const maxCohortChartValue = React.useMemo(() => {
+    if (cohortChartData.length === 0) return 100;
+    let maxValue = 0;
+    cohortChartData.forEach(row => {
+      Object.keys(row).forEach(key => {
+        if (key !== 'periodNum') {
+          const value = row[key];
+          if (typeof value === 'number' && Number.isFinite(value) && value > maxValue) {
+            maxValue = value;
+          }
+        }
+      });
+    });
+    // Only allow >100% if actual data exceeds 100%, otherwise cap at 100%
+    return maxValue > 100 ? Math.ceil((maxValue + 5) / 10) * 10 : 100;
+  }, [cohortChartData]);
+
   if (loading) {
     return (
       <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
         <div className="animate-pulse space-y-6">
           <div className="h-10 bg-gray-200 rounded w-1/2"></div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white rounded-lg p-5 border border-gray-200 h-32">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+              <div key={i} className="bg-white rounded-lg p-5 border border-gray-200 h-36">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-gray-100 rounded w-full mb-1"></div>
+                <div className="h-3 bg-gray-100 rounded w-2/3 mb-3"></div>
                 <div className="h-8 bg-gray-300 rounded w-1/2"></div>
               </div>
             ))}
@@ -1458,99 +1609,129 @@ export default function RetentionCurvesPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {/* Avg Retention */}
+        {/* Year 1 Retention */}
         <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-shadow duration-150 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex flex-col h-full">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
-              <h3 className="text-base font-semibold text-gray-900">Avg Retention</h3>
+              <h3 className="text-base font-semibold text-gray-900">Year 1 Retention</h3>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent className="bg-gray-900 text-white border-0 max-w-[200px]">
-                  <p className="text-xs">
-                    Retention rate at benchmark period ({cohortType === 'monthly' ? 'Month 3' : (cohortType === 'quarterly' || cohortType === 'half-year') ? 'Period 2' : 'Year 1'}).
+                <TooltipContent className="bg-gray-900 text-white border-0 max-w-[300px]">
+                  <p className="text-xs mb-1">
+                    Year 1 retention = % of customers from each cohort active at the end of their first year.
+                  </p>
+                  <p className="text-xs text-gray-300 mb-1">
+                    Weighted to reflect the customer experience across cohorts (larger cohorts contribute more).
+                  </p>
+                  <p className="text-xs text-gray-300">
+                    This value matches the aggregated chart at Year 1 for the current filters.
                   </p>
                 </TooltipContent>
               </Tooltip>
             </div>
-            {kpiMetrics.avgRetention !== null && (
+            {kpiMetrics.year1Retention !== null && (
               <span className={`px-2 py-0.5 text-xs font-medium rounded ${
-                kpiMetrics.avgRetention >= 70 
+                kpiMetrics.year1Retention >= 70 
                   ? 'bg-green-100 text-green-700' 
-                  : kpiMetrics.avgRetention >= 40
+                  : kpiMetrics.year1Retention >= 40
                   ? 'bg-blue-100 text-blue-700'
                   : 'bg-red-50 text-red-500'
               }`}>
-                {kpiMetrics.avgRetention >= 70 ? 'Excellent' : kpiMetrics.avgRetention >= 40 ? 'Good' : 'Needs Improvement'}
+                {kpiMetrics.year1Retention >= 70 ? 'Excellent' : kpiMetrics.year1Retention >= 40 ? 'Good' : 'Needs Improvement'}
               </span>
             )}
           </div>
-          <p className="text-xs text-gray-500 mb-3">Across all cohorts</p>
+          <p className="text-xs text-gray-500 mb-3">Year 1 retention (all cohorts)</p>
           <div className="text-2xl font-bold text-gray-900">
-            {kpiMetrics.avgRetention !== null ? `${kpiMetrics.avgRetention.toFixed(1)}%` : 'N/A'}
+            {kpiMetrics.year1Retention !== null ? `${kpiMetrics.year1Retention.toFixed(1)}%` : 'N/A'}
           </div>
         </div>
 
-        {/* Revenue Retention */}
+        {/* Revenue Retention at Year 1 */}
         <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-shadow duration-150 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex flex-col h-full">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
-              <h3 className="text-base font-semibold text-gray-900">Revenue Retention</h3>
+              <h3 className="text-base font-semibold text-gray-900">NRR at Year 1</h3>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent className="bg-gray-900 text-white border-0 max-w-[200px]">
-                  <p className="text-xs">Percentage of revenue retained at the last measurable period.</p>
+                <TooltipContent className="bg-gray-900 text-white border-0 max-w-[300px]">
+                  <p className="text-xs mb-1">
+                    Net Revenue Retention (NRR) at Year 1. Includes expansion and contraction within the cohort during Year 1.
+                  </p>
+                  <p className="text-xs text-gray-300 mb-1">
+                    Weighted by cohort size so larger cohorts contribute proportionally.
+                  </p>
+                  <p className="text-xs text-gray-300 mb-1">
+                    NRR varies by business model. Transactional / e-commerce cohorts often show lower NRR than subscription businesses.
+                  </p>
+                  <p className="text-xs text-gray-300">
+                    This value matches the aggregated chart at Year 1 for the current filters.
+                  </p>
                 </TooltipContent>
               </Tooltip>
             </div>
           </div>
-          <p className="text-xs text-gray-500 mb-3">At last period</p>
+          <p className="text-xs text-gray-500 mb-3">NRR at Year 1 (all cohorts)</p>
           <div className="text-2xl font-bold text-gray-900">
-            {kpiMetrics.revenueRetention !== null ? `${kpiMetrics.revenueRetention.toFixed(1)}%` : 'N/A'}
+            {kpiMetrics.year1RevenueRetention !== null ? `${kpiMetrics.year1RevenueRetention.toFixed(1)}%` : 'N/A'}
           </div>
         </div>
 
-        {/* Total Cohorts */}
+        {/* Data Coverage */}
         <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-shadow duration-150 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex flex-col h-full">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
-              <h3 className="text-base font-semibold text-gray-900">Total Cohorts</h3>
+              <h3 className="text-base font-semibold text-gray-900">Data Coverage</h3>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent className="bg-gray-900 text-white border-0 max-w-[200px]">
-                  <p className="text-xs">Number of cohorts included after filtering.</p>
+                <TooltipContent className="bg-gray-900 text-white border-0 max-w-[250px]">
+                  <p className="text-xs">
+                    Number of cohorts analyzed, time period covered, and available retention periods.
+                  </p>
                 </TooltipContent>
               </Tooltip>
             </div>
             <Users className="w-5 h-5 text-gray-400" />
           </div>
-          <p className="text-xs text-gray-500 mb-3">Cohorts analyzed</p>
-          <div className="text-2xl font-bold text-gray-900">{formatNumber(kpiMetrics.totalCohorts)}</div>
+          <p className="text-xs text-gray-500 mb-1">
+            {kpiMetrics.dataCoverage.dateRange} • {kpiMetrics.dataCoverage.cohortCount} cohorts • {kpiMetrics.dataCoverage.yearsObserved} years observed
+          </p>
+          <div className="text-sm font-semibold text-gray-900">
+            Periods available: {kpiMetrics.dataCoverage.periodsAvailable}
+          </div>
         </div>
 
-        {/* Best Period */}
+        {/* Max Drop Period */}
         <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-shadow duration-150 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex flex-col h-full">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
-              <h3 className="text-base font-semibold text-gray-900">Best Period</h3>
+              <h3 className="text-base font-semibold text-gray-900">Max Drop</h3>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent className="bg-gray-900 text-white border-0 max-w-[200px]">
-                  <p className="text-xs">Period with the highest retention rate.</p>
+                <TooltipContent className="bg-gray-900 text-white border-0 max-w-[300px]">
+                  <p className="text-xs mb-1">
+                    Largest retention drop between Year 1 and Year 2 across all cohorts, showing the retention cliff.
+                  </p>
+                  <p className="text-xs text-gray-300">
+                    This is the single largest drop observed (not the average decline).
+                  </p>
                 </TooltipContent>
               </Tooltip>
             </div>
-            <Crown className="w-5 h-5 text-yellow-500" />
+            <TrendingUp className="w-5 h-5 text-red-500 rotate-180" />
           </div>
-          <p className="text-xs text-gray-500 mb-3">Highest retention</p>
-          <div className="text-lg font-bold text-gray-900">{kpiMetrics.bestPeriod}</div>
+          <p className="text-xs text-gray-500 mb-3">Biggest drop: {kpiMetrics.maxDrop.fromPeriod} → {kpiMetrics.maxDrop.toPeriod}</p>
+          <div className="text-2xl font-bold text-red-600">
+            {kpiMetrics.maxDrop.dropPct !== null ? `-${kpiMetrics.maxDrop.dropPct.toFixed(1)} pp` : 'N/A'}
+          </div>
         </div>
       </div>
 
@@ -1568,6 +1749,47 @@ export default function RetentionCurvesPage() {
                 : `${retentionType === 'customer' ? 'Customer retention' : 'Revenue retention'} by cohort`
               }
             </p>
+            {/* Definition Strip */}
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+                <span className="flex items-center gap-1.5">
+                  <span className="font-medium text-gray-700">Cohorts:</span>
+                  <span>
+                    {cohortType === 'annual' 
+                      ? 'first purchase year'
+                      : cohortType === 'quarterly'
+                      ? 'first purchase quarter'
+                      : cohortType === 'half-year'
+                      ? 'first purchase half-year'
+                      : 'first purchase month'}
+                  </span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="font-medium text-gray-700">Active:</span>
+                  <span>≥1 order in period</span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="font-medium text-gray-700">Period length:</span>
+                  <span>
+                    {cohortType === 'annual' 
+                      ? '1 year'
+                      : cohortType === 'quarterly'
+                      ? '1 quarter'
+                      : cohortType === 'half-year'
+                      ? '6 months'
+                      : '1 month'}
+                  </span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="font-medium text-gray-700">Metric:</span>
+                  <span>
+                    {retentionType === 'customer' 
+                      ? 'Customer retention (% of cohort active)'
+                      : 'Revenue retention (gross revenue)'}
+                  </span>
+                </span>
+              </div>
+            </div>
           </div>
           
           {/* Cohort Selection Controls - Only show in Cohort-by-Cohort view */}
@@ -1793,11 +2015,21 @@ export default function RetentionCurvesPage() {
                   tickMargin={8}
                   className="text-xs text-gray-600"
                   tickFormatter={(value) => `${value}%`}
-                  domain={
-                    retentionType === 'revenue'
-                      ? [0, (dataMax: number) => Math.ceil((dataMax + 5) / 10) * 10] // Support >100% for revenue expansion
-                      : [0, 100] // Customer retention capped at 100%
-                  }
+                  domain={[0, maxChartValue]}
+                />
+                <ReferenceLine
+                  x={getPeriodLabel(cohortType === 'annual' ? 1 : (cohortType === 'quarterly' ? 4 : (cohortType === 'half-year' ? 2 : 12)))}
+                  stroke="#9ca3af"
+                  strokeWidth={1}
+                  strokeDasharray="2 2"
+                  opacity={0.5}
+                  label={{
+                    value: "Primary benchmark period",
+                    position: "top",
+                    fill: "#6b7280",
+                    fontSize: 10,
+                    offset: 5,
+                  }}
                 />
                 <ChartTooltip 
                   content={({ active, payload }) => {
@@ -1900,7 +2132,21 @@ export default function RetentionCurvesPage() {
                   tickMargin={8}
                   className="text-xs text-gray-600"
                   tickFormatter={(value) => `${value}%`}
-                  domain={[0, 100]}
+                  domain={[0, maxCohortChartValue]}
+                />
+                <ReferenceLine
+                  x={cohortType === 'annual' ? 1 : (cohortType === 'quarterly' ? 4 : (cohortType === 'half-year' ? 2 : 12))}
+                  stroke="#9ca3af"
+                  strokeWidth={1}
+                  strokeDasharray="2 2"
+                  opacity={0.5}
+                  label={{
+                    value: "Primary benchmark period",
+                    position: "top",
+                    fill: "#6b7280",
+                    fontSize: 10,
+                    offset: 5,
+                  }}
                 />
                 <ChartTooltip 
                   shared={true}
@@ -2194,60 +2440,71 @@ export default function RetentionCurvesPage() {
       {/* Retention Curve Data Table */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Retention Curve Data</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            {viewMode === 'aggregated' ? 'Detailed breakdown by period' : 'Cohort-by-cohort retention breakdown'}
-          </p>
+          <h2 className="text-xl font-bold text-gray-900">
+            {viewMode === 'aggregated' ? 'Aggregated retention by period' : 'Retention by cohort and period'}
+          </h2>
+          {viewMode === 'aggregated' ? (
+            <p className="text-sm text-gray-500 mt-1">
+              Each row represents a period aggregated across all cohorts.
+            </p>
+          ) : (
+            <p className="text-sm text-gray-500 mt-1">
+              Cohort-by-cohort retention breakdown
+            </p>
+          )}
         </div>
         
         {/* Aggregated View Table */}
         {viewMode === 'aggregated' && (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="sticky left-0 bg-gray-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider z-10">
-                    Period
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Cohort Size
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Retention Rate
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Revenue Retention
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {retentionCurveData.length > 0 ? (
-                  retentionCurveData.map((data) => (
-                    <tr key={data.period} className="hover:bg-gray-50">
-                      <td className="sticky left-0 bg-white px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 z-10">
-                        {data.periodLabel}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatNumber(data.cohortSize)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {data.retentionRate.toFixed(1)}%
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {data.revenueRetention.toFixed(1)}%
+          <>
+            {retentionCurveData.length > 0 && retentionCurveData[0]?.cohortSize && (
+              <div className="px-6 py-2 bg-gray-50 border-b border-gray-200">
+                <p className="text-xs text-gray-600">
+                  Initial cohort size: <span className="font-medium">{formatNumber(retentionCurveData[0].cohortSize)}</span> customers
+                </p>
+              </div>
+            )}
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="sticky left-0 bg-gray-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider z-10">
+                      Period
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Retention Rate
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Revenue Retention
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {retentionCurveData.length > 0 ? (
+                    retentionCurveData.map((data) => (
+                      <tr key={data.period} className="hover:bg-gray-50">
+                        <td className="sticky left-0 bg-white px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 z-10">
+                          {data.periodLabel}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {data.retentionRate.toFixed(1)}%
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {data.revenueRetention.toFixed(1)}%
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={3} className="px-6 py-8 text-center text-sm text-gray-500">
+                        No retention data available. Adjust filters to see results.
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500">
-                      No retention data available. Adjust filters to see results.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
 
         {/* Cohort-by-Cohort View Table */}

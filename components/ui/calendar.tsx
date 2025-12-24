@@ -7,7 +7,7 @@ import "react-day-picker/dist/style.css"
 
 import { cn } from "@/lib/utils"
 
-// Custom locale with 3-character month abbreviations for react-day-picker v9
+// Custom locale with 3-character month and day abbreviations for react-day-picker v9
 const customLocale = {
   code: "en",
   localize: {
@@ -16,7 +16,7 @@ const customLocale = {
       return monthNames[n];
     },
     day: (n: number) => {
-      const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       return dayNames[n];
     },
   },
@@ -46,6 +46,10 @@ function Calendar({
         formatMonthCaption: (month) => {
           const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
           return monthNames[month.getMonth()];
+        },
+        formatWeekdayName: (date) => {
+          const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+          return dayNames[date.getDay()];
         },
       }}
       classNames={{

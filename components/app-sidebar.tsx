@@ -13,6 +13,10 @@ import {
   Crown,
   MessageSquare,
   DollarSign,
+  BarChart3,
+  Repeat,
+  Sparkles,
+  Rocket,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -53,35 +57,45 @@ const data = {
           url: "/executive",
         },
         {
-          title: "Data Reconciliation",
+          title: "Data Health",
           url: "/executive/reconciliation",
-        },
-        {
-          title: "Exports",
-          url: "/executive/exports",
         },
       ],
     },
     {
-      title: "Retention & LTV",
+      title: "Revenue Formation",
       url: "#",
-      icon: TrendingUp,
+      icon: BarChart3,
       items: [
         {
           title: "Revenue Cohorts",
           url: "/retention-ltv/revenue-cohorts",
         },
+      ],
+    },
+    {
+      title: "Customer Retention",
+      url: "#",
+      icon: TrendingUp,
+      items: [
         {
           title: "Retention Curves",
           url: "/retention-ltv/curves",
         },
         {
-          title: "CLR & LTV Cohorts",
-          url: "/retention-ltv/ltv-cohorts",
-        },
-        {
           title: "Repeat Purchase Rates",
           url: "/retention-ltv/repeat-rates",
+        },
+      ],
+    },
+    {
+      title: "Value Growth",
+      url: "#",
+      icon: Sparkles,
+      items: [
+        {
+          title: "LTV Curves",
+          url: "/retention-ltv/ltv-cohorts",
         },
       ],
     },
@@ -93,61 +107,63 @@ const data = {
         {
           title: "Customer Composition",
           url: "/customer-intelligence/composition",
+          comingSoon: true,
         },
         {
           title: "Segments",
           url: "/customer-intelligence/segments",
+          comingSoon: true,
         },
         {
           title: "Customer Profiles",
           url: "/customer-intelligence/profiles",
+          comingSoon: true,
         },
       ],
     },
     {
-      title: "Product Economics",
+      title: "Product Insights",
       url: "#",
       icon: Package,
       items: [
         {
           title: "Product Performance",
           url: "/product-economics/performance",
+          comingSoon: true,
         },
         {
-          title: "Concentration Curve",
+          title: "Product Concentration",
           url: "/product-economics/concentration",
+          comingSoon: true,
         },
         {
-          title: "Discount Usage",
+          title: "Discount Impact",
           url: "/product-economics/discounts",
-        },
-        {
-          title: "Replenishment Frequency",
-          url: "/product-economics/replenishment",
+          comingSoon: true,
         },
       ],
     },
     {
-      title: "Financials",
+      title: "Activation",
       url: "#",
-      icon: DollarSign,
+      icon: Rocket,
       items: [
         {
-          title: "Revenue Intelligence",
-          url: "/financials/revenue",
+          title: "Lifecycle Opportunities",
+          url: "#",
+          disabled: true,
+          comingSoon: true,
         },
         {
-          title: "LTV Summary",
-          url: "/financials/ltv-summary",
-        },
-        {
-          title: "Forecasts & Scenarios",
-          url: "/financials/forecasts",
+          title: "Campaign Sync",
+          url: "#",
+          disabled: true,
+          comingSoon: true,
         },
       ],
     },
     {
-      title: "Settings",
+      title: "Platform",
       url: "#",
       icon: Settings2,
       items: [
@@ -156,13 +172,16 @@ const data = {
           url: "/settings/integrations",
         },
         {
+          title: "Exports",
+          url: "/executive/exports",
+        },
+        {
           title: "User Settings",
           url: "/settings",
         },
         {
           title: "Support & Feedback",
           url: "/settings/feedback",
-          icon: MessageSquare,
         },
       ],
     },

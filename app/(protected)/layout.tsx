@@ -63,15 +63,18 @@ export default function ProtectedLayout({
     };
 
     const pageLabels: Record<string, string> = {
-      'reconciliation': 'Data Reconciliation',
+      'reconciliation': 'Data Health',
       'exports': 'Exports',
       'revenue-cohorts': 'Revenue Cohorts',
       'curves': 'Retention Curves',
-      'ltv-cohorts': 'CLR & LTV Cohorts',
+      'ltv-cohorts': 'LTV Curves',
       'repeat-rates': 'Repeat Purchase Rates',
       'composition': 'Customer Composition',
       'segments': 'Segments',
       'profiles': 'Customer Profiles',
+      'performance': 'Product Performance',
+      'concentration': 'Product Concentration',
+      'discounts': 'Discount Impact',
       'performance': 'Product Performance',
       'concentration': 'Concentration Curve',
       'discounts': 'Discount Usage',

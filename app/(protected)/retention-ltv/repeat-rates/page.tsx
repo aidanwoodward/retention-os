@@ -5,7 +5,7 @@ import { FilterBar } from "@/components/filters/FilterBar";
 import { retentionCurvesFilters, retentionCurvesSearch } from "@/lib/filters/config";
 import { AIAnalysis } from "@/components/ai/AIAnalysis";
 import { LoadingButton } from "@/components/ui/loading-buttons";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Users,
   Download,
@@ -25,7 +25,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
+import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LabelList, ReferenceLine } from "recharts";
 import { ChartErrorBoundary } from "@/components/charts/ChartErrorBoundary";
 
 interface RepeatPurchaseData {
@@ -57,12 +57,45 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
+type PurchaseView = "cumulative" | "incremental";
+const DEFAULT_VIEW: PurchaseView = "cumulative";
+
+const readViewFromUrl = (sp: URLSearchParams): PurchaseView => {
+  const v = sp.get("purchaseView");
+  return v === "incremental" || v === "cumulative" ? v : DEFAULT_VIEW;
+};
+
 export default function RepeatPurchaseRatesPage() {
   const [repeatData, setRepeatData] = useState<RepeatPurchaseResponse['data'] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<Record<string, FilterValue>>({});
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const showDebug = searchParams.get("debug") === "1";
+  
+  // Initialize purchaseView from URL with lazy initializer
+  const [purchaseView, setPurchaseView] = useState<PurchaseView>(() => readViewFromUrl(searchParams));
+  
+  // Sync purchaseView with URL on back/forward navigation
+  React.useEffect(() => {
+    const urlView = readViewFromUrl(searchParams);
+    setPurchaseView(prev => (prev === urlView ? prev : urlView));
+  }, [searchParams]);
+  
+  // Update purchaseView and URL when user toggles
+  const updatePurchaseView = React.useCallback((next: PurchaseView) => {
+    setPurchaseView(next);
+    
+    const sp = new URLSearchParams(searchParams.toString());
+    sp.set("purchaseView", next);
+    
+    const nextQs = sp.toString();
+    const currQs = searchParams.toString();
+    if (nextQs !== currQs) {
+      router.replace(`?${nextQs}`, { scroll: false });
+    }
+  }, [searchParams, router]);
 
   const fetchRepeatData = useCallback(async () => {
     try {
@@ -198,7 +231,7 @@ export default function RepeatPurchaseRatesPage() {
 
   // Prepare chart data (cumulative survival-style step chart)
   // Use numeric purchaseNum for X-axis, ensure monotonicity for chart display only
-  const chartData = React.useMemo(() => {
+  const cumulativeChartData = React.useMemo(() => {
     if (!displayData) return [];
     
     let previousValue = 100; // Start at 100% for purchase 1
@@ -215,9 +248,66 @@ export default function RepeatPurchaseRatesPage() {
         value: clampedValue, // Clamped for chart (monotonic)
         rawValue: d.percentOfOriginal, // Original value for tooltip/table
         customersReaching: d.customersReaching,
+        pctReached: d.percentOfOriginal, // Store for incremental calculation
       };
     });
   }, [displayData]);
+
+  // Prepare incremental chart data (step-to-step continuation rate)
+  const incrementalChartData = React.useMemo(() => {
+    if (!displayData || cumulativeChartData.length === 0) return [];
+    
+    const result: Array<{
+      purchaseNum: number;
+      purchaseCountLabel: string;
+      value: number;
+      rawValue: number;
+      incrementalRate: number;
+      nextPurchaseNum: number;
+      nextPurchaseCountLabel: string;
+      customersReaching: number;
+      pctReached: number;
+    }> = [];
+    
+    // Calculate incremental rates for n ∈ {1,2,3,4} (no forward step for 5+)
+    for (let i = 0; i < cumulativeChartData.length - 1; i++) {
+      const current = cumulativeChartData[i];
+      const next = cumulativeChartData[i + 1];
+      
+      // Guard rails: skip if current or next is invalid
+      if (!current || !next) continue;
+      if (!isFinite(current.pctReached) || !isFinite(next.pctReached)) continue;
+      if (current.pctReached === 0) continue; // Division by zero guard
+      
+      // Calculate incremental rate: (reached[n+1] / reached[n]) * 100
+      const incrementalRate = (next.pctReached / current.pctReached) * 100;
+      
+      // Clamp to [0, 100] and ensure finite
+      const clampedRate = Math.max(0, Math.min(100, incrementalRate));
+      if (!isFinite(clampedRate)) continue;
+      
+      // Ensure purchaseNum is finite and numeric
+      const purchaseNum = current.purchaseNum;
+      if (!isFinite(purchaseNum) || typeof purchaseNum !== 'number') continue;
+      
+      result.push({
+        purchaseNum: purchaseNum, // Numeric: 1, 2, 3, 4 (no 5+)
+        purchaseCountLabel: current.purchaseCountLabel,
+        value: clampedRate,
+        rawValue: clampedRate,
+        incrementalRate: clampedRate,
+        nextPurchaseNum: next.purchaseNum,
+        nextPurchaseCountLabel: next.purchaseCountLabel,
+        customersReaching: current.customersReaching,
+        pctReached: current.pctReached,
+      });
+    }
+    
+    return result;
+  }, [cumulativeChartData, displayData]);
+
+  // Select chart data based on view mode
+  const chartData = purchaseView === "incremental" ? incrementalChartData : cumulativeChartData;
 
   // Calculate inline insights
   const insights = React.useMemo(() => {
@@ -228,10 +318,10 @@ export default function RepeatPurchaseRatesPage() {
     
     // Insight 1: Never place second order
     const neverSecondOrder = 100 - breakdown[1].percentOfOriginal;
-    insightsList.push(`${neverSecondOrder.toFixed(0)}% of customers never place a second order`);
+    insightsList.push(`${neverSecondOrder.toFixed(0)}% of customers drop before 2nd purchase`);
     
     // Insight 2: Reach fourth purchase
-    insightsList.push(`Only ${breakdown[3].percentOfOriginal.toFixed(0)}% of customers reach a fourth purchase`);
+    insightsList.push(`Only ${breakdown[3].percentOfOriginal.toFixed(0)}% reach 4+ purchases`);
     
     // Insight 3: Median for 5+ customers (if available)
     if (displayData.medianPurchasesFor5Plus !== null) {
@@ -297,7 +387,33 @@ export default function RepeatPurchaseRatesPage() {
   // DEV-ONLY PARITY GUARD: Ensure KPI values match chart and table values
   // =============================================================================
   React.useEffect(() => {
-    if (isDev && displayData && chartData.length > 0) {
+    if (isDev && purchaseView === "incremental") {
+      console.warn("⚠️ Repeat Purchase Depth: Incremental view enabled (advanced)");
+      
+      // Assert incremental values are valid
+      incrementalChartData.forEach((d, index) => {
+        if (d.incrementalRate !== null) {
+          if (d.incrementalRate < 0 || d.incrementalRate > 100) {
+            console.error(`❌ Invalid incremental rate at purchase ${d.purchaseNum}:`, d.incrementalRate);
+          }
+        }
+      });
+      
+      // Assert monotonicity before division
+      cumulativeChartData.forEach((d, index) => {
+        const nextData = cumulativeChartData[index + 1];
+        if (nextData && d.pctReached < nextData.pctReached) {
+          console.error(`❌ Non-monotonic cumulative data at purchase ${d.purchaseNum}:`, {
+            current: d.pctReached,
+            next: nextData.pctReached,
+          });
+        }
+      });
+    }
+  }, [isDev, purchaseView, incrementalChartData, cumulativeChartData]);
+
+  React.useEffect(() => {
+    if (isDev && displayData && chartData.length > 0 && purchaseView === "cumulative") {
       // Log dummy mode status once
       if (useDevDummy) {
         console.log('ℹ️ Repeat Purchase Rates: using DEV dummy data for visualization QA');
@@ -518,27 +634,48 @@ export default function RepeatPurchaseRatesPage() {
 
       {/* Core Visualization */}
       <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)] mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
+        <div className="flex items-start justify-between gap-3 mb-6 flex-wrap">
+          <div className="flex-1 min-w-0">
             <h2 className="text-xl font-bold text-gray-900 flex items-center">
               <BarChart3 className="w-6 h-6 mr-2 text-cyan-600" />
-              Repeat Purchase Rates
+              Repeat Purchase Depth
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="w-4 h-4 ml-2 text-gray-400 hover:text-gray-600 cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent className="bg-gray-900 text-white border-0 max-w-[280px]">
-                  <p className="text-xs mb-1">
-                    Cumulative percentage of customers who reached at least each purchase count. This shows repeat engagement depth, independent of time.
-                  </p>
-                  <p className="text-xs text-gray-300">
-                    This is a cumulative view, not a funnel.
-                  </p>
+                  {purchaseView === "cumulative" ? (
+                    <>
+                      <p className="text-xs mb-1">
+                        This is a cumulative view (not a funnel).
+                      </p>
+                      <p className="text-xs mb-1">
+                        At N=3, the value means % of customers who made 3+ purchases.
+                      </p>
+                      <p className="text-xs text-gray-300">
+                        The chart steps down at whole-number purchases because purchase counts are discrete.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-xs mb-1">
+                        This is step-to-step continuation, not cumulative depth.
+                      </p>
+                      <p className="text-xs mb-1">
+                        At N=2, the value means % of customers who reached 2 purchases and continued to 3+.
+                      </p>
+                      <p className="text-xs text-gray-300">
+                        Advanced view: Use with caution as small populations can appear deceptively healthy.
+                      </p>
+                    </>
+                  )}
                 </TooltipContent>
               </Tooltip>
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              Shows the percentage of customers who reached at least N purchases.
+              {purchaseView === "cumulative" 
+                ? "Shows the % of customers who reached at least N purchases."
+                : "Shows the % of customers who continue from one purchase to the next."}
             </p>
             {/* Definition Strip */}
             <div className="mt-3 pt-3 border-t border-gray-100">
@@ -549,68 +686,108 @@ export default function RepeatPurchaseRatesPage() {
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="font-medium text-gray-700">Metric:</span>
-                  <span>cumulative repeat purchase rate</span>
+                  <span>
+                    {purchaseView === "cumulative" 
+                      ? "% reaching ≥ N purchases (cumulative)"
+                      : "% continuing from N → N+1 purchases (incremental)"}
+                  </span>
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="font-medium text-gray-700">Interpretation:</span>
-                  <span>% of customers who reached at least N purchases</span>
+                  <span>
+                    {purchaseView === "cumulative"
+                      ? "step-down shows drop-off depth"
+                      : "each step is a continuation rate (can look healthy on small bases)"}
+                  </span>
                 </span>
               </div>
             </div>
           </div>
           
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button 
-                onClick={() => {
-                  // Export CSV
-                  if (!hasRealData || !displayData) return;
-                  
-                  const csvHeaders = ['Purchase Count', 'Customers Reaching', '% of Original Cohort', 'Drop-off vs Previous'];
-                  const csvRows = displayData.purchaseBreakdown.map(d => [
-                    d.purchaseCountLabel,
-                    d.customersReaching.toString(),
-                    d.percentOfOriginal.toFixed(1),
-                    d.dropOffVsPrevious !== null ? d.dropOffVsPrevious.toFixed(1) : '',
-                  ]);
-                  
-                  const csvContent = [
-                    csvHeaders.join(','),
-                    ...csvRows.map(row => row.join(','))
-                  ].join('\n');
-                  
-                  const blob = new Blob([csvContent], { type: 'text/csv' });
-                  const url = window.URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `repeat-purchase-rates-${new Date().toISOString().split('T')[0]}.csv`;
-                  document.body.appendChild(a);
-                  a.click();
-                  document.body.removeChild(a);
-                  window.URL.revokeObjectURL(url);
-                }}
-                disabled={!hasRealData}
-                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
-                  hasRealData 
-                    ? 'bg-cyan-600 text-white hover:bg-cyan-700 cursor-pointer' 
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* View Toggle */}
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => updatePurchaseView("cumulative")}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  purchaseView === "cumulative"
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <Download className="w-4 h-4" />
-                Export CSV
+                Cumulative
               </button>
-            </TooltipTrigger>
-            {!hasRealData && (
-              <TooltipContent className="bg-gray-900 text-white border-0 max-w-[200px]">
-                <p className="text-xs">No data to export for current filters.</p>
-              </TooltipContent>
+              <button
+                onClick={() => updatePurchaseView("incremental")}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  purchaseView === "incremental"
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Incremental
+                <span className="text-xs italic text-gray-400">(Advanced)</span>
+              </button>
+            </div>
+            {purchaseView === "incremental" && (
+              <span className="px-2 py-1 text-xs font-medium rounded bg-amber-100 text-amber-700">
+                Advanced
+              </span>
             )}
-          </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button 
+                  onClick={() => {
+                    // Export CSV
+                    if (!hasRealData || !displayData) return;
+                    
+                    const csvHeaders = ['Purchase Count', 'Customers Reaching', '% of Original Cohort', 'Drop-off vs Previous'];
+                    const csvRows = displayData.purchaseBreakdown.map(d => [
+                      d.purchaseCountLabel,
+                      d.customersReaching.toString(),
+                      d.percentOfOriginal.toFixed(1),
+                      d.dropOffVsPrevious !== null ? d.dropOffVsPrevious.toFixed(1) : '',
+                    ]);
+                    
+                    const csvContent = [
+                      csvHeaders.join(','),
+                      ...csvRows.map(row => row.join(','))
+                    ].join('\n');
+                    
+                    const blob = new Blob([csvContent], { type: 'text/csv' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `repeat-purchase-rates-${new Date().toISOString().split('T')[0]}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                  }}
+                  disabled={!hasRealData}
+                  className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+                    hasRealData 
+                      ? 'bg-cyan-600 text-white hover:bg-cyan-700 cursor-pointer' 
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
+                  }`}
+                >
+                  <Download className="w-4 h-4" />
+                  Export CSV
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-gray-900 text-white border-0 max-w-[200px]">
+                <p className="text-xs">
+                  {hasRealData ? 'Export data to CSV' : 'No data to export for current filters.'}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
 
-        {/* DEV Debug Banner */}
-        {isDev && (
-          <div className="mb-2 px-3 py-1.5 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+        {/* DEV Debug Banner - Only show if debug=1 query param */}
+        {isDev && showDebug && (
+          <div className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
             <strong>DEV:</strong> dummy={useDevDummy ? 'true' : 'false'} | loading={loading ? 'true' : 'false'} | 
             hasRealData={hasRealData ? 'true' : 'false'} | chartData={chartData.length} | 
             keys={chartData[0] ? Object.keys(chartData[0]).join(',') : 'none'}
@@ -624,17 +801,23 @@ export default function RepeatPurchaseRatesPage() {
 
         {/* DEV: Data structure validation warning */}
         {isDev && chartData.length > 0 && (() => {
-          const invalidRows = chartData.filter(r => 
-            typeof r.purchaseNum !== 'number' || 
-            typeof r.value !== 'number' ||
-            isNaN(r.purchaseNum) ||
-            isNaN(r.value)
-          );
+          // Validate based on view mode
+          const expectedPurchaseNums = purchaseView === "incremental" ? [1, 2, 3, 4] : [1, 2, 3, 4, 5];
+          
+          const invalidRows = chartData.filter(r => {
+            // Check purchaseNum is finite number
+            if (typeof r.purchaseNum !== 'number' || !isFinite(r.purchaseNum)) return true;
+            // Check value is finite number (null allowed for line breaks, but we don't use null in our data)
+            if (typeof r.value !== 'number' || !isFinite(r.value)) return true;
+            // Check purchaseNum is in expected range
+            if (!expectedPurchaseNums.includes(r.purchaseNum)) return true;
+            return false;
+          });
           
           if (invalidRows.length > 0) {
             return (
               <div className="mb-2 px-3 py-1.5 bg-red-50 border border-red-200 rounded text-xs text-red-800">
-                <strong>⚠️ Invalid chartData:</strong> {invalidRows.length} rows have invalid purchaseNum or value types
+                <strong>⚠️ Invalid chartData:</strong> {invalidRows.length} rows have invalid purchaseNum or value types (view: {purchaseView})
               </div>
             );
           }
@@ -658,13 +841,6 @@ export default function RepeatPurchaseRatesPage() {
                 dataPoints: chartData.length,
               }}
             >
-              {/* DEV: Smoke test SVG - remove after chart renders */}
-              {isDev && chartData.length > 0 && (
-                <svg className="absolute top-0 left-0 w-full h-full pointer-events-none z-0" style={{ opacity: 0.1 }}>
-                  <line x1="50" y1="50" x2="450" y2="250" stroke="red" strokeWidth="2" />
-                  <text x="50" y="30" fill="red" fontSize="12">Smoke Test SVG</text>
-                </svg>
-              )}
               <ResponsiveContainer width="100%" height="100%">
                 <RechartsLineChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200" />
@@ -675,10 +851,13 @@ export default function RepeatPurchaseRatesPage() {
                     axisLine={false}
                     tickMargin={8}
                     className="text-xs text-gray-600"
-                    domain={[0.5, 5.5]}
+                    domain={purchaseView === "incremental" ? [0.5, 4.5] : [0.5, 5.5]}
+                    ticks={purchaseView === "incremental" ? [1, 2, 3, 4] : [1, 2, 3, 4, 5]}
+                    label={{ value: purchaseView === "incremental" ? 'Purchase count' : 'Purchase count (5+ is grouped)', position: 'insideBottom', offset: -5, className: 'text-xs text-gray-600' }}
                     tickFormatter={(value) => {
-                      // Format last tick as "5+"
-                      return value === 5 ? '5+' : value.toString();
+                      // Format last tick as "5+" only in cumulative view
+                      if (purchaseView === "cumulative" && value === 5) return '5+';
+                      return String(value);
                     }}
                   />
                   <YAxis
@@ -689,21 +868,58 @@ export default function RepeatPurchaseRatesPage() {
                     tickFormatter={(value) => `${value}%`}
                     domain={[0, 100]}
                   />
+                  {/* Reference line at Second Purchase Rate - only show in cumulative view */}
+                  {purchaseView === "cumulative" && displayData && displayData.secondPurchaseRate !== undefined && isFinite(displayData.secondPurchaseRate) && (
+                    <ReferenceLine
+                      y={displayData.secondPurchaseRate}
+                      stroke="#9CA3AF"
+                      strokeDasharray="4 4"
+                      strokeOpacity={0.6}
+                      label={{ 
+                        value: '2nd purchase benchmark', 
+                        position: 'insideTopRight', 
+                        className: 'text-xs fill-gray-500',
+                        fontSize: 10,
+                        dy: -5
+                      }}
+                    />
+                  )}
                   <ChartTooltip 
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         const data = payload[0].payload;
-                        return (
-                          <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
-                            <p className="text-sm font-semibold text-gray-900">Purchase {data.purchaseCountLabel}</p>
-                            <p className="text-sm text-gray-600">
-                              Customers reaching: <span className="font-semibold">{data.rawValue.toFixed(1)}%</span>
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              {formatNumber(data.customersReaching)} customers
-                            </p>
-                          </div>
-                        );
+                        
+                        if (purchaseView === "cumulative") {
+                          const displayPurchaseNum = data.purchaseCountLabel;
+                          return (
+                            <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
+                              <p className="text-sm font-semibold text-gray-900">
+                                Reached ≥ {displayPurchaseNum} purchases
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                {data.rawValue.toFixed(1)}% of customers
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Customers reaching: {formatNumber(data.customersReaching)}
+                              </p>
+                            </div>
+                          );
+                        } else {
+                          // Incremental view
+                          return (
+                            <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
+                              <p className="text-sm font-semibold text-gray-900">
+                                Continued from {data.purchaseNum} → {data.nextPurchaseNum} purchases
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                {data.rawValue.toFixed(1)}% of customers who reached {data.purchaseNum} purchases
+                              </p>
+                              <p className="text-xs text-gray-400 mt-1 italic">
+                                This is a step-to-step continuation rate, not cumulative.
+                              </p>
+                            </div>
+                          );
+                        }
                       }
                       return null;
                     }}
@@ -711,13 +927,40 @@ export default function RepeatPurchaseRatesPage() {
                   <Line
                     type="stepAfter"
                     dataKey="value"
-                    stroke="hsl(221.2 83.2% 53.3%)"
+                    stroke={purchaseView === "cumulative" ? "hsl(221.2 83.2% 53.3%)" : "#6b7280"}
                     strokeWidth={2.5}
-                    dot={{ fill: "hsl(221.2 83.2% 53.3%)", r: 5, strokeWidth: 2, stroke: '#fff' }}
-                    activeDot={{ r: 7, strokeWidth: 2, stroke: '#fff' }}
-                    name="Customers Reaching"
+                    strokeOpacity={purchaseView === "incremental" ? 0.8 : 1}
+                    dot={{ fill: purchaseView === "cumulative" ? "hsl(221.2 83.2% 53.3%)" : "#6b7280", r: 4, strokeWidth: 2, stroke: '#ffffff' }}
+                    activeDot={{ r: 6, strokeWidth: 2, stroke: '#ffffff' }}
+                    name={purchaseView === "cumulative" ? "Customers Reaching" : "Continuation Rate"}
                     isAnimationActive={false}
-                  />
+                  >
+                    <LabelList
+                      dataKey="value"
+                      content={({ x, y, value, payload }: any) => {
+                        // Only show labels for purchaseNum 2, 3, 4 (cumulative) or 1, 2, 3 (incremental)
+                        const purchaseNum = payload?.purchaseNum;
+                        const validNums = purchaseView === "cumulative" ? [2, 3, 4] : [1, 2, 3];
+                        if (purchaseNum && validNums.includes(purchaseNum) && value !== undefined && value !== null) {
+                          return (
+                            <text
+                              x={x}
+                              y={y ? y - 10 : 0}
+                              dy={-10}
+                              fill={purchaseView === "cumulative" ? "#4b5563" : "#6b7280"}
+                              fontSize="12"
+                              textAnchor="middle"
+                              className="text-xs fill-gray-600 md:visible invisible"
+                              style={{ fontWeight: 'normal' }}
+                            >
+                              {typeof value === 'number' ? value.toFixed(0) : value}%
+                            </text>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                  </Line>
                 </RechartsLineChart>
               </ResponsiveContainer>
             </ChartErrorBoundary>
@@ -757,12 +1000,16 @@ export default function RepeatPurchaseRatesPage() {
                       <TooltipTrigger asChild>
                         <p className="text-xs text-gray-500 flex items-center gap-1">
                           <Info className="w-3 h-3" />
-                          Purchases beyond 5 are grouped to keep the visualization readable. Deeper behavior is summarized above.
+                          {purchaseView === "cumulative" 
+                            ? "Purchases beyond 5 are grouped to keep the visualization readable; cumulative view shows how deep customers go overall."
+                            : "Purchases beyond 5 are grouped to keep the visualization readable; incremental view shows step-by-step continuation (interpret cautiously for small populations)."}
                         </p>
                       </TooltipTrigger>
                       <TooltipContent className="bg-gray-900 text-white border-0 max-w-[280px]">
                         <p className="text-xs">
-                          Purchases beyond 5 are grouped to keep the visualization readable. Deeper behavior is summarized below.
+                          {purchaseView === "cumulative"
+                            ? "Purchases beyond 5 are grouped to keep the visualization readable. Cumulative view shows how deep customers go overall."
+                            : "Purchases beyond 5 are grouped to keep the visualization readable. Incremental view shows step-by-step continuation (interpret cautiously for small populations)."}
                         </p>
                       </TooltipContent>
                     </Tooltip>
@@ -782,6 +1029,11 @@ export default function RepeatPurchaseRatesPage() {
             <p className="text-sm text-gray-500 mt-1">
               Detailed breakdown by purchase count
             </p>
+            {purchaseView === "incremental" && (
+              <p className="text-xs text-gray-500 mt-2">
+                Note: Table remains cumulative (reached ≥ N) for consistency; the toggle only affects the chart.
+              </p>
+            )}
           </div>
           
           <div className="overflow-x-auto">

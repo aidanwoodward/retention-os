@@ -11,11 +11,17 @@ import { FilterChip } from "./FilterChip";
 export function FilterBar({
   filters,
   search,
+  searchConfig,
   table,
   className,
   onFiltersChange,
+  onFilterChange,
   onSearchChange,
 }: FilterBarProps) {
+  // Support both search and searchConfig props (searchConfig takes precedence)
+  const searchProps = searchConfig || search;
+  const handleFiltersChange = onFilterChange || onFiltersChange;
+  
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -38,7 +44,7 @@ export function FilterBar({
           const parts = paramValue.split(':');
           if (parts.length >= 2) {
             state[filter.id] = {
-              condition: parts[0] as any,
+              condition: parts[0] as 'equals' | 'greater_than' | 'less_than' | 'between',
               value: [parseFloat(parts[1]) || 0, parseFloat(parts[2]) || 0],
             };
           }
@@ -71,8 +77,12 @@ export function FilterBar({
     return state;
   };
 
+  // Support both search and searchConfig props (searchConfig takes precedence)
+  const searchProps = searchConfig || search;
+  
   const [filterState, setFilterState] = useState<FilterState>(getInitialFilterState);
-  const [searchValue, setSearchValue] = useState(searchParams.get(search?.param || 'q') || '');
+  const [searchValue, setSearchValue] = useState(searchParams.get(searchProps?.param || 'q') || '');
+  const handleFiltersChange = onFilterChange || onFiltersChange;
   const isInitialMount = React.useRef(true);
   const isUpdatingFromURL = React.useRef(false);
 
@@ -101,7 +111,7 @@ export function FilterBar({
           }
         }
       });
-      const searchParam = search?.param || 'q';
+      const searchParam = searchProps?.param || 'q';
       if (searchValue) {
         params.set(searchParam, searchValue);
       }
@@ -113,7 +123,7 @@ export function FilterBar({
       isUpdatingFromURL.current = true;
       const newState = getInitialFilterState();
       setFilterState(newState);
-      const newSearch = searchParams.get(search?.param || 'q') || '';
+      const newSearch = searchParams.get(searchProps?.param || 'q') || '';
       setSearchValue(newSearch);
       
       // Reset flag after state updates
@@ -198,10 +208,10 @@ export function FilterBar({
 
   // Update TanStack Table global filter when search changes
   useEffect(() => {
-    if (table && search) {
+    if (table && searchProps) {
       table.setGlobalFilter(searchValue);
     }
-  }, [searchValue, table, search]);
+  }, [searchValue, table, searchProps]);
 
   // Keyboard shortcut: "/" focuses search
   useEffect(() => {
@@ -232,8 +242,8 @@ export function FilterBar({
     }
     setFilterState(newState);
     
-    if (onFiltersChange) {
-      onFiltersChange(newState);
+    if (handleFiltersChange) {
+      handleFiltersChange(newState);
     }
   };
 
@@ -242,8 +252,8 @@ export function FilterBar({
     delete newState[filterId];
     setFilterState(newState);
     
-    if (onFiltersChange) {
-      onFiltersChange(newState);
+    if (handleFiltersChange) {
+      handleFiltersChange(newState);
     }
   };
 

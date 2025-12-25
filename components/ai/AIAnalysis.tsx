@@ -26,7 +26,7 @@ interface AIInsight {
   trend?: 'up' | 'down' | 'stable';
 }
 
-export function AIAnalysis({ filters, cohorts }: AIAnalysisProps) {
+export function AIAnalysis({ filters = {}, cohorts = [], pageType, dataAvailable, loading }: AIAnalysisProps) {
   const [insights, setInsights] = useState<AIInsight[]>([]);
   const [loading, setLoading] = useState(false);
   const [lastGenerated, setLastGenerated] = useState<Date | null>(null);

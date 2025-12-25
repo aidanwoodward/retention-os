@@ -480,7 +480,7 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
             <div className="flex-1">
               <CardTitle className="text-base md:text-lg font-semibold">Cohort Revenue Matrix</CardTitle>
               <CardDescription className="text-xs md:text-sm text-muted-foreground mt-1">
-                Colors represent performance relative to this account's own cohort distribution. Darker blues = top performers, lighter blues = weaker performance.
+                Colors represent performance relative to this account&apos;s own cohort distribution. Darker blues = top performers, lighter blues = weaker performance.
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">

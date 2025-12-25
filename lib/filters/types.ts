@@ -40,7 +40,7 @@ export interface FilterBarProps {
     placeholder?: string;
     param?: string; // default 'q'
   };
-  table?: any; // TanStack Table instance (optional)
+  table?: unknown; // TanStack Table instance (optional)
   className?: string;
   onFiltersChange?: (filters: Record<string, FilterValue>) => void;
   onSearchChange?: (search: string) => void;

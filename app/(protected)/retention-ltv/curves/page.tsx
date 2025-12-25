@@ -825,7 +825,7 @@ export default function RetentionCurvesPage() {
       if (s === "" || s === "—" || s === "-") return { kind: "missing", value: null };
       
       // Strip formatting: %, commas, currency symbols ($, £, €)
-      let cleaned = s
+      const cleaned = s
         .replace(/%/g, "")
         .replace(/,/g, "")
         .replace(/[$£€]/g, "")
@@ -1067,7 +1067,7 @@ export default function RetentionCurvesPage() {
       });
 
       // Store metadata in a hidden property for ZeroDot access
-      (row as any).__metadata = metadataRow;
+      (row as Record<string, unknown>).__metadata = metadataRow;
       return row;
     });
 
@@ -1291,11 +1291,11 @@ export default function RetentionCurvesPage() {
   // ZeroDot component: renders "X" marker for 0% retention points
   // ZeroDot component: renders "X" marker for 0% retention points (only true zeros, not missing)
   // Since we filter out missing values in normalization, any value === 0 that reaches here is a true zero
-  const ZeroDot = React.useCallback((props: any) => {
+  const ZeroDot = React.useCallback((props: { cx?: number; cy?: number; value?: number }) => {
     const { cx, cy, value } = props;
     // Only render for true zero values (not missing/null)
     // We've already filtered out missing values in normalization, so value === 0 means true zero
-    if (!Number.isFinite(value) || value !== 0) return null;
+    if (!Number.isFinite(value) || value !== 0 || cx === undefined || cy === undefined) return null;
     
     return (
       <g>

@@ -59,7 +59,7 @@ interface CohortsResponse {
 interface LTVPeriodData {
   bucket: number;
   bucketLabel: string;
-  ltv: number;
+  ltv: number | null;
   cohortSize: number;
 }
 
@@ -170,7 +170,7 @@ export default function CLRLTVCohortsPage() {
       const queryString = searchParams.toString();
       
       if (queryString === lastQueryStringRef.current) {
-        setLoading(false);
+    setLoading(false);
         setError(null);
         return;
       }
@@ -974,7 +974,7 @@ export default function CLRLTVCohortsPage() {
             {kpiMetrics.avgLTVMid !== null ? formatCurrency(kpiMetrics.avgLTVMid) : '—'}
           </div>
         </div>
-
+        
         {/* KPI 3: Avg LTV (at last observed bucket) */}
         <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-shadow duration-150 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex flex-col h-full">
           <div className="flex items-center justify-between mb-2">
@@ -1128,7 +1128,7 @@ export default function CLRLTVCohortsPage() {
                       } else {
                         const row: (string | number)[] = [d.bucketLabel];
                         normalizedCohortLTVData.forEach(cohort => {
-                          const value = (d as any)[cohort.cohortLabel];
+                          const value = (d as Record<string, number | null | undefined>)[cohort.cohortLabel];
                           row.push(value !== null && value !== undefined ? value.toFixed(2) : '');
                         });
                         return row;
@@ -1204,9 +1204,23 @@ export default function CLRLTVCohortsPage() {
                         // Aggregated view: use last observed bucket from aggregated series
                         const buckets: number[] = [];
                         chartData.forEach(d => {
-                          const bucket = d.bucket;
-                          if ((d as any).ltv !== null && isFinite((d as any).ltv)) {
-                            buckets.push(bucket);
+                          const bucket = (d as { bucket: number }).bucket;
+                          if (viewMode === 'aggregated') {
+                            const ltvData = d as { bucket: number; bucketLabel: string; ltv: number | null };
+                            if (ltvData.ltv !== null && isFinite(ltvData.ltv)) {
+                              buckets.push(bucket);
+                            }
+                          } else {
+                            // For cohort view, check if any cohort has data
+                            const hasData = normalizedCohortLTVData
+                              .filter(c => showCohorts.has(c.cohortLabel))
+                              .some(c => {
+                                const value = (d as Record<string, number | null | undefined>)[c.cohortLabel];
+                                return value !== null && value !== undefined && isFinite(value);
+                              });
+                            if (hasData) {
+                              buckets.push(bucket);
+                            }
                           }
                         });
                         if (buckets.length === 0) return [0, 'dataMax'];
@@ -1293,7 +1307,7 @@ export default function CLRLTVCohortsPage() {
                             .filter(c => showCohorts.has(c.cohortLabel))
                             .map(c => ({
                               label: c.cohortLabel,
-                              value: (data as any)[c.cohortLabel],
+                              value: (data as Record<string, number | null | undefined>)[c.cohortLabel],
                             }))
                             .filter(c => c.value !== null && c.value !== undefined)
                             .sort((a, b) => (b.value as number) - (a.value as number));
@@ -1574,31 +1588,31 @@ export default function CLRLTVCohortsPage() {
               <tr>
                 {viewMode === 'aggregated' ? (
                   <>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Bucket
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       LTV (£ per customer)
-                    </th>
+                </th>
                   </>
                 ) : (
                     <>
                       <th className="sticky left-0 bg-gray-50 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider z-30 border-r border-gray-200 w-[110px]">
                         Cohort
-                      </th>
+                </th>
                       <th className="sticky left-[110px] bg-gray-50 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider z-30 border-r border-gray-200 w-[90px]">
                         Size
                       </th>
                       <th className="sticky left-[200px] bg-gray-50 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider z-30 border-r-2 border-gray-300 w-[120px]">
-                        CLR
-                      </th>
+                  CLR
+                </th>
                       {Array.from({ length: Math.min(maxPossibleBucket + 1, 20) }, (_, i) => {
                         const shouldShow = tableExpanded || i < 6; // Show first 6 buckets by default
                         if (!shouldShow) return null;
                         return (
                           <th key={i} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[90px] border-r border-gray-100">
                             {getTimeBucketLabel(i)}
-                          </th>
+                </th>
                         );
                       })}
                     </>
@@ -1614,10 +1628,10 @@ export default function CLRLTVCohortsPage() {
                       <tr key={data.bucket} className="hover:bg-gray-50">
                         <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                           {data.bucketLabel}
-                        </td>
+                  </td>
                         <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900 tabular-nums">
                           {data.ltv !== null ? formatCurrencyFull(data.ltv) : '—'}
-                        </td>
+                  </td>
                       </tr>
                     );
                   })
@@ -1634,23 +1648,23 @@ export default function CLRLTVCohortsPage() {
                       >
                         <td className={`sticky left-0 ${stickyBg} ${stickyBgHover} px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 z-20 border-r border-gray-200 w-[110px]`}>
                           {cohort.cohortLabel}
-                        </td>
+                  </td>
                         <td className={`sticky left-[110px] ${stickyBg} ${stickyBgHover} px-4 py-3 whitespace-nowrap text-sm text-gray-900 tabular-nums z-20 border-r border-gray-200 w-[90px]`}>
                           {cohort.cohortSize.toLocaleString()}
-                        </td>
+                  </td>
                         <td className={`sticky left-[200px] ${stickyBg} ${stickyBgHover} px-4 py-3 whitespace-nowrap text-sm text-gray-900 tabular-nums z-20 border-r-2 border-gray-300 w-[120px]`}>
                           {cohort.clr !== null ? formatCurrencyFull(cohort.clr) : '–'}
-                        </td>
+                  </td>
                         {cohort.buckets.slice(0, 20).map((bucket) => {
                           const shouldShow = tableExpanded || bucket.bucket < 6; // Show first 6 buckets by default
                           if (!shouldShow) return null;
                           return (
                             <td key={bucket.bucket} className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 tabular-nums min-w-[90px] border-r border-gray-100">
                               {bucket.ltv !== null ? formatCurrencyFull(bucket.ltv) : '–'}
-                            </td>
+                  </td>
                           );
                         })}
-                      </tr>
+                </tr>
                     );
                   })
                 )}

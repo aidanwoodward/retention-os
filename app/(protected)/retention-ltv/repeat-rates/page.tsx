@@ -582,7 +582,7 @@ export default function RepeatPurchaseRatesPage() {
             {displayData ? displayData.secondPurchaseRate.toFixed(1) : 'N/A'}%
           </div>
         </div>
-
+        
         {/* KPI 2: Median Purchases per Customer */}
         <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-shadow duration-150 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex flex-col h-full">
           <div className="flex items-center justify-between mb-2">
@@ -606,7 +606,7 @@ export default function RepeatPurchaseRatesPage() {
             {displayData ? displayData.medianPurchases.toFixed(1) : 'N/A'}
           </div>
         </div>
-
+        
         {/* KPI 3: Customers with ≥3 Purchases */}
         <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-shadow duration-150 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex flex-col h-full">
           <div className="flex items-center justify-between mb-2">
@@ -917,7 +917,7 @@ export default function RepeatPurchaseRatesPage() {
                               <p className="text-xs text-gray-400 mt-1 italic">
                                 This is a step-to-step continuation rate, not cumulative.
                               </p>
-                            </div>
+                </div>
                           );
                         }
                       }
@@ -937,15 +937,19 @@ export default function RepeatPurchaseRatesPage() {
                   >
                     <LabelList
                       dataKey="value"
-                      content={({ x, y, value, payload }: any) => {
+                      content={(props: { x?: string | number; y?: string | number; value?: string | number; payload?: { purchaseNum?: number } }) => {
+                        const { x, y, value, payload } = props;
                         // Only show labels for purchaseNum 2, 3, 4 (cumulative) or 1, 2, 3 (incremental)
                         const purchaseNum = payload?.purchaseNum;
                         const validNums = purchaseView === "cumulative" ? [2, 3, 4] : [1, 2, 3];
-                        if (purchaseNum && validNums.includes(purchaseNum) && value !== undefined && value !== null) {
+                        const numValue = typeof value === 'number' ? value : typeof value === 'string' ? parseFloat(value) : undefined;
+                        const numX = typeof x === 'number' ? x : typeof x === 'string' ? parseFloat(x) : undefined;
+                        const numY = typeof y === 'number' ? y : typeof y === 'string' ? parseFloat(y) : undefined;
+                        if (purchaseNum && validNums.includes(purchaseNum) && numValue !== undefined && numValue !== null && numX !== undefined && numY !== undefined) {
                           return (
                             <text
-                              x={x}
-                              y={y ? y - 10 : 0}
+                              x={numX}
+                              y={numY - 10}
                               dy={-10}
                               fill={purchaseView === "cumulative" ? "#4b5563" : "#6b7280"}
                               fontSize="12"
@@ -953,7 +957,7 @@ export default function RepeatPurchaseRatesPage() {
                               className="text-xs fill-gray-600 md:visible invisible"
                               style={{ fontWeight: 'normal' }}
                             >
-                              {typeof value === 'number' ? value.toFixed(0) : value}%
+                              {`${numValue.toFixed(0)}%`}
                             </text>
                           );
                         }
@@ -977,7 +981,7 @@ export default function RepeatPurchaseRatesPage() {
                 Repeat purchase rates require customers with at least one completed purchase.
               </p>
             </div>
-          </div>
+                    </div>
         )}
 
         {/* Inline Insight Callouts */}
@@ -1034,47 +1038,47 @@ export default function RepeatPurchaseRatesPage() {
                 Note: Table remains cumulative (reached ≥ N) for consistency; the toggle only affects the chart.
               </p>
             )}
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
                   <th className="sticky left-0 bg-gray-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider z-10">
                     Purchase Count
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Customers Reaching
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     % of Original Cohort
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Drop-off vs Previous
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
                 {displayData.purchaseBreakdown.map((data) => (
                   <tr key={data.purchaseCount} className="hover:bg-gray-50">
                     <td className="sticky left-0 bg-white px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 z-10">
                       {data.purchaseCountLabel}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {formatNumber(data.customersReaching)}
-                    </td>
+                  </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {data.percentOfOriginal.toFixed(1)}%
-                    </td>
+                  </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {data.dropOffVsPrevious !== null ? `-${data.dropOffVsPrevious.toFixed(1)}%` : '–'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+      </div>
       )}
     </div>
   );

@@ -577,11 +577,11 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
     }
     
     // Calculate total revenue for each period and add as a property
-    return data.map((period: any) => {
+    return data.map((period: Record<string, string | number>) => {
       let total = 0;
       Object.keys(period).forEach((key) => {
         if (key !== 'period' && typeof period[key] === 'number') {
-          total += period[key];
+          total += period[key] as number;
         }
       });
       return { ...period, total_revenue: total };
@@ -595,7 +595,7 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
       return { maxValue: 0, yAxisTicks: [0] };
     }
     
-    const max = Math.max(...cohortData.map((d: any) => d.total_revenue || 0));
+    const max = Math.max(...cohortData.map((d: { total_revenue?: number }) => d.total_revenue || 0));
     const rawMax = max * 1.03; // 3% headroom (tightened Y-axis for better space usage)
     
     // Calculate nice round intervals
@@ -728,7 +728,7 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
   }
   
   // Custom label for new/returning revenue bars
-  const renderNewReturningLabel = (props: any) => {
+  const renderNewReturningLabel = (props: { x?: number; y?: number; width?: number; height?: number; value?: number; payload?: { new_revenue?: number; returning_revenue?: number }; dataKey?: string }) => {
     const { x, y, width, height, value, payload, dataKey } = props;
     
     if (!payload || !value || value === 0) return null;
@@ -779,8 +779,8 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
   };
   
   // Custom label for total revenue above each bar
-  const renderTotalLabel = (props: any) => {
-    const { x, y, width, payload, value } = props;
+  const renderTotalLabel = (props: { x?: number; y?: number; width?: number; payload?: { total_revenue?: number }; value?: number }) => {
+    const { x, y, width, payload } = props;
     
     if (!payload || !payload.total_revenue || payload.total_revenue === 0) return null;
     
@@ -864,8 +864,8 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
   };
 
   // Custom label for bars beneath (for better scanning)
-  const renderBottomLabel = (props: any) => {
-    const { x, y, width, payload, value } = props;
+  const renderBottomLabel = (props: { x?: number; y?: number; width?: number; payload?: { total_revenue?: number }; value?: number }) => {
+    const { x, y, width, payload } = props;
     
     if (!payload || !payload.total_revenue || payload.total_revenue === 0) return null;
     
@@ -1053,8 +1053,8 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
               // Data rows
               const chartDataToExport = showCohortView ? data : newReturningData;
               if (chartDataToExport && chartDataToExport.length > 0) {
-                chartDataToExport.forEach((row: any) => {
-                  const csvRow = [row.period || ''];
+                chartDataToExport.forEach((row: Record<string, string | number>) => {
+                  const csvRow = [(row.period as string) || ''];
                   if (showCohortView) {
                     cohortKeys.forEach(key => {
                       const value = row[key];

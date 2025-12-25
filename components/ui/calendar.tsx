@@ -27,7 +27,7 @@ const customLocale = {
     weekStartsOn: 0,
     firstWeekContainsDate: 1,
   },
-} as any;
+} as Parameters<typeof DayPicker>[0]['locale'];
 
 export type CalendarProps = DayPickerRangeProps
 

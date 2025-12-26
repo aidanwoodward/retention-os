@@ -26,16 +26,16 @@ interface AIInsight {
   trend?: 'up' | 'down' | 'stable';
 }
 
-export function AIAnalysis({ filters = {}, cohorts = [], pageType, dataAvailable, loading }: AIAnalysisProps) {
+export function AIAnalysis({ filters = {}, cohorts = [], pageType, dataAvailable, loading: externalLoading }: AIAnalysisProps) {
   const [insights, setInsights] = useState<AIInsight[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [lastGenerated, setLastGenerated] = useState<Date | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
 
   const generateInsights = async () => {
-    if (loading) return;
+    if (isGenerating) return;
     
-    setLoading(true);
+    setIsGenerating(true);
     setIsExpanded(true);
     
     try {
@@ -117,7 +117,7 @@ export function AIAnalysis({ filters = {}, cohorts = [], pageType, dataAvailable
     } catch (error) {
       console.error('Failed to generate AI insights:', error);
     } finally {
-      setLoading(false);
+      setIsGenerating(false);
     }
   };
 
@@ -189,7 +189,7 @@ export function AIAnalysis({ filters = {}, cohorts = [], pageType, dataAvailable
       {/* Button Header - Always Visible */}
       <button
         onClick={handleToggle}
-        disabled={loading}
+        disabled={isGenerating}
         className="w-full p-3 flex items-center justify-between hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <div className="flex items-center gap-3">
@@ -202,13 +202,13 @@ export function AIAnalysis({ filters = {}, cohorts = [], pageType, dataAvailable
                 Last generated {lastGenerated.toLocaleTimeString()}
               </p>
             )}
-            {!lastGenerated && !loading && (
+            {!lastGenerated && !isGenerating && (
               <p className="text-xs text-muted-foreground mt-0.5">Click to generate insights</p>
             )}
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {loading && (
+          {isGenerating && (
             <RefreshCw className="w-4 h-4 text-blue-600 animate-spin" />
           )}
           {isExpanded ? (
@@ -222,7 +222,7 @@ export function AIAnalysis({ filters = {}, cohorts = [], pageType, dataAvailable
       {/* Expanded Content */}
       {isExpanded && (
         <div className="border-t border-gray-200">
-          {loading ? (
+          {isGenerating ? (
             <div className="p-6 flex items-center justify-center">
               <div className="flex items-center gap-3">
                 <RefreshCw className="w-5 h-5 text-blue-600 animate-spin" />
@@ -284,10 +284,10 @@ export function AIAnalysis({ filters = {}, cohorts = [], pageType, dataAvailable
                     e.stopPropagation();
                     generateInsights();
                   }}
-                  disabled={loading}
+                  disabled={isGenerating}
                   className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
                   Regenerate
                 </button>
               </div>

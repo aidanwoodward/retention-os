@@ -77,12 +77,8 @@ export function FilterBar({
     return state;
   };
 
-  // Support both search and searchConfig props (searchConfig takes precedence)
-  const searchProps = searchConfig || search;
-  
   const [filterState, setFilterState] = useState<FilterState>(getInitialFilterState);
   const [searchValue, setSearchValue] = useState(searchParams.get(searchProps?.param || 'q') || '');
-  const handleFiltersChange = onFilterChange || onFiltersChange;
   const isInitialMount = React.useRef(true);
   const isUpdatingFromURL = React.useRef(false);
 

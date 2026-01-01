@@ -35,7 +35,7 @@ export function NavMain({
 }) {
   return (
     <>
-      {items.map((item, groupIndex) => (
+      {items.map((item, _groupIndex) => (
         <SidebarGroup key={item.title}>
           <SidebarMenu>
             {item.items && item.items.length > 0 ? (
@@ -61,7 +61,6 @@ export function NavMain({
                         <SidebarMenuSubItem key={subItem.title}>
                           {subItem.disabled || subItem.comingSoon ? (
                             <SidebarMenuSubButton
-                              disabled
                               aria-disabled="true"
                               className="cursor-not-allowed opacity-60"
                             >

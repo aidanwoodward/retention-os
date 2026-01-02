@@ -392,7 +392,7 @@ function RetentionCurvesContent() {
     }
 
     return curveData.sort((a, b) => a.period - b.period);
-  }, [filteredCohorts, cohortType, convertPeriodNumber, getPeriodLabel, maxPossiblePeriod]);
+  }, [filteredCohorts, convertPeriodNumber, getPeriodLabel, maxPossiblePeriod]); // cohortType omitted: convertPeriodNumber already depends on it
 
   // Get all unique cohort labels
   const allCohortLabels = React.useMemo(() => {
@@ -476,7 +476,8 @@ function RetentionCurvesContent() {
       // Default: show all if no URL state
       setShowCohorts(new Set(allCohortLabels));
     }
-  }, [searchParams]); // Only run on mount/URL change, not on every state change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]); // Only run on mount/URL change, not on every state change. allCohortLabels/showCohorts.size intentionally omitted to avoid loops
 
   // URL State Persistence: Update URL when state changes
   React.useEffect(() => {
@@ -562,7 +563,8 @@ function RetentionCurvesContent() {
     if (newUrl !== window.location.pathname + currentUrl) {
       router.replace(newUrl, { scroll: false });
     }
-  }, [retentionType, viewMode, cohortSearchQuery, showCohorts, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [retentionType, viewMode, cohortSearchQuery, showCohorts, router]); // searchParams intentionally omitted to avoid infinite loops
 
   // Hover highlight handlers with debounce (anti-flicker)
   const handleCohortHover = React.useCallback((cohortKey: string | null) => {
@@ -811,7 +813,7 @@ function RetentionCurvesContent() {
       // Sort chronologically (oldest first)
       return new Date(a.cohortMonth).getTime() - new Date(b.cohortMonth).getTime();
     });
-  }, [filteredCohorts, getCohortLabel, getPeriodLabel, convertPeriodNumber, maxPossiblePeriod, showCohorts]);
+  }, [filteredCohorts, getCohortLabel, getPeriodLabel, convertPeriodNumber, maxPossiblePeriod, showCohorts, retentionType]);
 
   // Helper: Parse retention value robustly (handles revenue ratios, percentages, currency, etc.)
   const parseRetentionValue = React.useCallback((raw: unknown, retentionType: 'customer' | 'revenue'): { kind: "missing" | "zero" | "value"; value: number | null } => {
@@ -1247,17 +1249,17 @@ function RetentionCurvesContent() {
   }, [normalizedCohortCurvesData, maxPossiblePeriod, retentionType]);
 
   // Revenue Cohorts blue color scale (oldest → newest)
-  const revenueBlueScale = [
+  const revenueBlueScale = React.useMemo(() => [
     "#1e3a8a", // blue-900 (darkest)
     "#1e40af", // blue-800
     "#1d4ed8", // blue-700
     "#2563eb", // blue-600
     "#3b82f6", // blue-500
     "#60a5fa", // blue-400 (lightest)
-  ];
+  ], []);
   
   // Extended palette for more than 6 cohorts
-  const extendedPalette = [
+  const extendedPalette = React.useMemo(() => [
     ...revenueBlueScale,
     "#10b981", // green-600
     "#34d399", // green-500
@@ -1266,7 +1268,7 @@ function RetentionCurvesContent() {
     "#737373", // neutral-500
     "#a3a3a3", // neutral-400
     "#d4d4d4", // neutral-300 (for very old overflow)
-  ];
+  ], [revenueBlueScale]);
 
   // Get sorted cohort keys (oldest first)
   const sortedCohortKeys = React.useMemo(() => {
@@ -1284,7 +1286,7 @@ function RetentionCurvesContent() {
   const getCohortColor = React.useCallback((cohortKey: string): string => {
     const index = sortedCohortKeys.indexOf(cohortKey);
     return extendedPalette[index >= 0 ? index % extendedPalette.length : 0];
-  }, [sortedCohortKeys]);
+  }, [sortedCohortKeys, extendedPalette]);
 
   // ZeroDot component: renders "X" marker for 0% retention points
   // ZeroDot component: renders "X" marker for 0% retention points (only true zeros, not missing)

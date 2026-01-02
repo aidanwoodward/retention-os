@@ -460,7 +460,7 @@ function RepeatPurchaseRatesContent() {
         }
       });
     }
-  }, [displayData, chartData, isDev, useDevDummy]);
+  }, [displayData, chartData, isDev, useDevDummy, purchaseView]); // purchaseView used in condition
 
   const formatNumber = (num: number) => {
     if (num >= 1000000) {

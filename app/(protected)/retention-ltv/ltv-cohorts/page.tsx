@@ -579,7 +579,7 @@ function CLRLTVCohortsContent() {
       // Check if this looks like dummy data (heuristic: very regular patterns)
       return c.cohort_month.startsWith('2020-') && c.periods.length === 37;
     });
-  }, [isDev, cohorts]);
+  }, [cohorts]); // isDev omitted: constant from outer scope
 
   // Calculate insights - fully data-driven, no hardcoded copy
   // Gated: do not show insights when using DEV dummy data or insufficient coverage
@@ -669,7 +669,7 @@ function CLRLTVCohortsContent() {
     
     // If no meaningful insights, return empty (fallback message shown in UI)
     return insightsList.slice(0, 2);
-  }, [normalizedCohortLTVData, kpiMetrics, ltvHorizons, getTimeBucketLabel, useDevDummy]);
+  }, [normalizedCohortLTVData, kpiMetrics, ltvHorizons, useDevDummy]); // getTimeBucketLabel omitted: not used in this useMemo
 
   // Prepare chart data for aggregated view
   // Chart data derives from aggregatedLTVData (which already enforces monotonicity)
@@ -869,7 +869,8 @@ function CLRLTVCohortsContent() {
         }
       }
     }
-  }, [isDev, viewMode, normalizedCohortLTVData, aggregatedLTVData, aggregatedChartData, kpiMetrics, ltvHorizons]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDev, viewMode, normalizedCohortLTVData, aggregatedLTVData, aggregatedChartData, kpiMetrics, ltvHorizons]); // cohorts omitted: dev-only logging effect, adding would cause unnecessary re-runs
 
   const hasRealData = cohorts.length > 0 && !error;
 

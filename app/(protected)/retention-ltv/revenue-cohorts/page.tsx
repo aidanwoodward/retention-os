@@ -705,7 +705,7 @@ function RevenueCohortsContent() {
       }));
     
       return top5Cohorts;
-  }, [filteredCohorts, viewMode, currentPeriodKey]);
+  }, [filteredCohorts, viewMode, currentPeriodKey, cohorts.length]); // cohorts.length used in early return
 
   // Count cohorts that have revenue in the current period (for "Top X of Y" display)
   const cohortsInCurrentPeriodCount = React.useMemo(() => {
@@ -779,7 +779,7 @@ function RevenueCohortsContent() {
     });
     
     return cohortRevenuesInPeriod.length;
-  }, [filteredCohorts, viewMode, currentPeriodKey]);
+  }, [filteredCohorts, viewMode, currentPeriodKey, cohorts.length]); // cohorts.length used in early return
 
   // Generate trend data first - this will be our single source of truth
   // Uses filteredCohorts to ensure only periods in date range are included

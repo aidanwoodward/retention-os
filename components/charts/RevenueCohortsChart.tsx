@@ -688,7 +688,7 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
     });
     
     return sortedKeys;
-  }, [allCohortsConfig, showCohortView, aggregationMode, allCohortLabels]);
+  }, [allCohortsConfig, showCohortView, aggregationMode]); // allCohortLabels omitted: not used in this useMemo
   
   // Get cohort keys for bars (only visible cohorts)
   const cohortKeys = useMemo(() => {

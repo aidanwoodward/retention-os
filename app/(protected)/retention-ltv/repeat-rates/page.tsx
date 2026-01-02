@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { FilterBar } from "@/components/filters/FilterBar";
 import { retentionCurvesFilters, retentionCurvesSearch } from "@/lib/filters/config";
 import { AIAnalysis } from "@/components/ai/AIAnalysis";
@@ -65,7 +65,7 @@ const readViewFromUrl = (sp: URLSearchParams): PurchaseView => {
   return v === "incremental" || v === "cumulative" ? v : DEFAULT_VIEW;
 };
 
-export default function RepeatPurchaseRatesPage() {
+function RepeatPurchaseRatesContent() {
   const [repeatData, setRepeatData] = useState<RepeatPurchaseResponse['data'] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -600,7 +600,7 @@ export default function RepeatPurchaseRatesPage() {
               </Tooltip>
             </div>
             <BarChart3 className="w-5 h-5 text-gray-400" />
-          </div>
+            </div>
           <p className="text-xs text-gray-500 mb-3">Per customer</p>
           <div className="text-2xl font-bold text-gray-900">
             {displayData ? displayData.medianPurchases.toFixed(1) : 'N/A'}
@@ -628,10 +628,10 @@ export default function RepeatPurchaseRatesPage() {
           <p className="text-xs text-gray-500 mb-3">% of original cohort</p>
           <div className="text-2xl font-bold text-gray-900">
             {displayData ? displayData.customersWith3PlusPurchases.toFixed(1) : 'N/A'}%
+            </div>
           </div>
         </div>
-      </div>
-
+        
       {/* Core Visualization */}
       <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)] mb-8">
         <div className="flex items-start justify-between gap-3 mb-6 flex-wrap">
@@ -700,10 +700,10 @@ export default function RepeatPurchaseRatesPage() {
                       : "each step is a continuation rate (can look healthy on small bases)"}
                   </span>
                 </span>
-              </div>
-            </div>
           </div>
-          
+        </div>
+      </div>
+
           <div className="flex items-center gap-2 flex-shrink-0">
             {/* View Toggle */}
             <div className="flex bg-gray-100 rounded-lg p-1">
@@ -818,7 +818,7 @@ export default function RepeatPurchaseRatesPage() {
             return (
               <div className="mb-2 px-3 py-1.5 bg-red-50 border border-red-200 rounded text-xs text-red-800">
                 <strong>⚠️ Invalid chartData:</strong> {invalidRows.length} rows have invalid purchaseNum or value types (view: {purchaseView})
-              </div>
+                </div>
             );
           }
           return null;
@@ -830,8 +830,8 @@ export default function RepeatPurchaseRatesPage() {
             <div className="animate-pulse space-y-4 w-full px-8">
               <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
               <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
-            </div>
-          </div>
+                    </div>
+                  </div>
         ) : chartData.length > 0 ? (
           <div className="h-[320px] w-full">
             <ChartErrorBoundary
@@ -968,7 +968,7 @@ export default function RepeatPurchaseRatesPage() {
                 </RechartsLineChart>
               </ResponsiveContainer>
             </ChartErrorBoundary>
-          </div>
+                </div>
         ) : (
           <div className="h-80 bg-gray-50/50 rounded-xl flex items-center justify-center border border-dashed border-gray-200 py-10">
             <div className="text-center max-w-md px-4">
@@ -980,8 +980,8 @@ export default function RepeatPurchaseRatesPage() {
               <p className="text-gray-500 text-sm">
                 Repeat purchase rates require customers with at least one completed purchase.
               </p>
-            </div>
-                    </div>
+                </div>
+              </div>
         )}
 
         {/* Inline Insight Callouts */}
@@ -1019,8 +1019,8 @@ export default function RepeatPurchaseRatesPage() {
                     </Tooltip>
                   </div>
                 )}
-              </div>
-            </div>
+          </div>
+        </div>
           </div>
         )}
       </div>
@@ -1081,5 +1081,27 @@ export default function RepeatPurchaseRatesPage() {
       </div>
       )}
     </div>
+  );
+}
+
+export default function RepeatPurchaseRatesPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="animate-pulse space-y-6">
+          <div className="h-10 bg-gray-200 rounded w-1/2"></div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-32">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+                <div className="h-8 bg-gray-300 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    }>
+      <RepeatPurchaseRatesContent />
+    </Suspense>
   );
 }

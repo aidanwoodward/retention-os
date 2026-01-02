@@ -36,7 +36,7 @@ export function InsightPanel({
         "bg-card text-card-foreground flex flex-col rounded-2xl border border-border/70 p-4 shadow-sm transition duration-200 ease-[cubic-bezier(.2,.8,.2,1)]",
         className
       )}
-      style={{ gap: uiTokens.spacing.md, boxShadow: uiTokens.shadow.card }}
+      style={{ gap: uiTokens.spacing.md, boxShadow: uiTokens.shadows.card }}
       {...rest}
     >
       <header className="flex flex-col gap-2" style={{ gap: uiTokens.spacing.sm }}>

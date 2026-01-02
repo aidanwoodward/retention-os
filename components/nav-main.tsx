@@ -62,6 +62,7 @@ export function NavMain({
                           {subItem.disabled || subItem.comingSoon ? (
                             <SidebarMenuSubButton
                               aria-disabled="true"
+                              onClick={(e) => e.preventDefault()}
                               className="cursor-not-allowed opacity-60"
                             >
                               <span>{subItem.title}</span>

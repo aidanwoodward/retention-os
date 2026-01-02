@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker } from "react-day-picker"
 import "react-day-picker/dist/style.css"
 
@@ -19,6 +18,10 @@ const customLocale = {
       const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       return dayNames[n];
     },
+    ordinalNumber: () => "",
+    era: () => "",
+    quarter: () => "",
+    dayPeriod: () => "",
   },
   formatLong: {
     date: () => "mm/dd/yyyy",
@@ -93,10 +96,6 @@ function Calendar({
         ...defaultClassNames,
         ...classNames,
       }}
-      components={{
-        IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
-        IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
-      } as React.ComponentProps<typeof DayPicker>['components']}
       {...props}
     />
   )

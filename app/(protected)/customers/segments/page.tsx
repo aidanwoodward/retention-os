@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { FilterBar } from "@/components/filters/FilterBar";
 import { customerSegmentsFilters, customerSegmentsSearch } from "@/lib/filters/config";
-import { FilterValue } from "@/lib/filters/types";
 import { useSearchParams } from "next/navigation";
 import {
   Activity,
@@ -48,7 +47,7 @@ function CustomerSegmentsContent() {
   const [segments, setSegments] = useState<CustomerSegmentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filterState, setFilterState] = useState<Record<string, FilterValue>>({});
+  // TODO: Re-add filterState when needed for local filter state management
   const searchParams = useSearchParams();
 
   const fetchSegments = useCallback(async () => {
@@ -163,8 +162,8 @@ function CustomerSegmentsContent() {
         <FilterBar
           filters={customerSegmentsFilters}
           search={customerSegmentsSearch}
-          onFiltersChange={(filters) => {
-            setFilterState(filters);
+          onFiltersChange={() => {
+            // FilterBar syncs to URL, no local state needed
           }}
           onSearchChange={() => {
             // URL sync handled by FilterBar

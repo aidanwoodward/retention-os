@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { FilterBar } from "@/components/filters/FilterBar";
 import { productsPerformanceFilters, productsPerformanceSearch } from "@/lib/filters/config";
-import { FilterValue } from "@/lib/filters/types";
 import { useSearchParams } from "next/navigation";
 import {
   Package,
@@ -12,12 +11,10 @@ import {
   Crown,
   Activity,
   Star,
-  Filter,
   AlertTriangle,
   ShoppingCart,
   Heart,
   DollarSign,
-  RefreshCw,
   Download,
 } from "lucide-react";
 import { ProductPerformanceChart } from "@/components/charts/ProductPerformanceChart";
@@ -53,7 +50,7 @@ function ProductPerformanceContent() {
   const [products, setProducts] = useState<ProductPerformanceData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filterState, setFilterState] = useState<Record<string, FilterValue>>({});
+  // TODO: Re-add filterState when needed for local filter state management
   const searchParams = useSearchParams();
 
   const fetchProducts = useCallback(async () => {
@@ -169,8 +166,8 @@ function ProductPerformanceContent() {
         <FilterBar
           filters={productsPerformanceFilters}
           search={productsPerformanceSearch}
-          onFiltersChange={(filters) => {
-            setFilterState(filters);
+          onFiltersChange={() => {
+            // FilterBar syncs to URL, no local state needed
           }}
           onSearchChange={() => {
             // URL sync handled by FilterBar

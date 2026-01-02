@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo, Suspense } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { FilterBar } from "@/components/filters/FilterBar";
 import { retentionCurvesFilters, retentionCurvesSearch } from "@/lib/filters/config";
 import { AIAnalysis } from "@/components/ai/AIAnalysis";
@@ -11,7 +11,6 @@ import {
   AlertTriangle,
   Download,
   Users,
-  Crown,
   Info,
   LineChart,
 } from "lucide-react";
@@ -25,9 +24,8 @@ import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
 } from "@/components/ui/chart";
-import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
+import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Legend, ReferenceLine } from "recharts";
 import { ChartErrorBoundary } from "@/components/charts/ChartErrorBoundary";
 
 interface CohortData {
@@ -90,11 +88,11 @@ function RetentionCurvesContent() {
   const [filterState, setFilterState] = useState<Record<string, FilterValue>>({});
   const [retentionType, setRetentionType] = useState<'customer' | 'revenue'>('customer');
   const [viewMode, setViewMode] = useState<'aggregated' | 'cohort'>('aggregated');
-  const [hoveredCohort, setHoveredCohort] = useState<string | null>(null);
+  const [hoveredCohort, _setHoveredCohort] = useState<string | null>(null);
   const [showCohorts, setShowCohorts] = useState<Set<string>>(new Set());
   const [cohortSearchQuery, setCohortSearchQuery] = useState<string>("");
   const [activeCohortKey, setActiveCohortKey] = useState<string | null>(null);
-  const [chartError, setChartError] = useState<Error | null>(null);
+  const [_chartError, setChartError] = useState<Error | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
   
@@ -1079,7 +1077,7 @@ function RetentionCurvesContent() {
       let lastKnownPeriod: number | null = null;
       let lastKnownValue: number | null = null;
       
-      sortedPoints.forEach((point, idx) => {
+      sortedPoints.forEach((point, _idx) => {
         const currentPeriod = point.periodNum;
         const currentValue = point.retention;
         
@@ -2226,7 +2224,7 @@ function RetentionCurvesContent() {
                               Period: <span className="font-semibold">{getPeriodLabel(periodNum)}</span>
                             </p>
                             <div className="space-y-1.5">
-                              {displayData.map((item, idx) => {
+                              {displayData.map((item, _idx) => {
                                 const isHovered = hoveredCohort === item.cohortKey;
                                 const isRevivalPeriod = revivalEventsRef.current.some(e => 
                                   e.cohortKey === item.cohortKey && e.toPeriod === periodNum
@@ -2299,7 +2297,7 @@ function RetentionCurvesContent() {
                     return (
                       <div className="flex flex-col items-center gap-2">
                         <div className="flex items-center gap-4 flex-wrap justify-center">
-                          {payload?.map((entry, index) => {
+                          {payload?.map((entry, _index) => {
                                 // Filter out dash lines and gap lines from legend
                             if (!entry.value || entry.value === 'undefined') return null;
                                 const dataKeyStr = typeof entry.dataKey === 'string' ? entry.dataKey : (entry.dataKey ? String(entry.dataKey) : '');

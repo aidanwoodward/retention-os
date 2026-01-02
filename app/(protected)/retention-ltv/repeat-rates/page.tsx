@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo, Suspense } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { FilterBar } from "@/components/filters/FilterBar";
 import { retentionCurvesFilters, retentionCurvesSearch } from "@/lib/filters/config";
 import { AIAnalysis } from "@/components/ai/AIAnalysis";
@@ -20,10 +20,7 @@ import {
 } from "@/components/ui/tooltip";
 import { FilterValue } from "@/lib/filters/types";
 import {
-  ChartConfig,
-  ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
 } from "@/components/ui/chart";
 import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LabelList, ReferenceLine } from "recharts";
 import { ChartErrorBoundary } from "@/components/charts/ChartErrorBoundary";
@@ -50,12 +47,7 @@ interface RepeatPurchaseResponse {
   error?: string;
 }
 
-const chartConfig = {
-  repeatRate: {
-    label: "Customers Reaching Purchase Count",
-    color: "hsl(221.2 83.2% 53.3%)", // blue-600
-  },
-} satisfies ChartConfig;
+// TODO: Re-add chartConfig when chart styling is customized
 
 type PurchaseView = "cumulative" | "incremental";
 const DEFAULT_VIEW: PurchaseView = "cumulative";
@@ -236,7 +228,7 @@ function RepeatPurchaseRatesContent() {
     
     let previousValue = 100; // Start at 100% for purchase 1
     
-    return displayData.purchaseBreakdown.map((d, index) => {
+    return displayData.purchaseBreakdown.map((d, _index) => {
       // Clamp to ensure monotonicity (non-increasing) for chart display only
       // This prevents visual artifacts from rounding while preserving accurate KPI/table values
       const clampedValue = Math.min(d.percentOfOriginal, previousValue);
@@ -391,7 +383,7 @@ function RepeatPurchaseRatesContent() {
       console.warn("⚠️ Repeat Purchase Depth: Incremental view enabled (advanced)");
       
       // Assert incremental values are valid
-      incrementalChartData.forEach((d, index) => {
+      incrementalChartData.forEach((d, _index) => {
         if (d.incrementalRate !== null) {
           if (d.incrementalRate < 0 || d.incrementalRate > 100) {
             console.error(`❌ Invalid incremental rate at purchase ${d.purchaseNum}:`, d.incrementalRate);
@@ -453,7 +445,7 @@ function RepeatPurchaseRatesContent() {
       }
 
       // Check table values match chart values
-      displayData.purchaseBreakdown.forEach((tableRow, index) => {
+      displayData.purchaseBreakdown.forEach((tableRow, _index) => {
         const chartRow = chartData.find(d => d.purchaseNum === tableRow.purchaseCount);
         if (chartRow) {
           const diff = Math.abs(tableRow.percentOfOriginal - chartRow.rawValue);

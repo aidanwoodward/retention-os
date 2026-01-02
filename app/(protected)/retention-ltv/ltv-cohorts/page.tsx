@@ -1,11 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { FilterBar } from "@/components/filters/FilterBar";
 import { retentionCurvesFilters, retentionCurvesSearch } from "@/lib/filters/config";
 import { AIAnalysis } from "@/components/ai/AIAnalysis";
-import { LoadingButton } from "@/components/ui/loading-buttons";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   TrendingUp,
@@ -23,12 +22,9 @@ import {
 } from "@/components/ui/tooltip";
 import { FilterValue } from "@/lib/filters/types";
 import {
-  ChartConfig,
-  ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
 } from "@/components/ui/chart";
-import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
+import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine } from "recharts";
 import { ChartErrorBoundary } from "@/components/charts/ChartErrorBoundary";
 // Standardizing tooltip styling to match Revenue Cohorts tooltip for consistency
 import { StandardTooltip, TooltipRow } from "@/components/charts/StandardTooltip";
@@ -75,27 +71,22 @@ interface CohortLTVData {
   }>;
 }
 
-const chartConfig = {
-  ltv: {
-    label: "LTV",
-    color: "hsl(221.2 83.2% 53.3%)", // blue-600
-  },
-} satisfies ChartConfig;
-
+// TODO: Re-add chartConfig when chart styling is customized
 const isDev = process.env.NODE_ENV !== 'production';
 
 function CLRLTVCohortsContent() {
   const [cohorts, setCohorts] = useState<CohortData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filterState, setFilterState] = useState<Record<string, FilterValue>>({});
+  // TODO: Re-add filterState when needed for local filter state management
+  const [_filterState, setFilterState] = useState<Record<string, FilterValue>>({});
   const [viewMode, setViewMode] = useState<'aggregated' | 'cohort'>('aggregated');
   const [hoveredCohort, setHoveredCohort] = useState<string | null>(null);
   const [showCohorts, setShowCohorts] = useState<Set<string>>(new Set());
   const [cohortSearchQuery, setCohortSearchQuery] = useState<string>("");
   const [tableExpanded, setTableExpanded] = useState<boolean>(false);
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const _router = useRouter();
   const lastQueryStringRef = React.useRef<string>('');
 
   // Get cohort type from URL (default to annual)

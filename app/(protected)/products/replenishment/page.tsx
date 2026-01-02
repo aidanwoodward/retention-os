@@ -3,14 +3,11 @@
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { FilterBar } from "@/components/filters/FilterBar";
 import { productsReplenishmentFilters, productsReplenishmentSearch } from "@/lib/filters/config";
-import { FilterValue } from "@/lib/filters/types";
 import { useSearchParams } from "next/navigation";
 import {
-  RefreshCw,
   BarChart3,
   Activity,
   Star,
-  Filter,
   AlertTriangle,
   ShoppingCart,
   Heart,
@@ -53,7 +50,7 @@ function ReplenishmentMetricsContent() {
   const [replenishments, setReplenishments] = useState<ReplenishmentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filterState, setFilterState] = useState<Record<string, FilterValue>>({});
+  // TODO: Re-add filterState when needed for local filter state management
   const searchParams = useSearchParams();
 
   const fetchReplenishments = useCallback(async () => {
@@ -152,7 +149,7 @@ function ReplenishmentMetricsContent() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold mb-2 flex items-center">
-                <RefreshCw className="w-10 h-10 mr-3" />
+                <Box className="w-10 h-10 mr-3" />
                 Replenishment Metrics
               </h1>
               <p className="text-teal-100 text-lg">Optimize inventory levels and prevent stockouts with smart replenishment insights</p>
@@ -170,8 +167,8 @@ function ReplenishmentMetricsContent() {
         <FilterBar
           filters={productsReplenishmentFilters}
           search={productsReplenishmentSearch}
-          onFiltersChange={(filters) => {
-            setFilterState(filters);
+          onFiltersChange={() => {
+            // FilterBar syncs to URL, no local state needed
           }}
           onSearchChange={() => {
             // URL sync handled by FilterBar

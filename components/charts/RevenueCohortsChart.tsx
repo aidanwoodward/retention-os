@@ -1,15 +1,12 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Bar, BarChart, XAxis, YAxis, LabelList, Line, LineChart, ComposedChart, CartesianGrid } from "recharts";
+import { Bar, XAxis, YAxis, LabelList, ComposedChart, CartesianGrid } from "recharts";
 import { Download } from "lucide-react";
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
 } from "@/components/ui/chart";
 
 interface CohortData {
@@ -100,7 +97,7 @@ const transformCohortData = (
     viewMode === 'annual' ? 'annual' : 'half-year';
   
   // Find the earliest cohort date dynamically
-  const earliestCohortDate = cohorts.length > 0 
+  const _earliestCohortDate = cohorts.length > 0 
     ? cohorts.reduce((earliest, cohort) => {
         const cohortDate = new Date(cohort.cohort_month);
         return cohortDate < earliest ? cohortDate : earliest;
@@ -717,180 +714,9 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
     return sortedKeys;
   }, [cohortConfig, showCohortView, showCohorts, aggregationMode]);
   
-  if (!cohorts || cohorts.length === 0 || cohortsWithData.length === 0) {
-    return (
-      <div className="w-full">
-        <div className="h-[300px] flex items-center justify-center text-gray-500 bg-gray-50 rounded-lg border border-gray-200">
-          <p className="text-sm">No cohort data available</p>
-        </div>
-      </div>
-    );
-  }
-  
-  // Custom label for new/returning revenue bars
-  const renderNewReturningLabel = (props: { x?: number; y?: number; width?: number; height?: number; value?: number; payload?: { new_revenue?: number; returning_revenue?: number }; dataKey?: string }) => {
-    const { x, y, width, height, value, payload, dataKey } = props;
-    
-    if (!payload || !value || value === 0) return null;
-    
-    const newRevenue = (payload.new_revenue as number) || 0;
-    const returningRevenue = (payload.returning_revenue as number) || 0;
-    const total = newRevenue + returningRevenue;
-    
-    if (total === 0) return null;
-    
-    const percentage = ((value / total) * 100).toFixed(1);
-    const centerX = (x || 0) + (width || 0) / 2;
-    
-    // For stacked bars, each segment's y and height are relative to that segment only
-    // returning_revenue is rendered first (bottom stack), new_revenue is rendered second (top stack)
-    if (dataKey === 'returning_revenue') {
-      // Bottom segment - show in middle of this segment
-      const segmentCenterY = (y || 0) - (height || 0) / 2;
-      return (
-        <text
-          x={centerX}
-          y={segmentCenterY}
-          fill="#374151"
-          textAnchor="middle"
-          fontSize={11}
-          fontWeight={600}
-        >
-          {formatCurrency(value)} ({percentage}%)
-        </text>
-      );
-    } else if (dataKey === 'new_revenue' && newRevenue > 0) {
-      // Top segment - show at top of this segment (which is top of whole bar)
-      return (
-        <text
-          x={centerX}
-          y={(y || 0) - 5}
-          fill="#374151"
-          textAnchor="middle"
-          fontSize={11}
-          fontWeight={600}
-        >
-          {formatCurrency(value)} ({percentage}%)
-        </text>
-      );
-    }
-    
-    return null;
-  };
-  
-  // Custom label for total revenue above each bar
-  const renderTotalLabel = (props: { x?: number; y?: number; width?: number; payload?: { total_revenue?: number }; value?: number }) => {
-    const { x, y, width, payload } = props;
-    
-    if (!payload || !payload.total_revenue || payload.total_revenue === 0) return null;
-    
-    const total = payload.total_revenue as number;
-    const centerX = (x || 0) + (width || 0) / 2;
-    // Position above the bar - y is the top of the bar segment
-    const labelY = Math.max((y || 0) - 8, 12); // At least 12px from top of chart
-    
-    return (
-      <text
-        x={centerX}
-        y={labelY}
-        fill="#6b7280"
-        textAnchor="middle"
-        fontSize={11}
-        fontWeight={500}
-        className="text-gray-500"
-      >
-        {formatCurrency(total)}
-      </text>
-    );
-  };
-  
-  // Custom tooltip
-  const CustomTooltip = ({ active, payload, label }: {
-    active?: boolean;
-    payload?: Array<{
-      dataKey: string;
-      value: number;
-      color: string;
-    }>;
-    label?: string;
-  }) => {
-    if (!active || !payload || !payload.length) return null;
-    
-    const total = payload.reduce((sum, entry) => sum + (entry.value || 0), 0);
-    
-      return (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
-          <p className="font-semibold text-gray-900 mb-2">{label}</p>
-          <div className="space-y-1">
-          {payload
-            .filter(entry => entry.value > 0)
-            .map((entry, index) => {
-              const config = cohortConfig[entry.dataKey as keyof typeof cohortConfig];
-              const percentage = total > 0 ? ((entry.value / total) * 100).toFixed(1) : '0.0';
-              
-              return (
-                <div key={index} className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-sm flex-shrink-0" 
-                  style={{ backgroundColor: entry.color }}
-                />
-                <span className="text-sm text-gray-700">
-                      {config?.label || entry.dataKey}
-                </span>
-              </div>
-                  <div className="text-right">
-                    <span className="text-sm font-semibold text-gray-900">
-                      {formatCurrency(entry.value)}
-                    </span>
-                    <span className="text-xs text-gray-500 ml-1">
-                      ({percentage}%)
-                    </span>
-          </div>
-        </div>
-      );
-            })}
-          <div className="border-t border-gray-200 pt-1 mt-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-gray-900">Total</span>
-              <span className="text-sm font-semibold text-gray-900">
-        {formatCurrency(total)}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Custom label for bars beneath (for better scanning)
-  const renderBottomLabel = (props: { x?: number; y?: number; width?: number; payload?: { total_revenue?: number }; value?: number }) => {
-    const { x, y, width, payload } = props;
-    
-    if (!payload || !payload.total_revenue || payload.total_revenue === 0) return null;
-    
-    const total = payload.total_revenue as number;
-    const centerX = (x || 0) + (width || 0) / 2;
-    // Position below the bar
-    const labelY = (y || 0) + 15; // Below the bar
-    
-    return (
-      <text
-        x={centerX}
-        y={labelY}
-        fill="#9ca3af"
-        textAnchor="middle"
-        fontSize={10}
-        fontWeight={500}
-        className="text-gray-400"
-      >
-        {formatCurrency(total)}
-      </text>
-    );
-  };
-
   // Calculate CAGR (Compound Annual Growth Rate) from cohort revenue data
   // Only uses complete cohorts (excludes pre-2020 and current incomplete year)
+  // NOTE: This hook MUST be called before any early returns to comply with Rules of Hooks
   const cagrData = useMemo(() => {
     if (!cohortsWithData || cohortsWithData.length < 2) return null;
     
@@ -987,25 +813,189 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
       }
     } else {
       // Half-year format: "H1 2020-H1 2025"
-      const [firstYearStr, firstHalf] = firstLabel.split(' ');
-      const [lastYearStr, lastHalf] = lastLabel.split(' ');
-      const firstYear = parseInt(firstYearStr);
-      const lastYear = parseInt(lastYearStr);
-      
-      if (firstYear === lastYear && firstHalf === lastHalf) {
-        yearRange = `${firstHalf} ${firstYear}`;
-      } else {
-        yearRange = `${firstHalf} ${firstYear}-${lastHalf} ${lastYear}`;
-      }
+      const firstParts = firstLabel.split(' ');
+      const lastParts = lastLabel.split(' ');
+      yearRange = `${firstParts[1]} ${firstParts[0]}-${lastParts[1]} ${lastParts[0]}`;
     }
     
     return {
       value: cagrValue,
       yearRange,
-      firstYear: aggregationMode === 'annual' ? parseInt(firstLabel) : parseInt(firstLabel.split(' ')[0]),
-      lastYear: aggregationMode === 'annual' ? parseInt(lastLabel) : parseInt(lastLabel.split(' ')[0]),
     };
   }, [cohortsWithData, viewMode, aggregationMode]);
+  
+  if (!cohorts || cohorts.length === 0 || cohortsWithData.length === 0) {
+    return (
+      <div className="w-full">
+        <div className="h-[300px] flex items-center justify-center text-gray-500 bg-gray-50 rounded-lg border border-gray-200">
+          <p className="text-sm">No cohort data available</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Custom label for new/returning revenue bars
+  const renderNewReturningLabel = (props: { x?: string | number; y?: string | number; width?: string | number; height?: string | number; value?: string | number; payload?: { new_revenue?: number; returning_revenue?: number }; dataKey?: string }) => {
+    const { x, y, width, height, value, payload, dataKey } = props;
+    
+    const numValue = Number(value);
+    if (!payload || !value || numValue === 0) return null;
+    
+    const newRevenue = (payload.new_revenue as number) || 0;
+    const returningRevenue = (payload.returning_revenue as number) || 0;
+    const total = newRevenue + returningRevenue;
+    
+    if (total === 0) return null;
+    
+    const percentage = ((numValue / total) * 100).toFixed(1);
+    const centerX = (Number(x) || 0) + (Number(width) || 0) / 2;
+    
+    // For stacked bars, each segment's y and height are relative to that segment only
+    // returning_revenue is rendered first (bottom stack), new_revenue is rendered second (top stack)
+    if (dataKey === 'returning_revenue') {
+      // Bottom segment - show in middle of this segment
+      const segmentCenterY = (Number(y) || 0) - (Number(height) || 0) / 2;
+      return (
+        <text
+          x={centerX}
+          y={segmentCenterY}
+          fill="#374151"
+          textAnchor="middle"
+          fontSize={11}
+          fontWeight={600}
+        >
+          {formatCurrency(numValue)} ({percentage}%)
+        </text>
+      );
+    } else if (dataKey === 'new_revenue' && newRevenue > 0) {
+      // Top segment - show at top of this segment (which is top of whole bar)
+      return (
+        <text
+          x={centerX}
+          y={(Number(y) || 0) - 5}
+          fill="#374151"
+          textAnchor="middle"
+          fontSize={11}
+          fontWeight={600}
+        >
+          {formatCurrency(numValue)} ({percentage}%)
+        </text>
+      );
+    }
+    
+    return null;
+  };
+  
+  // Custom label for total revenue above each bar
+  const renderTotalLabel = (props: { x?: string | number; y?: string | number; width?: string | number; payload?: { total_revenue?: number }; value?: string | number }) => {
+    const { x, y, width, payload } = props;
+    
+    if (!payload || !payload.total_revenue || payload.total_revenue === 0) return null;
+    
+    const total = payload.total_revenue as number;
+    const centerX = (Number(x) || 0) + (Number(width) || 0) / 2;
+    // Position above the bar - y is the top of the bar segment
+    const labelY = Math.max((Number(y) || 0) - 8, 12); // At least 12px from top of chart
+    
+    return (
+      <text
+        x={centerX}
+        y={labelY}
+        fill="#6b7280"
+        textAnchor="middle"
+        fontSize={11}
+        fontWeight={500}
+        className="text-gray-500"
+      >
+        {formatCurrency(total)}
+      </text>
+    );
+  };
+  
+  // Custom tooltip
+  const CustomTooltip = ({ active, payload, label }: {
+    active?: boolean;
+    payload?: Array<{
+      dataKey: string;
+      value: number;
+      color: string;
+    }>;
+    label?: string;
+  }) => {
+    if (!active || !payload || !payload.length) return null;
+    
+    const total = payload.reduce((sum, entry) => sum + (entry.value || 0), 0);
+    
+      return (
+        <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
+          <p className="font-semibold text-gray-900 mb-2">{label}</p>
+          <div className="space-y-1">
+          {payload
+            .filter(entry => entry.value > 0)
+            .map((entry, index) => {
+              const config = cohortConfig[entry.dataKey as keyof typeof cohortConfig];
+              const percentage = total > 0 ? ((entry.value / total) * 100).toFixed(1) : '0.0';
+              
+              return (
+                <div key={index} className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-3 h-3 rounded-sm flex-shrink-0" 
+                  style={{ backgroundColor: entry.color }}
+                />
+                <span className="text-sm text-gray-700">
+                      {config?.label || entry.dataKey}
+                </span>
+              </div>
+                  <div className="text-right">
+                    <span className="text-sm font-semibold text-gray-900">
+                      {formatCurrency(entry.value)}
+                    </span>
+                    <span className="text-xs text-gray-500 ml-1">
+                      ({percentage}%)
+                    </span>
+          </div>
+        </div>
+      );
+            })}
+          <div className="border-t border-gray-200 pt-1 mt-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-900">Total</span>
+              <span className="text-sm font-semibold text-gray-900">
+        {formatCurrency(total)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Custom label for bars beneath (for better scanning)
+  const renderBottomLabel = (props: { x?: string | number; y?: string | number; width?: string | number; payload?: { total_revenue?: number }; value?: string | number }) => {
+    const { x, y, width, payload } = props;
+    
+    if (!payload || !payload.total_revenue || payload.total_revenue === 0) return null;
+    
+    const total = payload.total_revenue as number;
+    const centerX = (Number(x) || 0) + (Number(width) || 0) / 2;
+    // Position below the bar
+    const labelY = (Number(y) || 0) + 15; // Below the bar
+    
+    return (
+      <text
+        x={centerX}
+        y={labelY}
+        fill="#9ca3af"
+        textAnchor="middle"
+        fontSize={10}
+        fontWeight={500}
+        className="text-gray-400"
+      >
+        {formatCurrency(total)}
+      </text>
+    );
+  };
 
   return (
     <div className="w-full bg-white rounded-lg border border-gray-200 shadow-sm p-6 pt-6">
@@ -1041,7 +1031,8 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
                 cohortKeys.forEach(key => {
                   const config = cohortConfig[key];
                   if (config) {
-                    header.push(config.label || key);
+                    const label = typeof config.label === 'string' ? config.label : String(key);
+                    header.push(label);
                   }
                 });
               } else {
@@ -1051,18 +1042,18 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
               csvData.push(header);
               
               // Data rows
-              const chartDataToExport = showCohortView ? data : newReturningData;
+              const chartDataToExport = cohortData;
               if (chartDataToExport && chartDataToExport.length > 0) {
                 chartDataToExport.forEach((row: Record<string, string | number>) => {
-                  const csvRow = [(row.period as string) || ''];
+                  const csvRow = [(row['period'] as string | undefined) || ''];
                   if (showCohortView) {
                     cohortKeys.forEach(key => {
                       const value = row[key];
                       csvRow.push(value !== undefined && value !== null ? Number(value).toFixed(2) : '0.00');
                     });
                   } else {
-                    csvRow.push((row.new_revenue || 0).toFixed(2));
-                    csvRow.push((row.returning_revenue || 0).toFixed(2));
+                    csvRow.push(Number(row['new_revenue'] || 0).toFixed(2));
+                    csvRow.push(Number(row['returning_revenue'] || 0).toFixed(2));
                   }
                   // Calculate total
                   let total = 0;
@@ -1071,7 +1062,7 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
                       total += Number(row[key] || 0);
                     });
                   } else {
-                    total = (row.new_revenue || 0) + (row.returning_revenue || 0);
+                    total = Number(row['new_revenue'] || 0) + Number(row['returning_revenue'] || 0);
                   }
                   csvRow.push(total.toFixed(2));
                   csvData.push(csvRow);

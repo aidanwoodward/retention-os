@@ -41,7 +41,7 @@ const InlineDateRangePicker = React.forwardRef<
   InlineDateRangePickerProps
 >(({ 
   value, 
-  onValueChange, 
+  onValueChange: _onValueChange, 
   minDate = new Date(2010, 0, 1),
   maxDate = new Date(2030, 11, 31),
   placeholder = "Select date range",
@@ -93,9 +93,6 @@ const InlineDateRangePicker = React.forwardRef<
           onRangeChange?.(next);
           // Don't call onValueChange here - only on Apply button
         }}
-        captionLayout="dropdown"
-        fromYear={minDate.getFullYear()}
-        toYear={maxDate.getFullYear()}
         numberOfMonths={2}
         disabled={(date) => {
           return date < minDate || date > maxDate;
@@ -275,8 +272,8 @@ export function FilterChip({ config, value, onChange, onClear }: FilterChipProps
                 }}
                 className={someSelected ? "data-[state=checked]:bg-primary data-[state=checked]:border-primary" : ""}
                 ref={(el) => {
-                  if (el) {
-                    el.indeterminate = someSelected;
+                  if (el && 'indeterminate' in el) {
+                    (el as HTMLInputElement).indeterminate = someSelected;
                   }
                 }}
               />

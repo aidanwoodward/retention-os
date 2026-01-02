@@ -24,8 +24,8 @@ export function EnhancedTrendChart({
   height = 120,
   xAxisLabels,
   formatValue = (v) => `$${v.toLocaleString()}`,
-  currentPeriodLabel = "This period",
-  previousPeriodLabel = "Previous period",
+  currentPeriodLabel: _currentPeriodLabel = "This period",
+  previousPeriodLabel: _previousPeriodLabel = "Previous period",
   cohortType = 'monthly',
   periodLabels,
 }: EnhancedTrendChartProps) {

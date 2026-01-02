@@ -1,11 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { FilterBar } from "@/components/filters/FilterBar";
 import { retentionCurvesFilters, retentionCurvesSearch } from "@/lib/filters/config";
 import { AIAnalysis } from "@/components/ai/AIAnalysis";
-import { LoadingButton } from "@/components/ui/loading-buttons";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   TrendingUp,
@@ -23,12 +22,9 @@ import {
 } from "@/components/ui/tooltip";
 import { FilterValue } from "@/lib/filters/types";
 import {
-  ChartConfig,
-  ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
 } from "@/components/ui/chart";
-import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
+import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine } from "recharts";
 import { ChartErrorBoundary } from "@/components/charts/ChartErrorBoundary";
 // Standardizing tooltip styling to match Revenue Cohorts tooltip for consistency
 import { StandardTooltip, TooltipRow } from "@/components/charts/StandardTooltip";
@@ -75,27 +71,22 @@ interface CohortLTVData {
   }>;
 }
 
-const chartConfig = {
-  ltv: {
-    label: "LTV",
-    color: "hsl(221.2 83.2% 53.3%)", // blue-600
-  },
-} satisfies ChartConfig;
-
+// TODO: Re-add chartConfig when chart styling is customized
 const isDev = process.env.NODE_ENV !== 'production';
 
-export default function CLRLTVCohortsPage() {
+function CLRLTVCohortsContent() {
   const [cohorts, setCohorts] = useState<CohortData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filterState, setFilterState] = useState<Record<string, FilterValue>>({});
+  // TODO: Re-add filterState when needed for local filter state management
+  const [_filterState, setFilterState] = useState<Record<string, FilterValue>>({});
   const [viewMode, setViewMode] = useState<'aggregated' | 'cohort'>('aggregated');
   const [hoveredCohort, setHoveredCohort] = useState<string | null>(null);
   const [showCohorts, setShowCohorts] = useState<Set<string>>(new Set());
   const [cohortSearchQuery, setCohortSearchQuery] = useState<string>("");
   const [tableExpanded, setTableExpanded] = useState<boolean>(false);
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const _router = useRouter();
   const lastQueryStringRef = React.useRef<string>('');
 
   // Get cohort type from URL (default to annual)
@@ -888,8 +879,8 @@ export default function CLRLTVCohortsPage() {
       <div className="mb-6">
         <FilterBar
           filters={retentionCurvesFilters}
-          searchConfig={retentionCurvesSearch}
-          onFilterChange={setFilterState}
+          search={retentionCurvesSearch}
+          onFiltersChange={setFilterState}
         />
       </div>
 
@@ -1122,18 +1113,16 @@ export default function CLRLTVCohortsPage() {
                       ? ['Bucket', 'LTV (£ per customer)']
                       : ['Bucket', ...normalizedCohortLTVData.map(c => c.cohortLabel)];
                     
-                    const csvRows = chartData.map(d => {
-                      if (viewMode === 'aggregated') {
-                        return [d.bucketLabel, d.ltv?.toFixed(2) || ''];
-                      } else {
-                        const row: (string | number)[] = [d.bucketLabel];
-                        normalizedCohortLTVData.forEach(cohort => {
-                          const value = (d as Record<string, number | null | undefined>)[cohort.cohortLabel];
-                          row.push(value !== null && value !== undefined ? value.toFixed(2) : '');
+                    const csvRows = viewMode === 'aggregated' 
+                      ? aggregatedChartData.map(d => [d.bucketLabel, d.ltv !== null ? d.ltv.toFixed(2) : ''])
+                      : cohortChartData.map(d => {
+                          const row: (string | number)[] = [d.bucketLabel];
+                          normalizedCohortLTVData.forEach(cohort => {
+                            const value = (d as unknown as Record<string, number | null | undefined>)[cohort.cohortLabel];
+                            row.push(value !== null && value !== undefined ? value.toFixed(2) : '');
+                          });
+                          return row;
                         });
-                        return row;
-                      }
-                    });
                     
                     const csvContent = [
                       csvHeaders.join(','),
@@ -1215,7 +1204,7 @@ export default function CLRLTVCohortsPage() {
                             const hasData = normalizedCohortLTVData
                               .filter(c => showCohorts.has(c.cohortLabel))
                               .some(c => {
-                                const value = (d as Record<string, number | null | undefined>)[c.cohortLabel];
+                                const value = (d as unknown as Record<string, number | null | undefined>)[c.cohortLabel];
                                 return value !== null && value !== undefined && isFinite(value);
                               });
                             if (hasData) {
@@ -1674,5 +1663,27 @@ export default function CLRLTVCohortsPage() {
       </div>
       )}
     </div>
+  );
+}
+
+export default function CLRLTVCohortsPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="animate-pulse space-y-6">
+          <div className="h-10 bg-gray-200 rounded w-1/2"></div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-32">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+                <div className="h-8 bg-gray-300 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    }>
+      <CLRLTVCohortsContent />
+    </Suspense>
   );
 }

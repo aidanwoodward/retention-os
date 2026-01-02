@@ -11,10 +11,7 @@ import {
   Zap,
   Shield,
   Crown,
-  MessageSquare,
-  DollarSign,
   BarChart3,
-  Repeat,
   Sparkles,
   Rocket,
 } from "lucide-react"

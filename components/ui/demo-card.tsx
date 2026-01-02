@@ -53,7 +53,7 @@ export function DemoCard({
         "hover:shadow-md focus-within:shadow-md",
         className
       )}
-      style={{ boxShadow: uiTokens.shadow.card }}
+      style={{ boxShadow: uiTokens.shadows.card }}
       {...rest}
     >
       <CardContent className="p-4">

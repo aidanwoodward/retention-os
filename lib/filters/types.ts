@@ -2,6 +2,8 @@
  * Shared types for FilterBar component system
  */
 
+import type { Table } from '@tanstack/react-table';
+
 export type FilterOption = {
   label: string;
   value: string;
@@ -34,13 +36,17 @@ export interface FilterConfig {
   defaultValue?: FilterValue;
 }
 
-export interface FilterBarProps {
+export interface FilterBarProps<TData = unknown> {
   filters: FilterConfig[];
   search?: {
     placeholder?: string;
     param?: string; // default 'q'
   };
-  table?: unknown; // TanStack Table instance (optional)
+  searchConfig?: {
+    placeholder?: string;
+    param?: string;
+  };
+  table?: Table<TData>; // TanStack Table instance (optional)
   className?: string;
   onFiltersChange?: (filters: Record<string, FilterValue>) => void;
   onSearchChange?: (search: string) => void;

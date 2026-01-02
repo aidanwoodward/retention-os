@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { FilterBar } from "@/components/filters/FilterBar";
 import { retentionCurvesFilters, retentionCurvesSearch } from "@/lib/filters/config";
 import { AIAnalysis } from "@/components/ai/AIAnalysis";
@@ -11,7 +11,6 @@ import {
   AlertTriangle,
   Download,
   Users,
-  Crown,
   Info,
   LineChart,
 } from "lucide-react";
@@ -25,9 +24,8 @@ import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
 } from "@/components/ui/chart";
-import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
+import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Legend, ReferenceLine } from "recharts";
 import { ChartErrorBoundary } from "@/components/charts/ChartErrorBoundary";
 
 interface CohortData {
@@ -83,18 +81,18 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export default function RetentionCurvesPage() {
+function RetentionCurvesContent() {
   const [cohorts, setCohorts] = useState<CohortData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<Record<string, FilterValue>>({});
   const [retentionType, setRetentionType] = useState<'customer' | 'revenue'>('customer');
   const [viewMode, setViewMode] = useState<'aggregated' | 'cohort'>('aggregated');
-  const [hoveredCohort, setHoveredCohort] = useState<string | null>(null);
+  const [hoveredCohort, _setHoveredCohort] = useState<string | null>(null);
   const [showCohorts, setShowCohorts] = useState<Set<string>>(new Set());
   const [cohortSearchQuery, setCohortSearchQuery] = useState<string>("");
   const [activeCohortKey, setActiveCohortKey] = useState<string | null>(null);
-  const [chartError, setChartError] = useState<Error | null>(null);
+  const [_chartError, setChartError] = useState<Error | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
   
@@ -1079,7 +1077,7 @@ export default function RetentionCurvesPage() {
       let lastKnownPeriod: number | null = null;
       let lastKnownValue: number | null = null;
       
-      sortedPoints.forEach((point, idx) => {
+      sortedPoints.forEach((point, _idx) => {
         const currentPeriod = point.periodNum;
         const currentValue = point.retention;
         
@@ -1382,7 +1380,7 @@ export default function RetentionCurvesPage() {
         return `Q${periodNum}`;
       } else if (cohortType === 'half-year') {
         return periodNum === 0 ? 'H1' : `H${periodNum + 1}`;
-      } else {
+    } else {
         return `M${periodNum}`;
       }
     };
@@ -2226,7 +2224,7 @@ export default function RetentionCurvesPage() {
                               Period: <span className="font-semibold">{getPeriodLabel(periodNum)}</span>
                             </p>
                             <div className="space-y-1.5">
-                              {displayData.map((item, idx) => {
+                              {displayData.map((item, _idx) => {
                                 const isHovered = hoveredCohort === item.cohortKey;
                                 const isRevivalPeriod = revivalEventsRef.current.some(e => 
                                   e.cohortKey === item.cohortKey && e.toPeriod === periodNum
@@ -2299,7 +2297,7 @@ export default function RetentionCurvesPage() {
                     return (
                       <div className="flex flex-col items-center gap-2">
                         <div className="flex items-center gap-4 flex-wrap justify-center">
-                          {payload?.map((entry, index) => {
+                          {payload?.map((entry, _index) => {
                                 // Filter out dash lines and gap lines from legend
                             if (!entry.value || entry.value === 'undefined') return null;
                                 const dataKeyStr = typeof entry.dataKey === 'string' ? entry.dataKey : (entry.dataKey ? String(entry.dataKey) : '');
@@ -2444,9 +2442,9 @@ export default function RetentionCurvesPage() {
             {viewMode === 'aggregated' ? 'Aggregated retention by period' : 'Retention by cohort and period'}
           </h2>
           {viewMode === 'aggregated' ? (
-            <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 mt-1">
               Each row represents a period aggregated across all cohorts.
-            </p>
+          </p>
           ) : (
             <p className="text-sm text-gray-500 mt-1">
               Cohort-by-cohort retention breakdown
@@ -2464,46 +2462,46 @@ export default function RetentionCurvesPage() {
                 </p>
               </div>
             )}
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="sticky left-0 bg-gray-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider z-10">
-                      Period
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Retention Rate
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Revenue Retention
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {retentionCurveData.length > 0 ? (
-                    retentionCurveData.map((data) => (
-                      <tr key={data.period} className="hover:bg-gray-50">
-                        <td className="sticky left-0 bg-white px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 z-10">
-                          {data.periodLabel}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {data.retentionRate.toFixed(1)}%
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {data.revenueRetention.toFixed(1)}%
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={3} className="px-6 py-8 text-center text-sm text-gray-500">
-                        No retention data available. Adjust filters to see results.
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="sticky left-0 bg-gray-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider z-10">
+                    Period
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Retention Rate
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Revenue Retention
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {retentionCurveData.length > 0 ? (
+                  retentionCurveData.map((data) => (
+                    <tr key={data.period} className="hover:bg-gray-50">
+                      <td className="sticky left-0 bg-white px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 z-10">
+                        {data.periodLabel}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {data.retentionRate.toFixed(1)}%
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {data.revenueRetention.toFixed(1)}%
                       </td>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                ) : (
+                  <tr>
+                      <td colSpan={3} className="px-6 py-8 text-center text-sm text-gray-500">
+                      No retention data available. Adjust filters to see results.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
           </>
         )}
 
@@ -2585,5 +2583,27 @@ export default function RetentionCurvesPage() {
         })()}
       </div>
     </div>
+  );
+}
+
+export default function RetentionCurvesPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="animate-pulse space-y-6">
+          <div className="h-10 bg-gray-200 rounded w-1/2"></div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-32">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+                <div className="h-8 bg-gray-300 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    }>
+      <RetentionCurvesContent />
+    </Suspense>
   );
 }

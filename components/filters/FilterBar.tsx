@@ -5,22 +5,21 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Search, ChevronDown, ChevronUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { FilterBarProps, FilterValue, FilterState } from "@/lib/filters/types";
+import { FilterBarProps, FilterValue, FilterState, NumberCondition } from "@/lib/filters/types";
 import { FilterChip } from "./FilterChip";
 
-export function FilterBar({
+export function FilterBar<TData = unknown>({
   filters,
   search,
   searchConfig,
   table,
   className,
   onFiltersChange,
-  onFilterChange,
   onSearchChange,
-}: FilterBarProps) {
+}: FilterBarProps<TData>) {
   // Support both search and searchConfig props (searchConfig takes precedence)
   const searchProps = searchConfig || search;
-  const handleFiltersChange = onFilterChange || onFiltersChange;
+  const handleFiltersChange = onFiltersChange;
   
   const router = useRouter();
   const pathname = usePathname();
@@ -44,7 +43,7 @@ export function FilterBar({
           const parts = paramValue.split(':');
           if (parts.length >= 2) {
             state[filter.id] = {
-              condition: parts[0] as 'equals' | 'greater_than' | 'less_than' | 'between',
+              condition: (parts[0] === 'between' ? 'is-between' : parts[0]) as NumberCondition,
               value: [parseFloat(parts[1]) || 0, parseFloat(parts[2]) || 0],
             };
           }

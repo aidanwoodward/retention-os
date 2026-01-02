@@ -19,6 +19,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { FilterValue } from "@/lib/filters/types";
+import { compareQueryStrings } from "@/lib/utils";
 import {
   ChartTooltip,
 } from "@/components/ui/chart";
@@ -84,7 +85,8 @@ function RepeatPurchaseRatesContent() {
     
     const nextQs = sp.toString();
     const currQs = searchParams.toString();
-    if (nextQs !== currQs) {
+    // Only update URL if the normalized query string actually changed (ignoring internal params)
+    if (!compareQueryStrings(nextQs, currQs)) {
       router.replace(`?${nextQs}`, { scroll: false });
     }
   }, [searchParams, router]);
@@ -94,21 +96,29 @@ function RepeatPurchaseRatesContent() {
       setLoading(true);
       const queryString = searchParams.toString();
       
-      // TODO: Replace with actual API endpoint when available
       const response = await fetch(`/api/metrics/repeat-purchases?${queryString}`);
       
-      // If API doesn't exist yet, return null (will use dev dummy if needed)
-      if (!response.ok && response.status === 404) {
-        setRepeatData(null);
-        setError(null);
-        return;
+      // If API returns 404 or non-OK, log a single WARN in dev and fall back to dummy data
+      if (!response.ok) {
+        if (response.status === 404) {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[Repeat Purchases] API endpoint not found (404), using fallback dummy data');
+          }
+          setRepeatData(null);
+          setError(null);
+          return;
+        }
+        
+        // For other errors, try to parse error message
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch repeat purchase data');
+        } catch {
+          throw new Error(`Failed to fetch repeat purchase data: ${response.status} ${response.statusText}`);
+        }
       }
       
       const data: RepeatPurchaseResponse = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch repeat purchase data');
-      }
 
       // Check if we have real data
       if (data.data && data.data.purchaseBreakdown && data.data.purchaseBreakdown.length > 0) {
@@ -124,6 +134,7 @@ function RepeatPurchaseRatesContent() {
       if (process.env.NODE_ENV === 'production') {
         setError(err instanceof Error ? err.message : 'Failed to fetch repeat purchase data');
       } else {
+        // In dev, silently fall back to dummy data (already logged warning above if 404)
         setRepeatData(null);
         setError(null);
       }

@@ -33,7 +33,7 @@ const data = {
   user: {
     name: "Aidan Woodward",
     email: "aidan@retention-os.com",
-    avatar: "/avatars/aidan.jpg",
+    avatar: "/avatars/aidan.svg",
   },
   teams: [
     {

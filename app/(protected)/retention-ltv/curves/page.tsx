@@ -20,6 +20,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { FilterValue } from "@/lib/filters/types";
+import { compareQueryStrings } from "@/lib/utils";
 import {
   ChartConfig,
   ChartContainer,
@@ -557,10 +558,11 @@ function RetentionCurvesContent() {
     }
     
     // Update URL without adding to history (use replace)
-    // Only update if params actually changed to avoid infinite loops
-    const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
-    const currentUrl = window.location.search;
-    if (newUrl !== window.location.pathname + currentUrl) {
+    // Only update if params actually changed to avoid infinite loops (ignoring internal params)
+    const newQueryString = params.toString();
+    const currentQueryString = window.location.search.slice(1); // Remove leading '?'
+    if (!compareQueryStrings(newQueryString, currentQueryString)) {
+      const newUrl = newQueryString ? `?${newQueryString}` : window.location.pathname;
       router.replace(newUrl, { scroll: false });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

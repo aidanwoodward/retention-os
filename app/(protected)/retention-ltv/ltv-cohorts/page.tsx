@@ -73,6 +73,8 @@ interface CohortLTVData {
 
 // TODO: Re-add chartConfig when chart styling is customized
 const isDev = process.env.NODE_ENV !== 'production';
+// Gate monotonic warnings behind DEBUG flag or only log once per cohort
+const DEBUG_LTV_MONOTONIC = process.env.NEXT_PUBLIC_DEBUG_LTV_MONOTONIC === 'true';
 
 function CLRLTVCohortsContent() {
   const [cohorts, setCohorts] = useState<CohortData[]>([]);
@@ -88,6 +90,8 @@ function CLRLTVCohortsContent() {
   const searchParams = useSearchParams();
   const _router = useRouter();
   const lastQueryStringRef = React.useRef<string>('');
+  // Track which cohorts have already been warned about monotonicity issues (reduce console noise)
+  const warnedCohortsRef = React.useRef<Set<string>>(new Set());
 
   // Get cohort type from URL (default to annual)
   const cohortType = React.useMemo(() => {
@@ -341,14 +345,16 @@ function CLRLTVCohortsContent() {
           // Enforce monotonicity: if current LTV is lower than previous by more than tolerance, treat as incomplete/partial data
           const TOLERANCE = 0.001;
           if (previousLTV !== null && ltv < previousLTV - TOLERANCE) {
-            // DEV-only: log warning before nulling out
-            if (isDev) {
+            // DEV-only: log warning once per cohort (reduce console noise)
+            const warningKey = `${cohortLabel}-monotonic`;
+            if (isDev && (DEBUG_LTV_MONOTONIC || !warnedCohortsRef.current.has(warningKey))) {
               console.warn(`⚠️ Non-monotonic LTV detected in cohort ${cohortLabel} at bucket ${bucket}:`, {
                 previous: previousLTV,
                 current: ltv,
                 difference: previousLTV - ltv,
                 action: 'Setting to null (line break)',
               });
+              warnedCohortsRef.current.add(warningKey);
             }
             // Break the line - set to null for incomplete/partial bucket
             buckets.push({
@@ -423,14 +429,16 @@ function CLRLTVCohortsContent() {
         
         // Enforce monotonicity for aggregated data
         if (previousLTV !== null && aggregatedLTV < previousLTV - TOLERANCE) {
-          // DEV-only: log warning
-          if (isDev) {
+          // DEV-only: log warning once (reduce console noise)
+          const warningKey = 'aggregated-monotonic';
+          if (isDev && (DEBUG_LTV_MONOTONIC || !warnedCohortsRef.current.has(warningKey))) {
             console.warn(`⚠️ Non-monotonic aggregated LTV at bucket ${bucket}:`, {
               previous: previousLTV,
               current: aggregatedLTV,
               difference: previousLTV - aggregatedLTV,
               action: 'Setting to null (line break)',
             });
+            warnedCohortsRef.current.add(warningKey);
           }
           // Break the line
           result.push({
@@ -801,14 +809,19 @@ function CLRLTVCohortsContent() {
           const ltv = cohort.cohort_size > 0 ? cumulativeRevenue / cohort.cohort_size : 0;
           
           if (previousLTV !== null && ltv < previousLTV - TOLERANCE) {
-            console.warn(`⚠️ UPSTREAM DATA ISSUE: Non-monotonic cumulative revenue detected in cohort ${cohort.cohort_month} at period ${period.period_number}:`, {
-              previousLTV,
-              currentLTV: ltv,
-              difference: previousLTV - ltv,
-              previousRevenue: (previousLTV || 0) * cohort.cohort_size,
-              currentRevenue: cumulativeRevenue,
-              message: 'This will be corrected in normalization (set to null)',
-            });
+            // Log warning once per cohort (reduce console noise)
+            const warningKey = `${cohort.cohort_month}-upstream`;
+            if (DEBUG_LTV_MONOTONIC || !warnedCohortsRef.current.has(warningKey)) {
+              console.warn(`⚠️ UPSTREAM DATA ISSUE: Non-monotonic cumulative revenue detected in cohort ${cohort.cohort_month} at period ${period.period_number}:`, {
+                previousLTV,
+                currentLTV: ltv,
+                difference: previousLTV - ltv,
+                previousRevenue: (previousLTV || 0) * cohort.cohort_size,
+                currentRevenue: cumulativeRevenue,
+                message: 'This will be corrected in normalization (set to null)',
+              });
+              warnedCohortsRef.current.add(warningKey);
+            }
           }
           previousLTV = ltv;
         });

@@ -7,7 +7,7 @@ import { RevenueCohortsChart } from "@/components/charts/RevenueCohortsChart";
 import { CohortMatrix } from "@/components/charts/CohortMatrix";
 import { AIAnalysis } from "@/components/ai/AIAnalysis";
 import { LoadingButton } from "@/components/ui/loading-buttons";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   AlertTriangle,
   Info,
@@ -18,6 +18,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { FilterValue } from "@/lib/filters/types";
+import { compareQueryStrings } from "@/lib/utils";
 // TODO: Re-add SimpleTrendChart when needed
 import { EnhancedTrendChart } from "@/components/charts/EnhancedTrendChart";
 
@@ -52,6 +53,8 @@ function RevenueCohortsContent() {
   const [error, setError] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<Record<string, FilterValue>>({});
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   // Initialize with default value to avoid hydration mismatch
   // Actual value will be set in useEffect on client side
   const [viewMode, setViewMode] = useState<'monthly' | 'quarterly' | 'half-year' | 'annual'>('annual');
@@ -216,13 +219,17 @@ function RevenueCohortsContent() {
       if (!urlInitializedRef.current) {
         const newParams = new URLSearchParams(searchParams.toString());
         newParams.set('cohortType', 'annual');
-        // Update URL without triggering navigation
-        window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
+        const newQueryString = newParams.toString();
+        const currentQueryString = searchParams.toString();
+        // Only update URL if the normalized query string actually changed (ignoring internal params)
+        if (!compareQueryStrings(newQueryString, currentQueryString)) {
+          router.replace(`${pathname}?${newQueryString}`, { scroll: false });
+        }
         urlInitializedRef.current = true;
       }
       setViewMode('annual');
     }
-  }, [searchParams]);
+  }, [searchParams, pathname, router]);
 
   const formatCurrency = (amount: number) => {
     if (amount >= 1000000) {

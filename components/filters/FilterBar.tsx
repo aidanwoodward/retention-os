@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Search, ChevronDown, ChevronUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { cn, stripInternalParamsFromQueryString, compareQueryStrings } from "@/lib/utils";
 import { FilterBarProps, FilterValue, FilterState, NumberCondition } from "@/lib/filters/types";
 import { FilterChip } from "./FilterChip";
 
@@ -88,7 +88,7 @@ export function FilterBar<TData = unknown>({
       return;
     }
     
-    // Check if URL actually changed by comparing query strings
+    // Check if URL actually changed by comparing query strings (ignoring internal params)
     const currentQuery = searchParams.toString();
     const currentStateQuery = (() => {
       const params = new URLSearchParams();
@@ -113,8 +113,8 @@ export function FilterBar<TData = unknown>({
       return params.toString();
     })();
     
-    // Only sync from URL if it's different from current state
-    if (currentQuery !== currentStateQuery) {
+    // Only sync from URL if it's different from current state (ignoring internal params)
+    if (!compareQueryStrings(currentQuery, currentStateQuery)) {
       isUpdatingFromURL.current = true;
       const newState = getInitialFilterState();
       setFilterState(newState);
@@ -161,9 +161,14 @@ export function FilterBar<TData = unknown>({
       params.set(searchParam, searchValue);
     }
 
-    const queryString = params.toString();
-    router.replace(`${pathname}${queryString ? `?${queryString}` : ''}`, { scroll: false });
-  }, [filterState, searchValue, filters, search, router, pathname]);
+    const newQueryString = params.toString();
+    const currentQueryString = searchParams.toString();
+    
+    // Only update URL if the normalized query string actually changed (ignoring internal params)
+    if (!compareQueryStrings(newQueryString, currentQueryString)) {
+      router.replace(`${pathname}${newQueryString ? `?${newQueryString}` : ''}`, { scroll: false });
+    }
+  }, [filterState, searchValue, filters, search, router, pathname, searchParams]);
 
   // Debounce search and update URL
   useEffect(() => {

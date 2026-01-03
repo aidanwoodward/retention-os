@@ -3,6 +3,19 @@ import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+
+  // never run auth/demo middleware on Next internals or assets
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api") || // optional: only if your middleware shouldn't touch APIs
+    pathname === "/favicon.ico" ||
+    pathname.startsWith("/avatars/") ||
+    /\.(?:png|jpg|jpeg|svg|gif|webp|ico|css|js|map|woff2?)$/.test(pathname)
+  ) {
+    return NextResponse.next();
+  }
+
   const res = NextResponse.next();
 
   // Skip authentication in development mode

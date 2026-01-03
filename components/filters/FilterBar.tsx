@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Search, ChevronDown, ChevronUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { cn, stripInternalParamsFromQueryString, compareQueryStrings } from "@/lib/utils";
+import { cn, compareQueryStrings } from "@/lib/utils";
 import { FilterBarProps, FilterValue, FilterState, NumberCondition } from "@/lib/filters/types";
 import { FilterChip } from "./FilterChip";
 

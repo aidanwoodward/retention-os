@@ -94,7 +94,6 @@ The app uses Supabase for authentication with the following flow:
   - `/cohorts` – Cohort explorer with filters and export actions
   - `/cohorts/category` – Category-level cohort comparisons
   - `/cohorts/composition` – Composition breakdowns
-  - `/cohorts/revenue` – Revenue retention heatmaps
 - **Retention & LTV**
   - `/retention-ltv/revenue-cohorts` – Revenue cohort analysis
   - `/retention-ltv/curves` – Retention curves

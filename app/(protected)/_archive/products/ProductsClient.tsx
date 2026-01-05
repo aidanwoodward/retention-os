@@ -1,3 +1,26 @@
+/**
+ * ARCHIVED: ProductsClient.tsx
+ * 
+ * Original Intent: Product Analytics dashboard for SKU performance, cross-sell, and replenishment insights
+ * Date Archived: 2024-12-19
+ * 
+ * This component was built to provide:
+ * - SKU performance metrics (revenue, margin, retention)
+ * - Cross-sell and upsell opportunity identification
+ * - Replenishment frequency and timing optimization
+ * - Product-level retention insights
+ * 
+ * Why Archived: /products route converted to "Coming Soon" placeholder for product prioritization
+ * 
+ * Reintroduce When:
+ * - Product catalog sync is implemented
+ * - Order line items are tracked and analyzed
+ * - SKU-level retention metrics are prioritized
+ * - Cross-sell/replenishment algorithms are ready
+ * 
+ * See: docs/unused-product-ideas.md for full documentation
+ */
+
 'use client'
 
 import * as React from "react"
@@ -11,17 +34,17 @@ import { TableSection } from "@/components/ui/table-section"
 import { useMergedSearchParams, type SearchParamsRecord } from "@/hooks/use-merged-search-params"
 import { getPageContent } from "@/lib/content-map"
 import { useDemoMode } from "@/lib/demo-mode/context"
-import { generateFinancialDemoData } from "@/lib/demo-data/financials"
+import { generateProductDemoData } from "@/lib/demo-data/products"
 import { resolveDemoSeed } from "@/lib/demo-data/seed"
 import { resolveDemoState } from "@/lib/demo-data/state"
 
-interface FinancialsClientProps {
+interface ProductsClientProps {
   initialSearchParams?: SearchParamsRecord
 }
 
-export default function FinancialsClient({
+export default function ProductsClient({
   initialSearchParams,
-}: FinancialsClientProps) {
+}: ProductsClientProps) {
   const { demoMode, isDemoModeAvailable } = useDemoMode()
   const mergedSearchParams = useMergedSearchParams(initialSearchParams)
 
@@ -37,11 +60,11 @@ export default function FinancialsClient({
   const status = baseState !== "ready" ? baseState : demoModeActive ? "ready" : "empty"
 
   const demoData = React.useMemo(
-    () => (demoModeActive ? generateFinancialDemoData(seed) : null),
+    () => (demoModeActive ? generateProductDemoData(seed) : null),
     [demoModeActive, seed]
   )
 
-  const content = getPageContent("financials")
+  const content = getPageContent("products")
   const { title, summary, kpis, actions } = content
   const kpiItems = kpis.map((kpi) => ({
     id: kpi.key,
@@ -54,14 +77,14 @@ export default function FinancialsClient({
       status={status}
       empty={
         <EmptyState
-          title="Connect your data to unlock financial insights"
-          description="Set up integrations to see live financial data. Link your revenue source to monitor net revenue, margin, and retention-adjusted forecasts."
+          title="Connect your data to unlock product analytics"
+          description="Set up integrations to see live product data. Once your store syncs, you'll see SKU performance, replenishment signals, and retention insights here."
           action={{ label: "Connect Shopify", href: "/connect/shopify" }}
         />
       }
       error={
         <ErrorState
-          message="Financial metrics failed to load. Retry the sync or check integration settings."
+          message="Product analytics are temporarily unavailable. Check sync status or try again."
           action={{ label: "Open sync status", href: "/sync" }}
         />
       }
@@ -101,14 +124,14 @@ export default function FinancialsClient({
               description={demoData.insight.description}
               metricLabel={demoData.insight.metricLabel}
               data={demoData.insight.data}
-              footer={`${demoData.insight.footer} Next update ${demoData.summary.nextUpdate}.`}
+              footer={demoData.insight.footer}
             />
           </div>
 
           <div className="mt-6">
             <TableSection
-              title="Monthly revenue and margin"
-              description={`Last refreshed ${demoData.summary.refreshedAt}.`}
+              title="SKU performance snapshot"
+              description="Key retention KPIs for your top-performing products."
               caption={demoData.table.caption}
               columns={demoData.table.columns}
               rows={demoData.table.rows}

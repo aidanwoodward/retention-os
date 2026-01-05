@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { FilterBar } from "@/components/filters/FilterBar";
-import { retentionCurvesFilters, retentionCurvesSearch } from "@/lib/filters/config";
+import { repeatRatesFilters, repeatRatesSearch } from "@/lib/filters/config";
 import { AIAnalysis } from "@/components/ai/AIAnalysis";
 import { LoadingButton } from "@/components/ui/loading-buttons";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -417,8 +417,8 @@ export default function RepeatPurchaseRatesContent() {
       {/* Filter Bar */}
       <div className="mb-8">
         <FilterBar
-          filters={retentionCurvesFilters}
-          search={retentionCurvesSearch}
+          filters={repeatRatesFilters}
+          search={repeatRatesSearch}
           onFiltersChange={(filters) => {
             setFilterState(filters);
           }}
@@ -427,6 +427,20 @@ export default function RepeatPurchaseRatesContent() {
           }}
         />
       </div>
+
+      {/* Dev Mode Dummy Data Indicator */}
+      {useDevDummy && (
+        <div className="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-900 mb-1">Demo data — API unavailable</p>
+            <p className="text-xs text-amber-700">
+              The API is currently unavailable. This page is showing demo data for development purposes only. 
+              All metrics are simulated and should not be used for decision-making.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* AI Analysis Section */}
       <div className="mb-8">
@@ -449,8 +463,11 @@ export default function RepeatPurchaseRatesContent() {
                   <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent className="bg-gray-900 text-white border-0 max-w-[280px]">
-                  <p className="text-xs">
+                  <p className="text-xs mb-1">
                     Percentage of customers who placed at least one additional order after their first purchase.
+                  </p>
+                  <p className="text-xs text-gray-300">
+                    Lifetime-based: counts all purchases from first order to present, not limited to a specific time period.
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -583,6 +600,10 @@ export default function RepeatPurchaseRatesContent() {
                       ? "% reaching ≥ N purchases (cumulative)"
                       : "% continuing from N → N+1 purchases (incremental)"}
                   </span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="font-medium text-gray-700">Time window:</span>
+                  <span>lifetime-based (all purchases from first order to present)</span>
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="font-medium text-gray-700">Interpretation:</span>
@@ -755,6 +776,11 @@ export default function RepeatPurchaseRatesContent() {
                               <p className="text-xs text-gray-500 mt-1">
                                 Customers reaching: {formatNumber(data.customersReaching)}
                               </p>
+                              {data.value !== data.rawValue && (
+                                <p className="text-xs text-gray-400 mt-1 italic">
+                                  Note: Chart is monotonic by design. Tooltip shows raw value.
+                                </p>
+                              )}
                             </div>
                           );
                         } else {

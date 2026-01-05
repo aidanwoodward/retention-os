@@ -2,12 +2,17 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { Bar, XAxis, YAxis, LabelList, ComposedChart, CartesianGrid } from "recharts";
-import { Download } from "lucide-react";
+import { Download, Info } from "lucide-react";
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
 } from "@/components/ui/chart";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface CohortData {
   cohort_month: string;
@@ -24,7 +29,7 @@ interface CohortData {
 
 interface RevenueCohortsChartProps {
   cohorts: CohortData[];
-  viewMode?: 'monthly' | 'quarterly' | 'half-year' | 'annual';
+  viewMode?: 'monthly' | 'quarterly' | 'annual';
 }
 
   const formatCurrency = (value: number) => {
@@ -41,32 +46,26 @@ interface RevenueCohortsChartProps {
     }).format(value);
   };
 
-// Get half-year label (e.g., "2023 H1", "2023 H2")
-const getHalfYearLabel = (cohortMonth: string): string => {
-  const cohortDate = new Date(cohortMonth);
-  const year = cohortDate.getFullYear();
-  const half = cohortDate.getMonth() < 6 ? 'H1' : 'H2';
-  return `${year} ${half}`;
-};
-
 // Get cohort label based on aggregation mode
 const getCohortLabel = (
   cohortMonth: string, 
-  viewMode: 'monthly' | 'quarterly' | 'half-year' | 'annual',
-  aggregationMode: 'half-year' | 'annual'
+  viewMode: 'monthly' | 'quarterly' | 'annual',
+  aggregationMode: 'quarterly' | 'annual'
 ): string => {
   const cohortDate = new Date(cohortMonth);
   
   if (aggregationMode === 'annual') {
     return cohortDate.getFullYear().toString();
   } else {
-    // half-year aggregation
-    return getHalfYearLabel(cohortMonth);
+    // quarterly aggregation
+    const year = cohortDate.getFullYear();
+    const quarter = Math.floor(cohortDate.getMonth() / 3) + 1;
+    return `${year}-Q${quarter}`;
   }
 };
 
 // Parse cohort label to get sortable date
-const parseCohortLabelDate = (label: string, aggregationMode: 'half-year' | 'annual'): Date => {
+const parseCohortLabelDate = (label: string, aggregationMode: 'quarterly' | 'annual'): Date => {
   if (label.startsWith('Older cohorts') || label.startsWith('≤')) {
     // Return a very old date to ensure it sorts first
     return new Date('1900-01-01');
@@ -75,26 +74,26 @@ const parseCohortLabelDate = (label: string, aggregationMode: 'half-year' | 'ann
   if (aggregationMode === 'annual') {
     return new Date(parseInt(label), 0, 1);
   } else {
-    // half-year format: "2023 H1" or "2023 H2"
-    const [year, half] = label.split(' ');
-    const month = half === 'H1' ? 0 : 6;
+    // quarterly format: "2023-Q1" or "2023-Q2"
+    const [year, quarter] = label.split('-Q');
+    const month = (parseInt(quarter) - 1) * 3;
     return new Date(parseInt(year), month, 1);
   }
 };
 
-// Transform data for cohort view with half-year aggregation
+// Transform data for cohort view with quarterly aggregation
 const transformCohortData = (
   cohorts: CohortData[], 
-  viewMode: 'monthly' | 'quarterly' | 'half-year' | 'annual',
+  viewMode: 'monthly' | 'quarterly' | 'annual',
   showCohorts: Set<string>
 ) => {
   const chartData: Record<string, Record<string, number | string>> = {};
   
   // Determine aggregation mode based on viewMode
-  // Always use half-year buckets for the chart (unless annual or half-year is explicitly selected)
-  // Monthly and Quarterly views both aggregate to half-year for cleaner visualization
-  const aggregationMode: 'half-year' | 'annual' = 
-    viewMode === 'annual' ? 'annual' : 'half-year';
+  // Always use quarterly buckets for the chart (unless annual is explicitly selected)
+  // Monthly view aggregates to quarterly for cleaner visualization
+  const aggregationMode: 'quarterly' | 'annual' = 
+    viewMode === 'annual' ? 'annual' : 'quarterly';
   
   // Find the earliest cohort date dynamically
   const _earliestCohortDate = cohorts.length > 0 
@@ -145,7 +144,7 @@ const transformCohortData = (
       olderCohortsLabel = `≤ ${cutoffYear - 1}`;
     }
   } else {
-    // For half-year view, use color scale length limit
+    // For quarterly view, use color scale length limit
     const maxIndividualCohorts = COHORT_COLOR_SCALE.length;
     individualCohorts = sortedLabels.slice(-maxIndividualCohorts); // Newest ones
     olderCohorts = sortedLabels.slice(0, -maxIndividualCohorts); // Oldest ones
@@ -155,17 +154,18 @@ const transformCohortData = (
       const firstDate = parseCohortLabelDate(firstIndividualLabel, aggregationMode);
       const firstYear = firstDate.getFullYear();
       
-      // For half-year aggregation - determine the label
-      const firstHalf = firstIndividualLabel.split(' ')[1]; // "H1" or "H2"
+      // For quarterly aggregation - determine the label
+      const [labelYear, labelQuarter] = firstIndividualLabel.split('-Q');
+      const quarterNum = parseInt(labelQuarter);
       let potentialLabel: string;
-      if (firstHalf === 'H1') {
-        potentialLabel = `≤ ${firstYear - 1}`;
+      if (quarterNum === 1) {
+        potentialLabel = `≤ ${parseInt(labelYear) - 1}`;
       } else {
-        const h1OfSameYear = `${firstYear} H1`;
-        if (olderCohorts.includes(h1OfSameYear)) {
-          potentialLabel = `≤ ${firstYear - 1}`;
+        const q1OfSameYear = `${labelYear}-Q1`;
+        if (olderCohorts.includes(q1OfSameYear)) {
+          potentialLabel = `≤ ${parseInt(labelYear) - 1}`;
         } else {
-          potentialLabel = `≤ ${firstYear} H1`;
+          potentialLabel = `≤ ${labelYear}-Q1`;
         }
       }
       
@@ -198,10 +198,10 @@ const transformCohortData = (
       if (aggregationMode === 'annual') {
         periodKey = orderDate.getFullYear().toString();
       } else {
-        // half-year aggregation
+        // quarterly aggregation
         const year = orderDate.getFullYear();
-        const half = orderDate.getMonth() < 6 ? 'H1' : 'H2';
-        periodKey = `${year} ${half}`;
+        const quarter = Math.floor(orderDate.getMonth() / 3) + 1;
+        periodKey = `${year}-Q${quarter}`;
       }
       
       if (!chartData[periodKey]) {
@@ -221,13 +221,13 @@ const transformCohortData = (
     if (aggregationMode === 'annual') {
       return parseInt(periodA) - parseInt(periodB);
     } else {
-      // half-year format: "2023 H1" or "2023 H2"
-      const [yearA, halfA] = periodA.split(' ');
-      const [yearB, halfB] = periodB.split(' ');
+      // quarterly format: "2023-Q1" or "2023-Q2"
+      const [yearA, quarterA] = periodA.split('-Q');
+      const [yearB, quarterB] = periodB.split('-Q');
       const yearANum = parseInt(yearA);
       const yearBNum = parseInt(yearB);
       if (yearANum !== yearBNum) return yearANum - yearBNum;
-      return halfA === 'H1' && halfB === 'H2' ? -1 : halfA === 'H2' && halfB === 'H1' ? 1 : 0;
+      return parseInt(quarterA) - parseInt(quarterB);
     }
   });
 };
@@ -235,13 +235,13 @@ const transformCohortData = (
 // Transform data for new vs returning revenue view
 const transformNewReturningData = (
   cohorts: CohortData[],
-  viewMode: 'monthly' | 'quarterly' | 'half-year' | 'annual'
+  viewMode: 'monthly' | 'quarterly' | 'annual'
 ) => {
   const chartData: Record<string, { period: string; new_revenue: number; returning_revenue: number }> = {};
   
-  // Determine aggregation mode (same as cohort view - always half-year unless annual)
-  const aggregationMode: 'half-year' | 'annual' = 
-    viewMode === 'annual' ? 'annual' : 'half-year';
+  // Determine aggregation mode (same as cohort view - always quarterly unless annual)
+  const aggregationMode: 'quarterly' | 'annual' = 
+    viewMode === 'annual' ? 'annual' : 'quarterly';
   
   cohorts.forEach((cohort) => {
     cohort.periods.forEach((period) => {
@@ -251,10 +251,10 @@ const transformNewReturningData = (
       if (aggregationMode === 'annual') {
         periodKey = orderDate.getFullYear().toString();
       } else {
-        // half-year aggregation
+        // quarterly aggregation
         const year = orderDate.getFullYear();
-        const half = orderDate.getMonth() < 6 ? 'H1' : 'H2';
-        periodKey = `${year} ${half}`;
+        const quarter = Math.floor(orderDate.getMonth() / 3) + 1;
+        periodKey = `${year}-Q${quarter}`;
       }
       
       if (!chartData[periodKey]) {
@@ -278,13 +278,13 @@ const transformNewReturningData = (
     if (aggregationMode === 'annual') {
       return parseInt(periodA) - parseInt(periodB);
     } else {
-      // half-year format: "2023 H1" or "2023 H2"
-      const [yearA, halfA] = periodA.split(' ');
-      const [yearB, halfB] = periodB.split(' ');
+      // quarterly format: "2023-Q1" or "2023-Q2"
+      const [yearA, quarterA] = periodA.split('-Q');
+      const [yearB, quarterB] = periodB.split('-Q');
       const yearANum = parseInt(yearA);
       const yearBNum = parseInt(yearB);
       if (yearANum !== yearBNum) return yearANum - yearBNum;
-      return halfA === 'H1' && halfB === 'H2' ? -1 : halfA === 'H2' && halfB === 'H1' ? 1 : 0;
+      return parseInt(quarterA) - parseInt(quarterB);
     }
   });
 };
@@ -309,7 +309,7 @@ const OLDER_COHORTS_COLOR = "#d4d4d4"; // neutral-300
 
 // Get consistent color for a cohort label based on the year/period itself
 // This ensures each year always gets the same color, matching filter buttons
-const getCohortColor = (label: string, aggregationMode: 'half-year' | 'annual'): string => {
+const getCohortColor = (label: string, aggregationMode: 'quarterly' | 'annual'): string => {
   // Handle "Older cohorts" or "≤ 2019" labels - always gray
   if (label.startsWith('≤') || label.includes('Pre-2020') || label.includes('Older')) {
     return OLDER_COHORTS_COLOR;
@@ -338,10 +338,10 @@ const getCohortColor = (label: string, aggregationMode: 'half-year' | 'annual'):
     const colorIndex = year - 2020;
     return COHORT_COLOR_SCALE[Math.min(colorIndex, COHORT_COLOR_SCALE.length - 1)];
   } else {
-    // Half-year view: each half-year period gets a specific color
-    // Format: "2020 H1" or "2020 H2"
-    const halfYearMatch = label.match(/(\d{4})\s+(H[12])/);
-    if (!halfYearMatch) {
+    // Quarterly view: each quarter gets a specific color
+    // Format: "2020-Q1" or "2020-Q2"
+    const quarterlyMatch = label.match(/(\d{4})-Q(\d+)/);
+    if (!quarterlyMatch) {
       // Fallback: try to extract just the year
       const yearMatch = label.match(/(\d{4})/);
       if (!yearMatch) return COHORT_COLOR_SCALE[0];
@@ -349,31 +349,29 @@ const getCohortColor = (label: string, aggregationMode: 'half-year' | 'annual'):
       const year = parseInt(yearMatch[1]);
       if (year < 2020) return OLDER_COHORTS_COLOR;
       
-      // If no half specified, use H1 color
-      const colorIndex = (year - 2020) * 2;
+      // If no quarter specified, use Q1 color
+      const colorIndex = (year - 2020) * 4;
       return COHORT_COLOR_SCALE[Math.min(colorIndex, COHORT_COLOR_SCALE.length - 1)];
     }
     
-    const year = parseInt(halfYearMatch[1]);
-    const half = halfYearMatch[2]; // "H1" or "H2"
+    const year = parseInt(quarterlyMatch[1]);
+    const quarter = parseInt(quarterlyMatch[2]); // 1, 2, 3, or 4
     
     // Pre-2020: gray
     if (year < 2020) {
       return OLDER_COHORTS_COLOR;
     }
     
-    // Map half-years to colors:
-    // 2020 H1 -> blue-900 (index 0)
-    // 2020 H2 -> blue-800 (index 1)
-    // 2021 H1 -> blue-700 (index 2)
-    // 2021 H2 -> blue-600 (index 3)
-    // 2022 H1 -> blue-500 (index 4)
-    // 2022 H2 -> blue-400 (index 5)
-    // 2023 H1 -> green-600 (index 6)
+    // Map quarters to colors:
+    // 2020 Q1 -> blue-900 (index 0)
+    // 2020 Q2 -> blue-800 (index 1)
+    // 2020 Q3 -> blue-700 (index 2)
+    // 2020 Q4 -> blue-600 (index 3)
+    // 2021 Q1 -> blue-500 (index 4)
     // etc.
     const yearsSince2020 = year - 2020;
-    const halfOffset = half === 'H1' ? 0 : 1;
-    const colorIndex = (yearsSince2020 * 2) + halfOffset;
+    const quarterOffset = quarter - 1; // Q1=0, Q2=1, Q3=2, Q4=3
+    const colorIndex = (yearsSince2020 * 4) + quarterOffset;
     
     return COHORT_COLOR_SCALE[Math.min(colorIndex, COHORT_COLOR_SCALE.length - 1)];
   }
@@ -382,14 +380,14 @@ const getCohortColor = (label: string, aggregationMode: 'half-year' | 'annual'):
 // Generate chart config for cohorts with dynamic color mapping
 const generateCohortConfig = (
   cohorts: CohortData[],
-  viewMode: 'monthly' | 'quarterly' | 'half-year' | 'annual',
+  viewMode: 'monthly' | 'quarterly' | 'annual',
   showCohorts: Set<string>
 ): ChartConfig => {
   const config: ChartConfig = {};
   
-  // Determine aggregation mode (always half-year unless annual)
-  const aggregationMode: 'half-year' | 'annual' = 
-    viewMode === 'annual' ? 'annual' : 'half-year';
+  // Determine aggregation mode (always quarterly unless annual)
+  const aggregationMode: 'quarterly' | 'annual' = 
+    viewMode === 'annual' ? 'annual' : 'quarterly';
   
   // Get unique cohort labels using aggregation mode
   const cohortLabels = new Set<string>();
@@ -432,7 +430,7 @@ const generateCohortConfig = (
       olderCohortsLabel = `≤ ${cutoffYear - 1}`;
     }
   } else {
-    // For half-year view, use color scale length limit
+    // For quarterly view, use color scale length limit
     const maxIndividualCohorts = COHORT_COLOR_SCALE.length;
     individualCohorts = sortedLabels.slice(-maxIndividualCohorts); // Newest ones
     olderCohorts = sortedLabels.slice(0, -maxIndividualCohorts); // Oldest ones
@@ -442,17 +440,18 @@ const generateCohortConfig = (
       const firstDate = parseCohortLabelDate(firstIndividualLabel, aggregationMode);
       const firstYear = firstDate.getFullYear();
       
-      // For half-year aggregation - determine the label
-      const firstHalf = firstIndividualLabel.split(' ')[1]; // "H1" or "H2"
+      // For quarterly aggregation - determine the label
+      const [labelYear, labelQuarter] = firstIndividualLabel.split('-Q');
+      const quarterNum = parseInt(labelQuarter);
       let potentialLabel: string;
-      if (firstHalf === 'H1') {
-        potentialLabel = `≤ ${firstYear - 1}`;
+      if (quarterNum === 1) {
+        potentialLabel = `≤ ${parseInt(labelYear) - 1}`;
       } else {
-        const h1OfSameYear = `${firstYear} H1`;
-        if (olderCohorts.includes(h1OfSameYear)) {
-          potentialLabel = `≤ ${firstYear - 1}`;
+        const q1OfSameYear = `${labelYear}-Q1`;
+        if (olderCohorts.includes(q1OfSameYear)) {
+          potentialLabel = `≤ ${parseInt(labelYear) - 1}`;
         } else {
-          potentialLabel = `≤ ${firstYear} H1`;
+          potentialLabel = `≤ ${labelYear}-Q1`;
         }
       }
       
@@ -499,10 +498,10 @@ const generateNewReturningConfig = (): ChartConfig => ({
 
 export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCohortsChartProps) {
   // Determine aggregation mode for chart display
-  // Always use half-year aggregation for the chart (unless annual is selected)
+  // Always use quarterly aggregation for the chart (unless annual is selected)
   // This keeps the visualization clean and readable
-  const aggregationMode: 'half-year' | 'annual' = 
-    viewMode === 'annual' ? 'annual' : 'half-year';
+  const aggregationMode: 'quarterly' | 'annual' = 
+    viewMode === 'annual' ? 'annual' : 'quarterly';
   
   // Debug: Log cohorts to see what we're receiving
   console.log('RevenueCohortsChart - cohorts:', cohorts?.length, cohorts);
@@ -714,87 +713,130 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
     return sortedKeys;
   }, [cohortConfig, showCohortView, showCohorts, aggregationMode]);
   
-  // Calculate CAGR (Compound Annual Growth Rate) from cohort revenue data
-  // Only uses complete cohorts (excludes pre-2020 and current incomplete year)
-  // NOTE: This hook MUST be called before any early returns to comply with Rules of Hooks
+  /**
+   * CANONICAL DEFINITION: Revenue CAGR Calculation
+   * 
+   * CAGR (Compound Annual Growth Rate) is calculated from the same series data shown in the trend chart.
+   * This ensures CAGR matches what users see visually.
+   * 
+   * Formula: CAGR = ((End / Start) ^ (1 / years)) - 1
+   * 
+   * Where:
+   * - Start: First non-zero total revenue value in the chart data (first period)
+   * - End: Last non-zero total revenue value in the chart data (last period)
+   * - years: Time difference between first and last periods (in years)
+   *   - Annual: (lastYear - firstYear)
+   *   - Quarterly: (lastIndex - firstIndex) / 4 where index = year * 4 + quarterIndex
+   *   - Quarterly: (lastYear - firstYear) + (lastQuarter - firstQuarter) / 4
+   *   - Monthly: (lastYear - firstYear) + (lastMonth - firstMonth) / 12
+   * 
+   * Exclusions:
+   * - Exclude "Pre-2020" periods
+   * - Exclude current incomplete period (if current year/quarter is incomplete)
+   * - Use only complete periods for CAGR calculation
+   * 
+   * Alignment:
+   * - CAGR must match the exact time window shown in the trend chart
+   * - CAGR reflects the same aggregation mode as the chart (quarterly unless annual)
+   * - CAGR only calculated when showing cohort view (not new vs returning view)
+   */
   const cagrData = useMemo(() => {
-    if (!cohortsWithData || cohortsWithData.length < 2) return null;
+    // Only calculate CAGR when showing cohort view (not new vs returning)
+    if (!showCohortView || !cohortData || cohortData.length < 2) return null;
     
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth();
     
-    // Get cohort labels based on aggregation mode
-    const cohortLabels = new Set<string>();
-    cohortsWithData.forEach((cohort) => {
-      const label = getCohortLabel(cohort.cohort_month, viewMode, aggregationMode);
-      cohortLabels.add(label);
-    });
-    
-    // Filter to only complete cohorts:
-    // - Exclude pre-2020 (≤ 2019) and 2019
-    // - Exclude current year if incomplete (for annual view)
-    // - Exclude current half-year if incomplete (for half-year view)
-    const completeCohorts = Array.from(cohortLabels)
-      .filter(label => {
-        // Exclude pre-2020 and 2019
-        if (label.startsWith('≤') || label.includes('Pre-2020')) return false;
-        
-        if (aggregationMode === 'annual') {
-          const year = parseInt(label);
-          // Exclude 2019 and earlier, and exclude current year if incomplete
-          return year >= 2020 && year < currentYear;
-        } else {
-          // Half-year view
-          const [yearStr, half] = label.split(' ');
-          const year = parseInt(yearStr);
-          // Exclude 2019 and earlier
-          if (year < 2020) return false;
-          // Exclude current half-year if incomplete
-          if (year === currentYear) {
-            const isH1 = half === 'H1';
-            const isH2 = half === 'H2';
-            // If we're in H1 and this is H1, exclude it (incomplete)
-            // If we're in H2 and this is H2, exclude it (incomplete)
-            if (currentMonth < 6 && isH1) return false;
-            if (currentMonth >= 6 && isH2) return false;
-          }
-          return year < currentYear || (year === currentYear && ((currentMonth >= 6 && half === 'H1') || (currentMonth < 6)));
-        }
-      })
-      .sort((a, b) => {
-        const dateA = parseCohortLabelDate(a, aggregationMode);
-        const dateB = parseCohortLabelDate(b, aggregationMode);
-        return dateA.getTime() - dateB.getTime();
-      });
-    
-    if (completeCohorts.length < 2) return null;
-    
-    // Calculate total revenue for first and last complete cohorts
-    const firstLabel = completeCohorts[0];
-    const lastLabel = completeCohorts[completeCohorts.length - 1];
-    
-    let firstRevenue = 0;
-    let lastRevenue = 0;
-    
-    cohortsWithData.forEach((cohort) => {
-      const label = getCohortLabel(cohort.cohort_month, viewMode, aggregationMode);
-      const totalRevenue = cohort.periods.reduce((sum, p) => sum + p.total_revenue, 0);
+    // Filter chart data to exclude pre-2020 and incomplete periods
+    const completePeriods = cohortData.filter((period: Record<string, string | number>) => {
+      const periodKey = String(period.period);
       
-      if (label === firstLabel) {
-        firstRevenue += totalRevenue;
-      }
-      if (label === lastLabel) {
-        lastRevenue += totalRevenue;
+      // Exclude pre-2020 periods
+      if (periodKey.startsWith('Pre-') || periodKey.startsWith('≤')) return false;
+      
+      // Calculate total revenue for this period (sum of all cohorts)
+      const totalRevenue = Object.keys(period).reduce((sum, key) => {
+        if (key === 'period' || key === 'total_revenue') return sum;
+        const value = period[key];
+        return sum + (typeof value === 'number' ? value : 0);
+      }, 0);
+      
+      // Skip periods with zero revenue
+      if (totalRevenue === 0) return false;
+      
+      // Exclude incomplete periods
+      if (aggregationMode === 'annual') {
+        const year = parseInt(periodKey);
+        // Exclude current year if incomplete
+        return year >= 2020 && year < currentYear;
+      } else {
+        // Quarterly aggregation
+        const [yearStr, quarterStr] = periodKey.split('-Q');
+        const year = parseInt(yearStr);
+        const quarter = parseInt(quarterStr);
+        // Exclude 2019 and earlier
+        if (year < 2020) return false;
+        // Exclude current quarter if incomplete
+        if (year === currentYear) {
+          const currentQuarter = Math.floor(currentMonth / 3) + 1;
+          // If we're in Q1 and this is Q1, exclude it (incomplete)
+          // If we're in Q2 and this is Q2, exclude it (incomplete)
+          // etc.
+          if (quarter >= currentQuarter) return false;
+        }
+        return true;
       }
     });
+    
+    if (completePeriods.length < 2) return null;
+    
+    // Get first and last complete periods
+    const firstPeriod = completePeriods[0] as Record<string, string | number>;
+    const lastPeriod = completePeriods[completePeriods.length - 1] as Record<string, string | number>;
+    
+    // Calculate total revenue for first and last periods (sum of all cohorts)
+    const calculateTotalRevenue = (period: Record<string, string | number>): number => {
+      return Object.keys(period).reduce((sum, key) => {
+        if (key === 'period' || key === 'total_revenue') return sum;
+        const value = period[key];
+        return sum + (typeof value === 'number' ? value : 0);
+      }, 0);
+    };
+    
+    const firstRevenue = calculateTotalRevenue(firstPeriod);
+    const lastRevenue = calculateTotalRevenue(lastPeriod);
     
     if (firstRevenue <= 0) return null;
     
-    // Calculate years between first and last cohort
-    const firstDate = parseCohortLabelDate(firstLabel, aggregationMode);
-    const lastDate = parseCohortLabelDate(lastLabel, aggregationMode);
-    const yearsDiff = (lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
+    // Calculate years difference between first and last periods using index-based approach
+    const firstPeriodKey = String(firstPeriod.period);
+    const lastPeriodKey = String(lastPeriod.period);
+    
+    let yearsDiff: number;
+    if (aggregationMode === 'annual') {
+      // Annual: years = endYear - startYear
+      // Example: 2020 → 2024 = 4 years
+      const firstYear = parseInt(firstPeriodKey);
+      const lastYear = parseInt(lastPeriodKey);
+      yearsDiff = lastYear - firstYear;
+    } else {
+      // Quarterly: Convert to integer index, then divide by 4 to get years
+      // Index formula: year * 4 + quarterIndex (Q1=0, Q2=1, Q3=2, Q4=3)
+      // Example: 2020 Q1 → index 8080, 2024 Q1 → index 8096, years = (8096-8080)/4 = 4 years
+      // Example: 2020 Q1 → index 8080, 2024 Q2 → index 8097, years = (8097-8080)/4 = 4.25 years
+      const [firstYearStr, firstQuarterStr] = firstPeriodKey.split('-Q');
+      const [lastYearStr, lastQuarterStr] = lastPeriodKey.split('-Q');
+      const firstYear = parseInt(firstYearStr);
+      const lastYear = parseInt(lastYearStr);
+      const firstQuarter = parseInt(firstQuarterStr); // 1, 2, 3, or 4
+      const lastQuarter = parseInt(lastQuarterStr);
+      const firstQuarterIndex = firstQuarter - 1; // Q1=0, Q2=1, Q3=2, Q4=3
+      const lastQuarterIndex = lastQuarter - 1;
+      const firstIndex = firstYear * 4 + firstQuarterIndex;
+      const lastIndex = lastYear * 4 + lastQuarterIndex;
+      yearsDiff = (lastIndex - firstIndex) / 4;
+    }
     
     if (yearsDiff <= 0) return null;
     
@@ -804,25 +846,25 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
     // Format year range
     let yearRange: string;
     if (aggregationMode === 'annual') {
-      const firstYear = parseInt(firstLabel);
-      const lastYear = parseInt(lastLabel);
+      const firstYear = parseInt(firstPeriodKey);
+      const lastYear = parseInt(lastPeriodKey);
       if (lastYear - firstYear < 10) {
         yearRange = `${firstYear}-${lastYear.toString().slice(-2)}`;
       } else {
         yearRange = `${firstYear}-${lastYear}`;
       }
     } else {
-      // Half-year format: "H1 2020-H1 2025"
-      const firstParts = firstLabel.split(' ');
-      const lastParts = lastLabel.split(' ');
-      yearRange = `${firstParts[1]} ${firstParts[0]}-${lastParts[1]} ${lastParts[0]}`;
+      // Quarterly format: "Q1 2020-Q1 2025"
+      const [firstYear, firstQuarter] = firstPeriodKey.split('-Q');
+      const [lastYear, lastQuarter] = lastPeriodKey.split('-Q');
+      yearRange = `Q${firstQuarter} ${firstYear}-Q${lastQuarter} ${lastYear}`;
     }
     
     return {
       value: cagrValue,
       yearRange,
     };
-  }, [cohortsWithData, viewMode, aggregationMode]);
+  }, [cohortData, aggregationMode, showCohortView]);
   
   if (!cohorts || cohorts.length === 0 || cohortsWithData.length === 0) {
     return (
@@ -1008,9 +1050,19 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
         <div className="flex items-center gap-3">
           {cagrData !== null && (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200">
-              <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                {cagrData.yearRange} CAGR
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  {cagrData.yearRange} CAGR
+                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-gray-900 text-white border-0 max-w-[250px]">
+                    <p className="text-xs">CAGR uses complete periods only and excludes incomplete current periods.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <span className="w-px h-4 bg-gray-300"></span>
               <span className={`text-sm font-semibold ${
                 cagrData.value >= 0 ? 'text-green-600' : 'text-red-600'

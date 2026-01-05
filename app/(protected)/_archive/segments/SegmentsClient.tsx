@@ -1,3 +1,26 @@
+/**
+ * ARCHIVED: SegmentsClient.tsx
+ * 
+ * Original Intent: Segment Explorer component for building, monitoring, and activating lifecycle segments
+ * Date Archived: 2024-12-19
+ * 
+ * This component was built to provide:
+ * - KPI dashboard (total segments, dynamic audiences, coverage, lifecycle gaps)
+ * - Insight panel with segment health metrics
+ * - Table view of lifecycle segment health
+ * - Actions to create segments and sync to Klaviyo
+ * 
+ * Why Archived: /segments route converted to "Coming Soon" placeholder for product prioritization
+ * 
+ * Reintroduce When:
+ * - Segment creation/management APIs are ready
+ * - Klaviyo integration supports segment syncing
+ * - Lifecycle segment tracking is prioritized
+ * - Customer data supports dynamic segment definitions
+ * 
+ * See: docs/unused-product-ideas.md for full documentation
+ */
+
 'use client'
 
 import * as React from "react"
@@ -11,17 +34,17 @@ import { TableSection } from "@/components/ui/table-section"
 import { useMergedSearchParams, type SearchParamsRecord } from "@/hooks/use-merged-search-params"
 import { getPageContent } from "@/lib/content-map"
 import { useDemoMode } from "@/lib/demo-mode/context"
-import { generateProductDemoData } from "@/lib/demo-data/products"
+import { generateSegmentDemoData } from "@/lib/demo-data/segments"
 import { resolveDemoSeed } from "@/lib/demo-data/seed"
 import { resolveDemoState } from "@/lib/demo-data/state"
 
-interface ProductsClientProps {
+interface SegmentsClientProps {
   initialSearchParams?: SearchParamsRecord
 }
 
-export default function ProductsClient({
+export default function SegmentsClient({
   initialSearchParams,
-}: ProductsClientProps) {
+}: SegmentsClientProps) {
   const { demoMode, isDemoModeAvailable } = useDemoMode()
   const mergedSearchParams = useMergedSearchParams(initialSearchParams)
 
@@ -37,11 +60,11 @@ export default function ProductsClient({
   const status = baseState !== "ready" ? baseState : demoModeActive ? "ready" : "empty"
 
   const demoData = React.useMemo(
-    () => (demoModeActive ? generateProductDemoData(seed) : null),
+    () => (demoModeActive ? generateSegmentDemoData(seed) : null),
     [demoModeActive, seed]
   )
 
-  const content = getPageContent("products")
+  const content = getPageContent("segments")
   const { title, summary, kpis, actions } = content
   const kpiItems = kpis.map((kpi) => ({
     id: kpi.key,
@@ -54,14 +77,14 @@ export default function ProductsClient({
       status={status}
       empty={
         <EmptyState
-          title="Connect your data to unlock product analytics"
-          description="Set up integrations to see live product data. Once your store syncs, you'll see SKU performance, replenishment signals, and retention insights here."
+          title="Connect your data to build segments"
+          description="Set up integrations to see live segment data. Once customer sync completes, segments will populate with retention insights."
           action={{ label: "Connect Shopify", href: "/connect/shopify" }}
         />
       }
       error={
         <ErrorState
-          message="Product analytics are temporarily unavailable. Check sync status or try again."
+          message="Segments failed to load. Retry the sync or contact support."
           action={{ label: "Open sync status", href: "/sync" }}
         />
       }
@@ -107,8 +130,8 @@ export default function ProductsClient({
 
           <div className="mt-6">
             <TableSection
-              title="SKU performance snapshot"
-              description="Key retention KPIs for your top-performing products."
+              title="Lifecycle segment health"
+              description="Monitor coverage and value across priority lifecycle cohorts."
               caption={demoData.table.caption}
               columns={demoData.table.columns}
               rows={demoData.table.rows}

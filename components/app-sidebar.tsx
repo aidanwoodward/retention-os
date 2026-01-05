@@ -180,23 +180,27 @@ const data = {
           title: "Support & Feedback",
           url: "/settings/feedback",
         },
+        {
+          title: "Roadmap (internal)",
+          url: "/roadmap",
+        },
       ],
     },
   ],
   projects: [
     {
       name: "UK Market",
-      url: "/segments/uk",
+      url: "/segments",
       icon: Target,
     },
     {
       name: "European Expansion",
-      url: "/segments/europe",
+      url: "/segments",
       icon: Zap,
     },
     {
       name: "Premium Customers",
-      url: "/segments/premium",
+      url: "/segments",
       icon: Shield,
     },
   ],

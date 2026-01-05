@@ -1,3 +1,26 @@
+/**
+ * ARCHIVED: FinancialsClient.tsx
+ * 
+ * Original Intent: Financial Intelligence dashboard for revenue health and financial metrics
+ * Date Archived: 2024-12-19
+ * 
+ * This component was built to provide:
+ * - Revenue breakdown and trend analysis (gross/net revenue, refunds, discounts)
+ * - Margin performance tracking
+ * - Monthly revenue and margin tables
+ * - Retention-adjusted financial forecasts
+ * 
+ * Why Archived: /financials route and sub-routes converted to "Coming Soon" placeholders
+ * 
+ * Reintroduce When:
+ * - Revenue data modeling is complete
+ * - Refund and discount tracking is implemented
+ * - Financial forecasting algorithms are ready
+ * - Margin analysis is prioritized in the product roadmap
+ * 
+ * See: docs/unused-product-ideas.md for full documentation
+ */
+
 'use client'
 
 import * as React from "react"
@@ -11,17 +34,17 @@ import { TableSection } from "@/components/ui/table-section"
 import { useMergedSearchParams, type SearchParamsRecord } from "@/hooks/use-merged-search-params"
 import { getPageContent } from "@/lib/content-map"
 import { useDemoMode } from "@/lib/demo-mode/context"
-import { generateSegmentDemoData } from "@/lib/demo-data/segments"
+import { generateFinancialDemoData } from "@/lib/demo-data/financials"
 import { resolveDemoSeed } from "@/lib/demo-data/seed"
 import { resolveDemoState } from "@/lib/demo-data/state"
 
-interface SegmentsClientProps {
+interface FinancialsClientProps {
   initialSearchParams?: SearchParamsRecord
 }
 
-export default function SegmentsClient({
+export default function FinancialsClient({
   initialSearchParams,
-}: SegmentsClientProps) {
+}: FinancialsClientProps) {
   const { demoMode, isDemoModeAvailable } = useDemoMode()
   const mergedSearchParams = useMergedSearchParams(initialSearchParams)
 
@@ -37,11 +60,11 @@ export default function SegmentsClient({
   const status = baseState !== "ready" ? baseState : demoModeActive ? "ready" : "empty"
 
   const demoData = React.useMemo(
-    () => (demoModeActive ? generateSegmentDemoData(seed) : null),
+    () => (demoModeActive ? generateFinancialDemoData(seed) : null),
     [demoModeActive, seed]
   )
 
-  const content = getPageContent("segments")
+  const content = getPageContent("financials")
   const { title, summary, kpis, actions } = content
   const kpiItems = kpis.map((kpi) => ({
     id: kpi.key,
@@ -54,14 +77,14 @@ export default function SegmentsClient({
       status={status}
       empty={
         <EmptyState
-          title="Connect your data to build segments"
-          description="Set up integrations to see live segment data. Once customer sync completes, segments will populate with retention insights."
+          title="Connect your data to unlock financial insights"
+          description="Set up integrations to see live financial data. Link your revenue source to monitor net revenue, margin, and retention-adjusted forecasts."
           action={{ label: "Connect Shopify", href: "/connect/shopify" }}
         />
       }
       error={
         <ErrorState
-          message="Segments failed to load. Retry the sync or contact support."
+          message="Financial metrics failed to load. Retry the sync or check integration settings."
           action={{ label: "Open sync status", href: "/sync" }}
         />
       }
@@ -101,14 +124,14 @@ export default function SegmentsClient({
               description={demoData.insight.description}
               metricLabel={demoData.insight.metricLabel}
               data={demoData.insight.data}
-              footer={demoData.insight.footer}
+              footer={`${demoData.insight.footer} Next update ${demoData.summary.nextUpdate}.`}
             />
           </div>
 
           <div className="mt-6">
             <TableSection
-              title="Lifecycle segment health"
-              description="Monitor coverage and value across priority lifecycle cohorts."
+              title="Monthly revenue and margin"
+              description={`Last refreshed ${demoData.summary.refreshedAt}.`}
               caption={demoData.table.caption}
               columns={demoData.table.columns}
               rows={demoData.table.rows}

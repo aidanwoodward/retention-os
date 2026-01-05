@@ -13,7 +13,6 @@ const filesToClean = [
   'app/(protected)/retention/reactivation/page.tsx',
   'app/(protected)/customers/list/page.tsx',
   'app/(protected)/cohorts/category/page.tsx',
-  'app/(protected)/cohorts/revenue/page.tsx',
   'app/(protected)/cohorts/composition/page.tsx',
 ];
 

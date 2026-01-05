@@ -25,6 +25,7 @@ import {
   Calendar,
   Star,
   Shield,
+  MessageSquare,
 } from "lucide-react";
 
 // Navigation structure based on your specification
@@ -45,7 +46,7 @@ const navigationStructure = {
       path: "/cohorts",
       description: "Revenue cohorts, customer composition, category cohorts",
       subPages: [
-        { label: "Revenue Cohorts", path: "/cohorts/revenue", icon: DollarSign },
+        { label: "Revenue Cohorts", path: "/retention-ltv/revenue-cohorts", icon: DollarSign },
         { label: "Customer Composition", path: "/cohorts/composition", icon: Users },
         { label: "Category Cohorts", path: "/cohorts/category", icon: Target },
       ]
@@ -56,6 +57,7 @@ const navigationStructure = {
       icon: Package,
       path: "/products",
       description: "Product performance, cross-sell analysis, replenishment metrics",
+      comingSoon: true,
       subPages: [
         { label: "Product Performance", path: "/products/performance", icon: BarChart3 },
         { label: "Cross-Sell Analysis", path: "/products/cross-sell", icon: ShoppingCart },
@@ -91,11 +93,8 @@ const navigationStructure = {
       label: "Reports",
       icon: FileText,
       path: "/reports",
-      description: "Weekly summary, executive report",
-      subPages: [
-        { label: "Weekly Summary", path: "/reports/weekly", icon: Calendar },
-        { label: "Executive Report", path: "/reports/executive", icon: FileText },
-      ]
+      description: "Reports and summaries",
+      subPages: []
     },
   ],
   bottom: [
@@ -113,22 +112,23 @@ const navigationStructure = {
       icon: BookOpen,
       path: "/guides",
       description: "Metric definitions, scoring framework, interpretation playbook",
-      subPages: [
-        { label: "Metric Definitions", path: "/guides/metrics", icon: BookOpen },
-        { label: "Scoring Framework (RFM)", path: "/guides/rfm", icon: Star },
-        { label: "Interpretation Playbook", path: "/guides/playbook", icon: Shield },
-      ]
+      subPages: []
     },
     {
       id: "settings",
       label: "Settings",
       icon: SettingsIcon,
       path: "/settings",
-      description: "Account and permissions, preferences",
-      subPages: [
-        { label: "Account & Permissions", path: "/settings/account", icon: UserIcon },
-        { label: "Preferences", path: "/settings/preferences", icon: SettingsIcon },
-      ]
+      description: "Account and preferences",
+      subPages: []
+    },
+    {
+      id: "feedback",
+      label: "Feedback & Support",
+      icon: MessageSquare,
+      path: "/feedback",
+      description: "Share feedback and get support",
+      subPages: []
     },
   ]
 };
@@ -167,6 +167,7 @@ export function HierarchicalSidebar() {
     if (pathname.includes("/integrations")) return "integrations";
     if (pathname.includes("/guides")) return "guides";
     if (pathname.includes("/settings")) return "settings";
+    if (pathname.includes("/feedback")) return "feedback";
     return "home";
   };
 
@@ -178,6 +179,7 @@ export function HierarchicalSidebar() {
     icon: React.ComponentType<{ className?: string }>;
     path: string;
     description: string;
+    comingSoon?: boolean;
     subPages?: Array<{
       label: string;
       path: string;
@@ -207,15 +209,22 @@ export function HierarchicalSidebar() {
         >
           <Icon className="w-5 h-5 flex-shrink-0" />
           <span className="ml-3 font-medium">{item.label}</span>
-          {hasSubPages && (
-            <div className="ml-auto">
-              {isExpanded ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
-            </div>
-          )}
+          <div className="ml-auto flex items-center gap-2">
+            {item.comingSoon && (
+              <span className="text-xs px-2 py-0.5 rounded bg-slate-700 text-slate-300">
+                Coming soon
+              </span>
+            )}
+            {hasSubPages && (
+              <>
+                {isExpanded ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronRight className="w-4 h-4" />
+                )}
+              </>
+            )}
+          </div>
         </button>
         
 

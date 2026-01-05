@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 export default function Home() {
   // Redirect to dashboard in development, or show login page in production
   if (process.env.NODE_ENV === 'development') {
-    redirect('/cohorts/revenue');
+    redirect('/retention-ltv/revenue-cohorts');
   }
   
   return (

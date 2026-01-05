@@ -42,7 +42,6 @@ const cohortTypeFilter: FilterConfig = {
   options: [
     { label: 'Monthly', value: 'monthly' },
     { label: 'Quarterly', value: 'quarterly' },
-    { label: 'Half-year', value: 'half-year' },
     { label: 'Annual', value: 'annual' },
   ],
   formatter: (v) => {
@@ -413,6 +412,45 @@ export const retentionCurvesFilters: FilterConfig[] = [
 
 export const retentionCurvesSearch = {
   placeholder: 'Search cohorts…',
+  param: 'q',
+};
+
+/**
+ * Repeat Purchase Rates filter configuration (V1)
+ * Only includes filters that are fully supported end-to-end:
+ * - Date range (filters first_order_at)
+ * - Customer type (new/returning only - VIP/at-risk are outputs, not filters)
+ */
+const repeatRatesCustomerTypeFilter: FilterConfig = {
+  id: 'customerType',
+  title: 'Customer Type',
+  type: 'checkbox',
+  options: [
+    { label: 'New', value: 'new' },
+    { label: 'Returning', value: 'returning' },
+  ],
+  formatter: (v) => {
+    if (Array.isArray(v) && v.length > 0) {
+      const labels = v.map(val => {
+        const option = repeatRatesCustomerTypeFilter.options?.find(opt => opt.value === val);
+        return option?.label || val;
+      });
+      if (labels.length > 2) {
+        return `${labels[0]} and ${labels.length - 1} more`;
+      }
+      return labels.join(', ');
+    }
+    return '';
+  },
+};
+
+export const repeatRatesFilters: FilterConfig[] = [
+  dateRangeFilter,
+  repeatRatesCustomerTypeFilter,
+];
+
+export const repeatRatesSearch = {
+  placeholder: 'Search…',
   param: 'q',
 };
 

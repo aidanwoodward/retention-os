@@ -12,7 +12,7 @@ interface EnhancedTrendChartProps {
   formatValue?: (value: number) => string;
   currentPeriodLabel?: string;
   previousPeriodLabel?: string;
-  cohortType?: 'monthly' | 'quarterly' | 'half-year' | 'annual';
+  cohortType?: 'monthly' | 'quarterly' | 'annual';
   periodLabels?: string[]; // Optional: actual period labels matching data points
 }
 
@@ -147,24 +147,6 @@ export function EnhancedTrendChart({
         const currentQuarter = (quartersFromStart % 4) + 1;
         const currentYear = startYear + Math.floor(quartersFromStart / 4);
         return `Q${currentQuarter} ${String(currentYear).substring(2)}`;
-      }
-      return xAxisLabels.start;
-    } else if (cohortType === 'half-year') {
-      // Parse half-year format like "2024 H1"
-      const startMatch = xAxisLabels.start.match(/(\d+)\s+(H[12])/);
-      const endMatch = xAxisLabels.end.match(/(\d+)\s+(H[12])/);
-      if (startMatch && endMatch) {
-        const startYear = parseInt(startMatch[1]);
-        const startHalf = startMatch[2];
-        const endYear = parseInt(endMatch[1]);
-        const endHalf = endMatch[2];
-        
-        const totalHalfYears = (endYear - startYear) * 2 + (endHalf === 'H2' ? 2 : 1) - (startHalf === 'H1' ? 0 : 1);
-        const halfYearIndex = Math.round(progress * (totalHalfYears - 1));
-        const halfYearsFromStart = (startHalf === 'H1' ? 0 : 1) + halfYearIndex;
-        const currentHalf = (halfYearsFromStart % 2 === 0) ? 'H1' : 'H2';
-        const currentYear = startYear + Math.floor(halfYearsFromStart / 2);
-        return `${currentYear} ${currentHalf}`;
       }
       return xAxisLabels.start;
     } else {

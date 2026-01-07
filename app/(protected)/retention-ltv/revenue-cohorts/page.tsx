@@ -2,16 +2,17 @@
 
 import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { FilterBar } from "@/components/filters/FilterBar";
-import { revenueCohortsFilters, revenueCohortsSearch } from "@/lib/filters/config";
+import { revenueCohortsV1Filters, revenueCohortsSearch } from "@/lib/filters/config";
 import { RevenueCohortsChart } from "@/components/charts/RevenueCohortsChart";
 import { CohortMatrix } from "@/components/charts/CohortMatrix";
 import { AIAnalysis } from "@/components/ai/AIAnalysis";
 import { LoadingButton } from "@/components/ui/loading-buttons";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
-  AlertTriangle,
   Info,
+  AlertTriangle,
 } from "lucide-react";
+import { DemoBanner } from "@/components/ui/DemoBanner";
 import {
   Tooltip,
   TooltipContent,
@@ -43,6 +44,7 @@ interface RevenueCohortsResponse {
     cohorts: CohortData[];
     total_cohorts: number;
     calculated_at: string;
+    is_demo?: boolean;
   };
   error?: string;
 }
@@ -51,6 +53,7 @@ function RevenueCohortsContent() {
   const [cohorts, setCohorts] = useState<CohortData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDemo, setIsDemo] = useState(false);
   const [filterState, setFilterState] = useState<Record<string, FilterValue>>({});
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -90,6 +93,7 @@ function RevenueCohortsContent() {
       }
 
       setCohorts(data.data.cohorts);
+      setIsDemo(data.data.is_demo || false);
       setError(null); // Clear error on success
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch cohorts');
@@ -219,28 +223,40 @@ function RevenueCohortsContent() {
   //   }
   // }, [cohorts]);
 
+  // Clean URL params: Remove unsupported filters (geography, productCategory, customerSegment, customerType)
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const supportedParams = ['cohortType', 'dateRange', 'limit', 'cohort_month'];
+    let hasChanges = false;
+    
+    // Remove unsupported params
+    for (const [key] of params.entries()) {
+      if (!supportedParams.includes(key) && !key.startsWith('dateRange_')) {
+        params.delete(key);
+        hasChanges = true;
+      }
+    }
+    
+    // Ensure cohortType is set (default to 'annual')
+    if (!params.get('cohortType')) {
+      params.set('cohortType', 'annual');
+      hasChanges = true;
+    }
+    
+    if (hasChanges) {
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+  }, [searchParams, pathname, router]);
+
   // Handle view mode changes - derive from URL params (client-side only to avoid hydration mismatch)
   useEffect(() => {
     const cohortType = searchParams.get('cohortType');
     if (cohortType && ['monthly', 'quarterly', 'annual'].includes(cohortType)) {
       setViewMode(cohortType as 'monthly' | 'quarterly' | 'annual');
     } else {
-      // If no cohortType in URL, default to 'annual'
-      // Only initialize URL once on mount to avoid repeated history mutations
-      if (!urlInitializedRef.current) {
-        const newParams = new URLSearchParams(searchParams.toString());
-        newParams.set('cohortType', 'annual');
-        const newQueryString = newParams.toString();
-        const currentQueryString = searchParams.toString();
-        // Only update URL if the normalized query string actually changed (ignoring internal params)
-        if (!compareQueryStrings(newQueryString, currentQueryString)) {
-          router.replace(`${pathname}?${newQueryString}`, { scroll: false });
-        }
-        urlInitializedRef.current = true;
-      }
       setViewMode('annual');
     }
-  }, [searchParams, pathname, router]);
+  }, [searchParams]);
 
   const formatCurrency = (amount: number) => {
     if (amount >= 1000000) {
@@ -1177,7 +1193,7 @@ function RevenueCohortsContent() {
       {/* Filter Bar */}
       <div className="mb-8">
         <FilterBar
-          filters={revenueCohortsFilters}
+          filters={revenueCohortsV1Filters}
           search={revenueCohortsSearch}
           onFiltersChange={(filters) => {
             setFilterState(filters);
@@ -1189,12 +1205,18 @@ function RevenueCohortsContent() {
         />
       </div>
 
+      {/* Demo Data Banner */}
+      {isDemo && (
+        <DemoBanner reason="no real cohorts found" />
+      )}
+
       {/* AI Analysis Section */}
       <div className="mb-8">
         <AIAnalysis 
           filters={filterState}
           cohorts={filteredCohorts}
           onRegenerate={fetchCohorts}
+          isDemo={isDemo}
         />
       </div>
 

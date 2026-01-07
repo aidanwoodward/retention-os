@@ -47,9 +47,14 @@ export async function GET(request: Request) {
 
     const { data: { session } } = await supabase.auth.getSession();
     
-    // Skip authentication in development mode and return dummy data
     const isDevelopment = process.env.NODE_ENV === 'development';
-    if (isDevelopment && !session) {
+    
+    if (!session) {
+      // In production, always require authentication
+      if (!isDevelopment) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      // In development, return dummy data with is_demo flag
       console.log("Development mode: Returning dummy cohorts data");
       const dummyCohorts = generateDummyCohorts();
       
@@ -58,35 +63,10 @@ export async function GET(request: Request) {
         data: {
           cohorts: dummyCohorts,
           total_cohorts: dummyCohorts.length,
-          calculated_at: new Date().toISOString()
+          calculated_at: new Date().toISOString(),
+          is_demo: true
         }
       });
-    }
-    
-    // Also return dummy data in development even with session if no real data exists
-    if (isDevelopment) {
-      const { data: cohortsData, error } = await supabase
-        .from('mv_cohorts')
-        .select('*')
-        .limit(1);
-      
-      if (error || !cohortsData || cohortsData.length === 0) {
-        console.log("Development mode: No real data found, returning dummy cohorts data");
-        const dummyCohorts = generateDummyCohorts();
-        
-        return NextResponse.json({
-          success: true,
-          data: {
-            cohorts: dummyCohorts,
-            total_cohorts: dummyCohorts.length,
-            calculated_at: new Date().toISOString()
-          }
-        });
-      }
-    }
-    
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Get account ID for the user
@@ -109,9 +89,21 @@ export async function GET(request: Request) {
 
     const { data: cohortsData, error } = await query;
 
-    // If no data or error, return dummy data for development
+    // Handle no data or error
     if (error || !cohortsData || cohortsData.length === 0) {
-      console.log("No cohorts data found, returning dummy data for development");
+      // In production, return empty state
+      if (!isDevelopment) {
+        return NextResponse.json({
+          success: true,
+          data: {
+            cohorts: [],
+            total_records: 0,
+            latest_calculated_at: new Date().toISOString()
+          }
+        });
+      }
+      // In development, return dummy data with is_demo flag
+      console.log("Development mode: No real data found, returning dummy cohorts data");
       const dummyCohorts = generateDummyCohorts();
       
       return NextResponse.json({
@@ -119,7 +111,8 @@ export async function GET(request: Request) {
         data: {
           cohorts: dummyCohorts,
           total_records: dummyCohorts.length,
-          latest_calculated_at: new Date().toISOString()
+          latest_calculated_at: new Date().toISOString(),
+          is_demo: true
         }
       });
     }
@@ -178,7 +171,8 @@ export async function GET(request: Request) {
       data: {
         cohorts: Object.values(cohortsByMonth),
         total_records: cohorts.length,
-        latest_calculated_at: cohorts[0]?.calculated_at
+        latest_calculated_at: cohorts[0]?.calculated_at,
+        is_demo: false
       }
     });
 

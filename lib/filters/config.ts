@@ -416,6 +416,27 @@ export const retentionCurvesSearch = {
 };
 
 /**
+ * V1-Compliant Cohort Filter Configurations
+ * Only includes filters that are fully supported end-to-end:
+ * - Date range (filters order_month)
+ * - Cohort type (monthly/quarterly/annual)
+ */
+export const revenueCohortsV1Filters: FilterConfig[] = [
+  cohortTypeFilter,
+  dateRangeFilter,
+];
+
+export const retentionCurvesV1Filters: FilterConfig[] = [
+  cohortTypeFilter,
+  dateRangeFilter,
+];
+
+export const ltvCurvesV1Filters: FilterConfig[] = [
+  cohortTypeFilter,
+  dateRangeFilter,
+];
+
+/**
  * Repeat Purchase Rates filter configuration (V1)
  * Only includes filters that are fully supported end-to-end:
  * - Date range (filters first_order_at)

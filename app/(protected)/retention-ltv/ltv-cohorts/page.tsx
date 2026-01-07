@@ -3,18 +3,18 @@
 import * as React from "react";
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { FilterBar } from "@/components/filters/FilterBar";
-import { retentionCurvesFilters, retentionCurvesSearch } from "@/lib/filters/config";
+import { ltvCurvesV1Filters, retentionCurvesSearch } from "@/lib/filters/config";
 import { AIAnalysis } from "@/components/ai/AIAnalysis";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   TrendingUp,
-  AlertTriangle,
   Download,
   Users,
   DollarSign,
   Info,
   BarChart3,
 } from "lucide-react";
+import { DemoBanner } from "@/components/ui/DemoBanner";
 import {
   Tooltip,
   TooltipContent,
@@ -48,6 +48,7 @@ interface CohortsResponse {
     cohorts: CohortData[];
     total_cohorts: number;
     calculated_at: string;
+    is_demo?: boolean;
   };
   error?: string;
 }
@@ -84,6 +85,7 @@ function CLRLTVCohortsContent() {
   const [cohorts, setCohorts] = useState<CohortData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDemo, setIsDemo] = useState(false);
   // TODO: Re-add filterState when needed for local filter state management
   const [_filterState, setFilterState] = useState<Record<string, FilterValue>>({});
   const [viewMode, setViewMode] = useState<'aggregated' | 'cohort'>('aggregated');
@@ -92,7 +94,8 @@ function CLRLTVCohortsContent() {
   const [cohortSearchQuery, setCohortSearchQuery] = useState<string>("");
   const [tableExpanded, setTableExpanded] = useState<boolean>(false);
   const searchParams = useSearchParams();
-  const _router = useRouter();
+  const router = useRouter();
+  const pathname = usePathname();
   const lastQueryStringRef = React.useRef<string>('');
   // Track which cohorts have already been warned about monotonicity issues (reduce console noise)
   const warnedCohortsRef = React.useRef<Set<string>>(new Set());
@@ -184,16 +187,10 @@ function CLRLTVCohortsContent() {
       }
 
       setCohorts(data.data.cohorts);
+      setIsDemo(data.data.is_demo || false);
       setError(null);
     } catch (err) {
-      // Use dummy data in dev mode
-      if (isDev) {
-        const dummyCohorts = generateDummyLTVData();
-        setCohorts(dummyCohorts);
-        setError(null);
-      } else {
-        setError(err instanceof Error ? err.message : 'Failed to fetch cohorts');
-      }
+      setError(err instanceof Error ? err.message : 'Failed to fetch cohorts');
     } finally {
       setLoading(false);
     }
@@ -202,6 +199,31 @@ function CLRLTVCohortsContent() {
   useEffect(() => {
     fetchCohorts();
   }, [fetchCohorts]);
+
+  // Clean URL params: Remove unsupported filters (geography, productCategory, customerSegment, customerType)
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const supportedParams = ['cohortType', 'dateRange', 'limit', 'cohort_month'];
+    let hasChanges = false;
+    
+    // Remove unsupported params
+    for (const [key] of params.entries()) {
+      if (!supportedParams.includes(key) && !key.startsWith('dateRange_')) {
+        params.delete(key);
+        hasChanges = true;
+      }
+    }
+    
+    // Ensure cohortType is set (default to 'annual')
+    if (!params.get('cohortType')) {
+      params.set('cohortType', 'annual');
+      hasChanges = true;
+    }
+    
+    if (hasChanges) {
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+  }, [searchParams, pathname, router]);
 
   // Generate dummy LTV data for development
   // Always produces monotonic non-decreasing cumulative LTV per cohort
@@ -946,11 +968,16 @@ function CLRLTVCohortsContent() {
       {/* Filter Bar */}
       <div className="mb-6">
         <FilterBar
-          filters={retentionCurvesFilters}
+          filters={ltvCurvesV1Filters}
           search={retentionCurvesSearch}
           onFiltersChange={setFilterState}
         />
       </div>
+
+      {/* Demo Data Banner */}
+      {isDemo && (
+        <DemoBanner reason="no real cohorts found" />
+      )}
 
       {/* AI Analysis */}
       <div className="mb-8">
@@ -958,6 +985,8 @@ function CLRLTVCohortsContent() {
           pageType="ltv-cohorts"
           dataAvailable={hasRealData}
           loading={loading}
+          filters={filterState}
+          isDemo={isDemo}
         />
       </div>
 
@@ -965,7 +994,7 @@ function CLRLTVCohortsContent() {
       {error && !isDev && (
         <div className="mb-8 rounded-xl bg-red-50 border border-red-200 p-6">
           <div className="flex items-center">
-            <AlertTriangle className="w-5 h-5 text-red-400 mr-3" />
+            <Info className="w-5 h-5 text-red-400 mr-3" />
             <div>
               <h3 className="text-lg font-semibold text-red-800 mb-2">Error Loading LTV Data</h3>
               <p className="text-sm text-red-700">{error}</p>

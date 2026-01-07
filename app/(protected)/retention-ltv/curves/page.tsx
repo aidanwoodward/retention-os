@@ -2,18 +2,19 @@
 
 import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { FilterBar } from "@/components/filters/FilterBar";
-import { retentionCurvesFilters, retentionCurvesSearch } from "@/lib/filters/config";
+import { retentionCurvesV1Filters, retentionCurvesSearch } from "@/lib/filters/config";
 import { AIAnalysis } from "@/components/ai/AIAnalysis";
 import { LoadingButton } from "@/components/ui/loading-buttons";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   TrendingUp,
-  AlertTriangle,
   Download,
   Users,
   Info,
   LineChart,
+  AlertTriangle,
 } from "lucide-react";
+import { DemoBanner } from "@/components/ui/DemoBanner";
 import {
   Tooltip,
   TooltipContent,
@@ -48,6 +49,7 @@ interface CohortsResponse {
     cohorts: CohortData[];
     total_cohorts: number;
     calculated_at: string;
+    is_demo?: boolean;
   };
   error?: string;
 }
@@ -86,6 +88,7 @@ function RetentionCurvesContent() {
   const [cohorts, setCohorts] = useState<CohortData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDemo, setIsDemo] = useState(false);
   const [filterState, setFilterState] = useState<Record<string, FilterValue>>({});
   const [retentionType, setRetentionType] = useState<'customer' | 'revenue'>('customer');
   const [viewMode, setViewMode] = useState<'aggregated' | 'cohort'>('aggregated');
@@ -96,6 +99,7 @@ function RetentionCurvesContent() {
   const [_chartError, setChartError] = useState<Error | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
   
   // Debounce timer for hover highlight (anti-flicker)
   const hoverDebounceRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -124,6 +128,7 @@ function RetentionCurvesContent() {
       }
 
       setCohorts(data.data.cohorts);
+      setIsDemo(data.data.is_demo || false);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch cohorts');
@@ -135,6 +140,31 @@ function RetentionCurvesContent() {
   useEffect(() => {
     fetchCohorts();
   }, [fetchCohorts]);
+
+  // Clean URL params: Remove unsupported filters (geography, productCategory, customerSegment, customerType)
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const supportedParams = ['cohortType', 'dateRange', 'limit', 'cohort_month'];
+    let hasChanges = false;
+    
+    // Remove unsupported params
+    for (const [key] of params.entries()) {
+      if (!supportedParams.includes(key) && !key.startsWith('dateRange_')) {
+        params.delete(key);
+        hasChanges = true;
+      }
+    }
+    
+    // Ensure cohortType is set (default to 'annual')
+    if (!params.get('cohortType')) {
+      params.set('cohortType', 'annual');
+      hasChanges = true;
+    }
+    
+    if (hasChanges) {
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+  }, [searchParams, pathname, router]);
 
   // Extract date range from URL params with validation
   const dateRange = React.useMemo(() => {
@@ -297,84 +327,112 @@ function RetentionCurvesContent() {
   const retentionCurveData = React.useMemo((): RetentionPeriodData[] => {
     if (filteredCohorts.length === 0) return [];
 
-    // Calculate total cohort size at period 0 (sum of all cohort_size)
-    let totalCohortSize = 0;
+    // Calculate max observed period for each cohort (maturity check)
+    // Maturity rule: a cohort is mature enough for period N if maxObservedPeriod >= N
+    const cohortMaturity = new Map<string, number>();
     filteredCohorts.forEach(cohort => {
-      totalCohortSize += cohort.cohort_size;
+      let maxObservedPeriod = -1;
+      cohort.periods.forEach(period => {
+        const convertedPeriod = convertPeriodNumber(period.period_number);
+        if (convertedPeriod > maxObservedPeriod) {
+          maxObservedPeriod = convertedPeriod;
+        }
+      });
+      cohortMaturity.set(cohort.cohort_month, maxObservedPeriod);
     });
 
-    // Aggregate data by converted period number (not raw month period_number)
+    // Aggregate data by converted period number, only including mature cohorts
     const periodMap = new Map<number, {
       activeCustomers: number;
       revenue: number;
+      eligibleCohortSize: number; // Sum of cohort_size for cohorts mature enough for this period
+      cohortCount: number; // Number of cohorts included in this period
     }>();
 
-    filteredCohorts.forEach(cohort => {
-      cohort.periods.forEach(period => {
-        // Convert period_number (months) to the appropriate period based on cohortType
-        const convertedPeriod = convertPeriodNumber(period.period_number);
-        
-        // Only include periods up to maxPossiblePeriod
-        if (convertedPeriod <= maxPossiblePeriod) {
-          if (!periodMap.has(convertedPeriod)) {
-            periodMap.set(convertedPeriod, {
-              activeCustomers: 0,
-              revenue: 0,
-            });
+    // For each period, aggregate data from only eligible (mature) cohorts
+    for (let periodNum = 0; periodNum <= maxPossiblePeriod; periodNum++) {
+      let activeCustomers = 0;
+      let revenue = 0;
+      let eligibleCohortSize = 0;
+      let cohortCount = 0;
+
+      filteredCohorts.forEach(cohort => {
+        const maxObservedPeriod = cohortMaturity.get(cohort.cohort_month) ?? -1;
+        // Only include cohorts that have reached this period (maturity check)
+        if (maxObservedPeriod >= periodNum) {
+          cohortCount++;
+          eligibleCohortSize += cohort.cohort_size;
+
+          // Find period data for this cohort
+          const periodData = cohort.periods.find(p => {
+            const convertedPeriod = convertPeriodNumber(p.period_number);
+            return convertedPeriod === periodNum;
+          });
+
+          if (periodData) {
+            activeCustomers += periodData.active_customers;
+            revenue += periodData.total_revenue;
           }
-          const periodData = periodMap.get(convertedPeriod)!;
-          periodData.activeCustomers += period.active_customers;
-          periodData.revenue += period.total_revenue;
         }
       });
-    });
+
+      if (cohortCount > 0) {
+        periodMap.set(periodNum, {
+          activeCustomers,
+          revenue,
+          eligibleCohortSize,
+          cohortCount,
+        });
+      }
+    }
 
     // Get period 0 data for baseline calculations
     const period0Data = periodMap.get(0);
-    if (!period0Data || totalCohortSize === 0) return [];
+    if (!period0Data || period0Data.eligibleCohortSize === 0) return [];
 
-    // Period 0 baseline: active customers and revenue at period 0
-    const period0Customers = period0Data.activeCustomers;
+    // Baseline: use cohort_size as denominator (aligned with database definition)
+    // retention_rate_percent = active_customers / cohort_size
+    const baselineCohortSize = period0Data.eligibleCohortSize;
     const period0Revenue = period0Data.revenue;
 
-    // Generate retention curve data for all periods from 0 to maxPossiblePeriod
-    // Include ALL periods (0 through maxPossiblePeriod) so X-axis is consistent
+    // Calculate cohort coverage threshold (60% of filtered cohorts)
+    const coverageThreshold = Math.ceil(filteredCohorts.length * 0.6);
+
+    // Generate retention curve data, stopping when cohort coverage drops below threshold
     const curveData: RetentionPeriodData[] = [];
 
     for (let periodNum = 0; periodNum <= maxPossiblePeriod; periodNum++) {
       const periodData = periodMap.get(periodNum);
       
-      // Period 0 should always be 100% (baseline)
+      // Stop if cohort coverage drops below threshold (maturity rule: only show periods where enough cohorts have data)
+      if (!periodData || periodData.cohortCount < coverageThreshold) {
+        break;
+      }
+
+      // Period 0 baseline: calculate retention using cohort_size as denominator
       if (periodNum === 0) {
+        const period0Customers = period0Data.activeCustomers;
+        // Retention = active_customers / cohort_size (aligned with database definition)
+        // Note: Period 0 may not be exactly 100% if some customers don't order in their acquisition month
+        const retentionRate = baselineCohortSize > 0 
+          ? (period0Customers / baselineCohortSize) * 100 
+          : 0;
+        
         curveData.push({
           period: 0,
           periodLabel: getPeriodLabel(0),
-          cohortSize: totalCohortSize,
+          cohortSize: baselineCohortSize,
           activeCustomers: period0Customers,
-          retentionRate: 100, // Always 100% at baseline
+          retentionRate,
           revenue: period0Revenue,
-          revenueRetention: 100, // Always 100% at baseline
+          revenueRetention: 100, // Revenue retention baseline is always 100%
         });
         continue;
       }
 
-      // For other periods, use actual data or show 0% if no data
-      if (!periodData) {
-        // No data for this period - still include it with 0% to maintain X-axis consistency
-        curveData.push({
-          period: periodNum,
-          periodLabel: getPeriodLabel(periodNum),
-          cohortSize: totalCohortSize,
-          activeCustomers: 0,
-          retentionRate: 0,
-          revenue: 0,
-          revenueRetention: 0,
-        });
-        continue;
-      }
-
-      const retentionRate = period0Customers > 0 
-        ? (periodData.activeCustomers / period0Customers) * 100 
+      // For other periods, calculate retention using baseline cohort_size
+      const retentionRate = baselineCohortSize > 0 
+        ? (periodData.activeCustomers / baselineCohortSize) * 100 
         : 0;
       
       const revenueRetention = period0Revenue > 0 
@@ -384,7 +442,7 @@ function RetentionCurvesContent() {
       curveData.push({
         period: periodNum,
         periodLabel: getPeriodLabel(periodNum),
-        cohortSize: totalCohortSize, // Total users entering (same for all periods)
+        cohortSize: baselineCohortSize, // Baseline cohort size (same for all periods)
         activeCustomers: periodData.activeCustomers,
         retentionRate,
         revenue: periodData.revenue,
@@ -1589,7 +1647,7 @@ function RetentionCurvesContent() {
       {/* Filter Bar */}
       <div className="mb-8">
         <FilterBar
-          filters={retentionCurvesFilters}
+          filters={retentionCurvesV1Filters}
           search={retentionCurvesSearch}
           onFiltersChange={(filters) => {
             setFilterState(filters);
@@ -1600,12 +1658,18 @@ function RetentionCurvesContent() {
         />
       </div>
 
+      {/* Demo Data Banner */}
+      {isDemo && (
+        <DemoBanner reason="no real cohorts found" />
+      )}
+
       {/* AI Analysis Section */}
       <div className="mb-8">
         <AIAnalysis 
           filters={filterState}
           cohorts={filteredCohorts}
           onRegenerate={fetchCohorts}
+          isDemo={isDemo}
         />
       </div>
 
@@ -1625,7 +1689,10 @@ function RetentionCurvesContent() {
                     Year 1 retention = % of customers from each cohort active at the end of their first year.
                   </p>
                   <p className="text-xs text-gray-300 mb-1">
-                    Weighted to reflect the customer experience across cohorts (larger cohorts contribute more).
+                    Aggregated retention is size-weighted: we sum active customers across eligible cohorts each period and divide by the sum of cohort sizes.
+                  </p>
+                  <p className="text-xs text-gray-300 mb-1">
+                    Periods are shown only where enough cohorts have reached that age.
                   </p>
                   <p className="text-xs text-gray-300">
                     This value matches the aggregated chart at Year 1 for the current filters.
@@ -1790,6 +1857,25 @@ function RetentionCurvesContent() {
                       : 'Revenue retention (gross revenue)'}
                   </span>
                 </span>
+                {viewMode === 'aggregated' && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="flex items-center gap-1.5 cursor-help text-gray-400 hover:text-gray-600">
+                        <Info className="w-3 h-3" />
+                        <span className="font-medium text-gray-700">Aggregation:</span>
+                        <span>Size-weighted</span>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-gray-900 text-white border-0 max-w-[300px]">
+                      <p className="text-xs mb-1">
+                        Aggregated retention is size-weighted: we sum active customers across eligible cohorts each period and divide by the sum of cohort sizes.
+                      </p>
+                      <p className="text-xs text-gray-300">
+                        Periods are shown only where enough cohorts have reached that age.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
               </div>
             </div>
           </div>

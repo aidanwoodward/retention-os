@@ -11,8 +11,8 @@ import {
   Download,
   Info,
   BarChart3,
+  AlertTriangle
 } from "lucide-react";
-import { DemoBanner } from "@/components/ui/DemoBanner";
 import {
   Tooltip,
   TooltipContent,
@@ -430,7 +430,16 @@ export default function RepeatPurchaseRatesContent() {
 
       {/* Dev Mode Dummy Data Indicator */}
       {useDevDummy && (
-        <DemoBanner reason="API unavailable" />
+        <div className="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-900 mb-1">Demo data — API unavailable</p>
+            <p className="text-xs text-amber-700">
+              The API is currently unavailable. This page is showing demo data for development purposes only. 
+              All metrics are simulated and should not be used for decision-making.
+            </p>
+          </div>
+        </div>
       )}
 
       {/* AI Analysis Section */}
@@ -439,7 +448,6 @@ export default function RepeatPurchaseRatesContent() {
           filters={filterState}
           cohorts={[]}
           onRegenerate={fetchRepeatData}
-          isDemo={useDevDummy}
         />
       </div>
 

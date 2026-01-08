@@ -296,7 +296,7 @@ export default function REDHomePage() {
     hasData: true
   };
 
-  const mockInsights: AIInsight[] = [
+  const _mockInsights: AIInsight[] = [
     {
       id: 'insight_1',
       severity: 'high',
@@ -374,12 +374,10 @@ export default function REDHomePage() {
     }
   ];
 
-  // Use mock data if no real data (for KPIs and health score only)
-  // DO NOT use mock insights - show empty state instead to avoid misleading users
+  // Use mock data if no real data
   const displayKPIs = kpis.length > 0 ? kpis : mockKPIs;
   const displayHealthScore = healthScore || mockHealthScore;
-  // Only show real insights - never show mock insights
-  const displayInsights = insights;
+  const displayInsights = insights.length > 0 ? insights : _mockInsights;
 
   if (loading) {
     return (
@@ -467,11 +465,9 @@ export default function REDHomePage() {
       </div>
 
       {/* AI Insights */}
-      {displayInsights.length > 0 && (
-        <div className="mb-8">
-          <AIInsightsCard insights={displayInsights} />
-        </div>
-      )}
+      <div className="mb-8">
+        <AIInsightsCard insights={displayInsights} />
+      </div>
 
       {/* Section Navigation Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

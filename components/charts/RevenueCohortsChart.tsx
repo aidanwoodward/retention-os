@@ -152,7 +152,6 @@ const transformCohortData = (
     if (olderCohorts.length > 0 && individualCohorts.length > 0) {
       const firstIndividualLabel = individualCohorts[0];
       const firstDate = parseCohortLabelDate(firstIndividualLabel, aggregationMode);
-      const firstYear = firstDate.getFullYear();
       
       // For quarterly aggregation - determine the label
       const [labelYear, labelQuarter] = firstIndividualLabel.split('-Q');
@@ -438,7 +437,6 @@ const generateCohortConfig = (
     if (olderCohorts.length > 0 && individualCohorts.length > 0) {
       const firstIndividualLabel = individualCohorts[0];
       const firstDate = parseCohortLabelDate(firstIndividualLabel, aggregationMode);
-      const firstYear = firstDate.getFullYear();
       
       // For quarterly aggregation - determine the label
       const [labelYear, labelQuarter] = firstIndividualLabel.split('-Q');

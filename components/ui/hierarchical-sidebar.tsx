@@ -22,9 +22,6 @@ import {
   AlertTriangle,
   Activity,
   RefreshCw,
-  Calendar,
-  Star,
-  Shield,
   MessageSquare,
 } from "lucide-react";
 

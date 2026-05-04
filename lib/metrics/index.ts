@@ -29,6 +29,11 @@ export {
 
 export { calculateLTVByCohort, type CalculateLTVOptions } from "./ltv";
 
+export {
+  runDemoMetricSanityCheck,
+  type DemoMetricSanityCheckResult,
+} from "./demo-sanity-check";
+
 /**
  * Example wiring (not executed here):
  *

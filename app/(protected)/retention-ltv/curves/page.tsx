@@ -554,6 +554,8 @@ function RetentionCurvesContent() {
       revenue: number;
       eligibleCohortSize: number; // Sum of cohort_size for cohorts mature enough for this period
       cohortCount: number; // Number of cohorts included in this period
+      period0RevenueSum?: number;
+      revenueRetentionSum?: number;
     }>();
 
     // For each period, aggregate data from only eligible (mature) cohorts
@@ -668,9 +670,9 @@ function RetentionCurvesContent() {
       
       // DEMO-ONLY: Use API-provided revenue retention (weighted average) to avoid recomputation artifacts
       let revenueRetention: number;
-      if (isDemoMode && retentionType === 'revenue' && periodData.period0RevenueSum > 0) {
+      if (isDemoMode && retentionType === 'revenue' && (periodData.period0RevenueSum ?? 0) > 0) {
         // Use weighted average of API-provided revenue_retention_percent values
-        revenueRetention = periodData.revenueRetentionSum / periodData.period0RevenueSum;
+        revenueRetention = (periodData.revenueRetentionSum ?? 0) / periodData.period0RevenueSum!;
       } else {
         // Non-demo mode: compute from aggregated revenue (allows >100%)
         revenueRetention = period0Revenue > 0 
@@ -1001,6 +1003,8 @@ function RetentionCurvesContent() {
       const aggregatedPeriodMap = new Map<number, {
         activeCustomers: number;
         revenue: number;
+        period0RevenueSum?: number;
+        revenueRetentionSum?: number;
       }>();
 
       let totalCohortSize = 0;
@@ -1089,9 +1093,9 @@ function RetentionCurvesContent() {
           }
           
           // DEMO-ONLY: Use API-provided revenue retention (weighted average) to avoid recomputation artifacts
-          if (isDemoMode && retentionType === 'revenue' && periodData.period0RevenueSum > 0) {
+          if (isDemoMode && retentionType === 'revenue' && (periodData.period0RevenueSum ?? 0) > 0) {
             // Use weighted average of API-provided revenue_retention_percent values
-            revenueRetention = periodData.revenueRetentionSum / periodData.period0RevenueSum;
+            revenueRetention = (periodData.revenueRetentionSum ?? 0) / periodData.period0RevenueSum!;
           } else {
             // Non-demo mode: compute from aggregated revenue (allows >100%)
             revenueRetention = period0Revenue > 0
@@ -2027,7 +2031,7 @@ function RetentionCurvesContent() {
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Retention Curves</h1>
         <p className="text-lg font-semibold text-gray-700 mb-2">The Damage Map</p>
         <p className="text-sm text-gray-600 max-w-3xl">
-          How early do we lose customers — and is it fixable? Retention doesn't slowly fade away but falls off a cliff over certain time periods. 
+          How early do we lose customers — and is it fixable? Retention doesn&apos;t slowly fade away but falls off a cliff over certain time periods. 
           When does loss become irreversible? Why do cohorts never recover? Which customers are actually worth saving?
         </p>
       </div>

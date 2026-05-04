@@ -780,7 +780,7 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
       // Generate config for legend based on historyMode
       // Summarised: show "≤ 2019" bucket only, no individual 2019-Qx labels
       // Expanded: show all cohorts individually (including 2019-Qx), no bucket
-      let legendCohortsSet = new Set(allCohortLabels);
+      const legendCohortsSet = new Set(allCohortLabels);
       
       if (historyMode === 'summarised') {
         // Summarised mode: remove individual <=2019 labels, ensure bucket is present if pre-2020 cohorts exist

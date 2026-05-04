@@ -52,7 +52,7 @@ export function synthesizeDecisions(input: DecisionSynthesisInput): Uncomfortabl
   }
 
   // Decision 2: Rebuild onboarding for a specific cohort age
-  if (retentionCurves?.severity && retentionCurves.severity.level === 'high' || retentionCurves.severity.level === 'critical') {
+  if (retentionCurves?.severity && (retentionCurves.severity.level === 'high' || retentionCurves.severity.level === 'critical')) {
     const hasEarlyDrop = retentionCurves.sentence?.toLowerCase().includes('drop') ||
                          retentionCurves.sentence?.toLowerCase().includes('early lifecycle');
     
@@ -74,7 +74,7 @@ export function synthesizeDecisions(input: DecisionSynthesisInput): Uncomfortabl
   }
 
   // Decision 3: Kill a promo that boosts revenue but destroys LTV
-  if (repeatRates?.severity && repeatRates.severity.level === 'high' || repeatRates.severity.level === 'critical') {
+  if (repeatRates?.severity && (repeatRates.severity.level === 'high' || repeatRates.severity.level === 'critical')) {
     const hasPromotionalBehavior = repeatRates.sentence?.toLowerCase().includes('promotional') ||
                                    repeatRates.sentence?.toLowerCase().includes('discount') ||
                                    repeatRates.causality.some(c => c.factor.toLowerCase().includes('promotional') || c.factor.toLowerCase().includes('discount'));

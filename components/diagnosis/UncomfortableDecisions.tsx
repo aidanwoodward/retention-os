@@ -59,7 +59,7 @@ export function UncomfortableDecisions({
           <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
           <p className="text-sm text-gray-700 leading-relaxed mb-1">{framingCopy}</p>
           <p className="text-xs text-gray-500 italic">
-            Each decision requires tradeoffs and may be uncomfortable, but they're necessary for sustainable growth.
+            Each decision requires tradeoffs and may be uncomfortable, but they&apos;re necessary for sustainable growth.
           </p>
         </div>
         <Tooltip>

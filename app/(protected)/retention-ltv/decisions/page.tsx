@@ -7,6 +7,7 @@ import { diagnoseRevenueCohortsEnhanced } from "@/lib/diagnosis/revenue-cohorts"
 import { diagnoseRetentionCurvesEnhanced } from "@/lib/diagnosis/retention-curves";
 import { diagnoseLTVCohortsEnhanced } from "@/lib/diagnosis/ltv-curves";
 import { diagnoseRepeatRatesEnhanced } from "@/lib/diagnosis/repeat-rates";
+import type { UncomfortableDecision } from "@/lib/diagnosis/decisions";
 import { useSearchParams } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
 
@@ -26,7 +27,7 @@ interface CohortData {
 function DecisionsContent() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = React.useState(true);
-  const [decisions, setDecisions] = React.useState<any[]>([]);
+  const [decisions, setDecisions] = React.useState<UncomfortableDecision[]>([]);
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -55,7 +56,7 @@ function DecisionsContent() {
         const repeatRatesData = await repeatRatesResponse.json();
 
         // Process diagnoses
-        const diagnoses: any = {};
+        const diagnoses: Parameters<typeof synthesizeDecisions>[0] = {};
 
         if (revenueCohortsData.success && revenueCohortsData.data?.cohorts) {
           const cohorts = revenueCohortsData.data.cohorts as CohortData[];

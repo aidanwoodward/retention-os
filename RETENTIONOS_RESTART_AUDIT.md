@@ -29,29 +29,33 @@ Most important next step: freeze the broad route/integration surface, fix the li
 
 ## 2. Current Tech Stack
 
-| Area | Current State |
-| --- | --- |
-| Framework | Next.js `15.5.9` with App Router and route groups |
-| Language | TypeScript `^5`, strict mode enabled |
-| Runtime | React `19.1.0`, React DOM `19.1.0` |
-| Package manager | npm, `package-lock.json` lockfile version 3 |
-| Styling | Tailwind CSS `^4`, `@tailwindcss/postcss`, shadcn/Radix-style primitives, custom CSS tokens |
-| Auth | Supabase auth through `@supabase/ssr`; middleware only protects `/dashboard`, `/sync`, and `/connect` |
-| Database | Supabase/Postgres migrations in `supabase/migrations`; canonical tables plus materialized views |
-| Hosting/deployment | README says Vercel live deployment; no `vercel.json` found |
-| Charts | Recharts, Tremor wrappers, custom chart components |
-| UI dependencies | Radix UI primitives, lucide-react, Carbon icons, TanStack Table, motion |
-| Env/config | `.env.local` is present at runtime; README documents Supabase, Shopify, Klaviyo variables |
+
+| Area               | Current State                                                                                         |
+| ------------------ | ----------------------------------------------------------------------------------------------------- |
+| Framework          | Next.js `15.5.9` with App Router and route groups                                                     |
+| Language           | TypeScript `^5`, strict mode enabled                                                                  |
+| Runtime            | React `19.1.0`, React DOM `19.1.0`                                                                    |
+| Package manager    | npm, `package-lock.json` lockfile version 3                                                           |
+| Styling            | Tailwind CSS `^4`, `@tailwindcss/postcss`, shadcn/Radix-style primitives, custom CSS tokens           |
+| Auth               | Supabase auth through `@supabase/ssr`; middleware only protects `/dashboard`, `/sync`, and `/connect` |
+| Database           | Supabase/Postgres migrations in `supabase/migrations`; canonical tables plus materialized views       |
+| Hosting/deployment | README says Vercel live deployment; no `vercel.json` found                                            |
+| Charts             | Recharts, Tremor wrappers, custom chart components                                                    |
+| UI dependencies    | Radix UI primitives, lucide-react, Carbon icons, TanStack Table, motion                               |
+| Env/config         | `.env.local` is present at runtime; README documents Supabase, Shopify, Klaviyo variables             |
+
 
 Scripts:
 
-| Script | Command | Audit Result |
-| --- | --- | --- |
-| `dev` | `next dev --turbopack` | Starts successfully |
-| `build` | `next build --turbopack` | Bundle compiles, then fails lint/type validation |
-| `start` | `next start` | Not run; production build currently fails |
-| `lint` | `eslint` | Fails with 8 errors |
-| `typecheck` | Missing | Add `tsc --noEmit` |
+
+| Script      | Command                  | Audit Result                                     |
+| ----------- | ------------------------ | ------------------------------------------------ |
+| `dev`       | `next dev --turbopack`   | Starts successfully                              |
+| `build`     | `next build --turbopack` | Bundle compiles, then fails lint/type validation |
+| `start`     | `next start`             | Not run; production build currently fails        |
+| `lint`      | `eslint`                 | Fails with 8 errors                              |
+| `typecheck` | Missing                  | Add `tsc --noEmit`                               |
+
 
 ## 3. Current App Structure
 
@@ -101,79 +105,83 @@ Folder tree summary:
 
 Important files:
 
-| File | Why It Matters |
-| --- | --- |
-| `package.json` | Defines Next 15, React 19, npm scripts, dependency surface |
-| `middleware.ts` | Supabase session refresh and partial route protection |
-| `lib/supabaseClient.ts` | Browser Supabase client |
-| `lib/database.ts` | Canonical DB types, client factories, PII hashing, account helpers |
-| `lib/shopifyClient.ts` | Shopify REST client and connection lookup |
-| `supabase/migrations/002_create_canonical_schema.sql` | Accounts, customers, orders, order_items, sync_metadata |
-| `supabase/migrations/006_create_metric_views.sql` | `mv_kpis`, `mv_cohorts`, `mv_retention_periods`, `mv_customer_segments` |
-| `lib/demo-mode/context.tsx` | Client demo-mode provider and write suppression |
-| `lib/demo-data/*` | Seeded demo data for several newer MVP-like pages |
-| `lib/diagnosis/*` | WIP rule-based diagnosis and decision logic |
-| `components/app-sidebar.tsx` | Current navigation model |
-| `app/(protected)/retention-ltv/*` | Most complete analytics surfaces |
+
+| File                                                  | Why It Matters                                                          |
+| ----------------------------------------------------- | ----------------------------------------------------------------------- |
+| `package.json`                                        | Defines Next 15, React 19, npm scripts, dependency surface              |
+| `middleware.ts`                                       | Supabase session refresh and partial route protection                   |
+| `lib/supabaseClient.ts`                               | Browser Supabase client                                                 |
+| `lib/database.ts`                                     | Canonical DB types, client factories, PII hashing, account helpers      |
+| `lib/shopifyClient.ts`                                | Shopify REST client and connection lookup                               |
+| `supabase/migrations/002_create_canonical_schema.sql` | Accounts, customers, orders, order_items, sync_metadata                 |
+| `supabase/migrations/006_create_metric_views.sql`     | `mv_kpis`, `mv_cohorts`, `mv_retention_periods`, `mv_customer_segments` |
+| `lib/demo-mode/context.tsx`                           | Client demo-mode provider and write suppression                         |
+| `lib/demo-data/*`                                     | Seeded demo data for several newer MVP-like pages                       |
+| `lib/diagnosis/*`                                     | WIP rule-based diagnosis and decision logic                             |
+| `components/app-sidebar.tsx`                          | Current navigation model                                                |
+| `app/(protected)/retention-ltv/*`                     | Most complete analytics surfaces                                        |
+
 
 Important route observation: the current product shape is not aligned to the target MVP routes. The app currently favors `/retention-ltv/...`, `/executive`, `/financials`, `/products`, `/product-economics`, `/customer-intelligence`, and many legacy/placeholder routes. Target routes like `/ltv`, `/acquisition`, `/scenarios`, `/insights`, and `/data` are missing.
 
 ## 4. Route Audit
 
-| Route | Status | Data Source | MVP Relevance | Recommendation | Priority |
-| --- | --- | --- | --- | --- | --- |
-| `/` | Exists; dev redirects to `/retention-ltv/revenue-cohorts`; prod shows starter page | Hardcoded | Nice-to-have | Fix to redirect to `/dashboard` or login consistently | P1 |
-| `/login` | Exists | Supabase auth | MVP-critical | Keep, verify env-driven auth copy | P0 |
-| `/verify` | Exists | Supabase auth | MVP-critical | Keep | P1 |
-| `/dashboard` | Exists; likely works in dev/demo | Supabase connection check plus `REDHomePage` hardcoded/demo content | MVP-critical | Keep, simplify into executive MVP dashboard | P0 |
-| `/executive` | Exists; redirects to `/dashboard` | Client redirect | Duplicate | Pause or remove from nav after target route decision | P2 |
-| `/executive/reconciliation` | Exists | Likely static/internal | Data health useful | Fix later as `/data` health | P2 |
-| `/executive/exports` | Exists | Placeholder/static | Nice-to-have | Pause | Later |
-| `/cohorts` | Exists | `/api/metrics/cohorts`; Supabase view or dev dummy | MVP-critical | Keep temporarily, replace with metric engine | P0 |
-| `/cohorts/category` | Exists but calls missing `/api/metrics/category-cohorts` | Broken/missing API | Nice-to-have | Hide | P2 |
-| `/cohorts/composition` | Exists but calls missing `/api/metrics/composition` | Broken/missing API | Nice-to-have | Hide | P2 |
-| `/retention` | Exists | `lib/demo-data/retention` via demo mode only | MVP-critical | Keep concept, wire to metric engine | P0 |
-| `/retention/curve` | Exists | `/api/retention/curve` | MVP-critical subset | Merge with `/retention` or `/cohorts` | P1 |
-| `/retention/churn` | Exists but calls missing `/api/retention/churn` | Broken/missing API | Later | Hide | P2 |
-| `/retention/reactivation` | Exists but calls missing `/api/retention/reactivation` | Broken/missing API | Later | Hide | P2 |
-| `/retention-ltv/revenue-cohorts` | Exists; large page | `/api/metrics/cohorts` plus local derived/dummy top cohorts | MVP-critical under target `/dashboard`/`/cohorts` | Keep as source, refactor | P0 |
-| `/retention-ltv/curves` | Exists; large page | `/api/metrics/cohorts`, page-level calculations | MVP-critical under target `/retention` | Keep as source, fix lint/build | P0 |
-| `/retention-ltv/ltv-cohorts` | Exists; large page | `/api/metrics/cohorts`, page-level LTV transforms, dev dummy fallback | MVP-critical under target `/ltv` | Keep as source, refactor | P0 |
-| `/retention-ltv/repeat-rates` | Exists | `/api/metrics/repeat-purchases` | MVP-critical | Keep as source, refactor | P0 |
-| `/retention-ltv/decisions` | Exists but lint-failing and placeholder-heavy | Fetches cohorts/repeat APIs; synthesizes diagnosis | MVP-critical under target `/insights` | Fix types, then refactor into insight engine | P1 |
-| `/ltv` | Missing | None | MVP-critical | Add later as target route after engine | P0 |
-| `/acquisition` | Missing | None | MVP-critical | Add after marketing spend data model exists | P1 |
-| `/products` | Exists; ComingSoon | None | MVP-critical | Replace with product customer quality MVP | P1 |
-| `/products/performance` | Exists | `/api/products/performance`, mock data | MVP-critical source | Keep as prototype, refactor | P1 |
-| `/products/replenishment` | Exists but calls missing `/api/products/replenishment` | Broken/missing API | Later | Hide | P2 |
-| `/products/cross-sell` | Exists but calls missing `/api/products/cross-sell` | Broken/missing API | Later | Hide | P2 |
-| `/product-economics/performance` | Exists | `/api/products/performance`, mock data | Duplicate | Pause; merge into `/products` | P2 |
-| `/product-economics/concentration` | Exists | Local mock data | Later | Hide | Later |
-| `/product-economics/discounts` | Exists | Unknown/static | Later | Hide | Later |
-| `/scenarios` | Missing | None | MVP-critical | Add after metric engine; start simple | P1 |
-| `/financials` | Exists; ComingSoon | None | Duplicate/future | Pause | Later |
-| `/financials/revenue` | Exists; ComingSoon | None | Nice-to-have | Pause | Later |
-| `/financials/ltv-summary` | Exists; ComingSoon | None | Duplicate with `/ltv` | Pause | Later |
-| `/financials/forecasts` | Exists; ComingSoon | None | Scenario-adjacent | Use as source for `/scenarios` copy only | P2 |
-| `/insights` | Missing | None | MVP-critical | Add as target route backed by `lib/insights` | P1 |
-| `/data` | Missing | None | MVP-critical for demo/upload | Add as data import/demo status route | P1 |
-| `/settings` | Exists | `/api/settings/user` | MVP-critical | Keep | P1 |
-| `/settings/integrations` | Exists | Static cards | Nice-to-have | Keep as settings subpage, but hide future integrations | P2 |
-| `/settings/feedback` | Exists | Static/form-like | Nice-to-have | Pause | Later |
-| `/integrations` | Exists | Integration status client/API | Nice-to-have | Merge into `/data` or settings | P2 |
-| `/connect/shopify` | Exists | Shopify OAuth | Future integration | Pause until metric engine stable | P2 |
-| `/connect/klaviyo` | Exists; ComingSoon | None | Future integration | Pause | Later |
-| `/sync` | Exists | POSTs Shopify sync and dummy-data sync | Useful but risky | Hide destructive dummy writes from MVP nav | P1 |
-| `/customers` | Exists | Demo client | Nice-to-have | Pause unless needed for drilldowns | P2 |
-| `/customers/list` | Exists | `/api/customers/list` | Supporting | Keep later | P2 |
-| `/customers/profile` | Exists but calls missing `/api/customers/profile` | Broken/missing API | Later | Hide | Later |
-| `/customers/segments` | Exists | `/api/metrics/segments` or related API | Supporting | Pause | P2 |
-| `/customer-intelligence/*` | Exists | Mostly static/mock | Future | Hide | Later |
-| `/segments` | Exists; ComingSoon | None | Future | Hide | Later |
-| `/reports` | Exists | `/api/reports/summary` | Nice-to-have | Pause | Later |
-| `/guides` | Exists | `/api/guides/list` | Nice-to-have | Pause | Later |
-| `/roadmap` | Exists | Static/internal | Internal only | Remove from production nav | Later |
-| `/feedback` | Exists | Static/form-like | Nice-to-have | Pause | Later |
+
+| Route                              | Status                                                                             | Data Source                                                           | MVP Relevance                                     | Recommendation                                         | Priority |
+| ---------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------ | -------- |
+| `/`                                | Exists; dev redirects to `/retention-ltv/revenue-cohorts`; prod shows starter page | Hardcoded                                                             | Nice-to-have                                      | Fix to redirect to `/dashboard` or login consistently  | P1       |
+| `/login`                           | Exists                                                                             | Supabase auth                                                         | MVP-critical                                      | Keep, verify env-driven auth copy                      | P0       |
+| `/verify`                          | Exists                                                                             | Supabase auth                                                         | MVP-critical                                      | Keep                                                   | P1       |
+| `/dashboard`                       | Exists; likely works in dev/demo                                                   | Supabase connection check plus `REDHomePage` hardcoded/demo content   | MVP-critical                                      | Keep, simplify into executive MVP dashboard            | P0       |
+| `/executive`                       | Exists; redirects to `/dashboard`                                                  | Client redirect                                                       | Duplicate                                         | Pause or remove from nav after target route decision   | P2       |
+| `/executive/reconciliation`        | Exists                                                                             | Likely static/internal                                                | Data health useful                                | Fix later as `/data` health                            | P2       |
+| `/executive/exports`               | Exists                                                                             | Placeholder/static                                                    | Nice-to-have                                      | Pause                                                  | Later    |
+| `/cohorts`                         | Exists                                                                             | `/api/metrics/cohorts`; Supabase view or dev dummy                    | MVP-critical                                      | Keep temporarily, replace with metric engine           | P0       |
+| `/cohorts/category`                | Exists but calls missing `/api/metrics/category-cohorts`                           | Broken/missing API                                                    | Nice-to-have                                      | Hide                                                   | P2       |
+| `/cohorts/composition`             | Exists but calls missing `/api/metrics/composition`                                | Broken/missing API                                                    | Nice-to-have                                      | Hide                                                   | P2       |
+| `/retention`                       | Exists                                                                             | `lib/demo-data/retention` via demo mode only                          | MVP-critical                                      | Keep concept, wire to metric engine                    | P0       |
+| `/retention/curve`                 | Exists                                                                             | `/api/retention/curve`                                                | MVP-critical subset                               | Merge with `/retention` or `/cohorts`                  | P1       |
+| `/retention/churn`                 | Exists but calls missing `/api/retention/churn`                                    | Broken/missing API                                                    | Later                                             | Hide                                                   | P2       |
+| `/retention/reactivation`          | Exists but calls missing `/api/retention/reactivation`                             | Broken/missing API                                                    | Later                                             | Hide                                                   | P2       |
+| `/retention-ltv/revenue-cohorts`   | Exists; large page                                                                 | `/api/metrics/cohorts` plus local derived/dummy top cohorts           | MVP-critical under target `/dashboard`/`/cohorts` | Keep as source, refactor                               | P0       |
+| `/retention-ltv/curves`            | Exists; large page                                                                 | `/api/metrics/cohorts`, page-level calculations                       | MVP-critical under target `/retention`            | Keep as source, fix lint/build                         | P0       |
+| `/retention-ltv/ltv-cohorts`       | Exists; large page                                                                 | `/api/metrics/cohorts`, page-level LTV transforms, dev dummy fallback | MVP-critical under target `/ltv`                  | Keep as source, refactor                               | P0       |
+| `/retention-ltv/repeat-rates`      | Exists                                                                             | `/api/metrics/repeat-purchases`                                       | MVP-critical                                      | Keep as source, refactor                               | P0       |
+| `/retention-ltv/decisions`         | Exists but lint-failing and placeholder-heavy                                      | Fetches cohorts/repeat APIs; synthesizes diagnosis                    | MVP-critical under target `/insights`             | Fix types, then refactor into insight engine           | P1       |
+| `/ltv`                             | Missing                                                                            | None                                                                  | MVP-critical                                      | Add later as target route after engine                 | P0       |
+| `/acquisition`                     | Missing                                                                            | None                                                                  | MVP-critical                                      | Add after marketing spend data model exists            | P1       |
+| `/products`                        | Exists; ComingSoon                                                                 | None                                                                  | MVP-critical                                      | Replace with product customer quality MVP              | P1       |
+| `/products/performance`            | Exists                                                                             | `/api/products/performance`, mock data                                | MVP-critical source                               | Keep as prototype, refactor                            | P1       |
+| `/products/replenishment`          | Exists but calls missing `/api/products/replenishment`                             | Broken/missing API                                                    | Later                                             | Hide                                                   | P2       |
+| `/products/cross-sell`             | Exists but calls missing `/api/products/cross-sell`                                | Broken/missing API                                                    | Later                                             | Hide                                                   | P2       |
+| `/product-economics/performance`   | Exists                                                                             | `/api/products/performance`, mock data                                | Duplicate                                         | Pause; merge into `/products`                          | P2       |
+| `/product-economics/concentration` | Exists                                                                             | Local mock data                                                       | Later                                             | Hide                                                   | Later    |
+| `/product-economics/discounts`     | Exists                                                                             | Unknown/static                                                        | Later                                             | Hide                                                   | Later    |
+| `/scenarios`                       | Missing                                                                            | None                                                                  | MVP-critical                                      | Add after metric engine; start simple                  | P1       |
+| `/financials`                      | Exists; ComingSoon                                                                 | None                                                                  | Duplicate/future                                  | Pause                                                  | Later    |
+| `/financials/revenue`              | Exists; ComingSoon                                                                 | None                                                                  | Nice-to-have                                      | Pause                                                  | Later    |
+| `/financials/ltv-summary`          | Exists; ComingSoon                                                                 | None                                                                  | Duplicate with `/ltv`                             | Pause                                                  | Later    |
+| `/financials/forecasts`            | Exists; ComingSoon                                                                 | None                                                                  | Scenario-adjacent                                 | Use as source for `/scenarios` copy only               | P2       |
+| `/insights`                        | Missing                                                                            | None                                                                  | MVP-critical                                      | Add as target route backed by `lib/insights`           | P1       |
+| `/data`                            | Missing                                                                            | None                                                                  | MVP-critical for demo/upload                      | Add as data import/demo status route                   | P1       |
+| `/settings`                        | Exists                                                                             | `/api/settings/user`                                                  | MVP-critical                                      | Keep                                                   | P1       |
+| `/settings/integrations`           | Exists                                                                             | Static cards                                                          | Nice-to-have                                      | Keep as settings subpage, but hide future integrations | P2       |
+| `/settings/feedback`               | Exists                                                                             | Static/form-like                                                      | Nice-to-have                                      | Pause                                                  | Later    |
+| `/integrations`                    | Exists                                                                             | Integration status client/API                                         | Nice-to-have                                      | Merge into `/data` or settings                         | P2       |
+| `/connect/shopify`                 | Exists                                                                             | Shopify OAuth                                                         | Future integration                                | Pause until metric engine stable                       | P2       |
+| `/connect/klaviyo`                 | Exists; ComingSoon                                                                 | None                                                                  | Future integration                                | Pause                                                  | Later    |
+| `/sync`                            | Exists                                                                             | POSTs Shopify sync and dummy-data sync                                | Useful but risky                                  | Hide destructive dummy writes from MVP nav             | P1       |
+| `/customers`                       | Exists                                                                             | Demo client                                                           | Nice-to-have                                      | Pause unless needed for drilldowns                     | P2       |
+| `/customers/list`                  | Exists                                                                             | `/api/customers/list`                                                 | Supporting                                        | Keep later                                             | P2       |
+| `/customers/profile`               | Exists but calls missing `/api/customers/profile`                                  | Broken/missing API                                                    | Later                                             | Hide                                                   | Later    |
+| `/customers/segments`              | Exists                                                                             | `/api/metrics/segments` or related API                                | Supporting                                        | Pause                                                  | P2       |
+| `/customer-intelligence/*`         | Exists                                                                             | Mostly static/mock                                                    | Future                                            | Hide                                                   | Later    |
+| `/segments`                        | Exists; ComingSoon                                                                 | None                                                                  | Future                                            | Hide                                                   | Later    |
+| `/reports`                         | Exists                                                                             | `/api/reports/summary`                                                | Nice-to-have                                      | Pause                                                  | Later    |
+| `/guides`                          | Exists                                                                             | `/api/guides/list`                                                    | Nice-to-have                                      | Pause                                                  | Later    |
+| `/roadmap`                         | Exists                                                                             | Static/internal                                                       | Internal only                                     | Remove from production nav                             | Later    |
+| `/feedback`                        | Exists                                                                             | Static/form-like                                                      | Nice-to-have                                      | Pause                                                  | Later    |
+
 
 ## 5. Data Flow Audit
 
@@ -295,21 +303,23 @@ type Insight = {
 
 ## 7. Metric Calculation Audit
 
-| Metric | Exists? | Current Location | Quality | Recommendation |
-| --- | --- | --- | --- | --- |
-| Cohorts | Partial | `mv_cohorts`, `/api/metrics/cohorts`, `CohortMatrix`, retention-LTV pages | Useful but split between SQL/API/UI and dev dummy generator | Rebuild as `calculateCohorts()` in `/lib/metrics`, with optional SQL cache later |
-| Retention | Partial | `mv_cohorts`, `mv_retention_periods`, `/api/retention/curve`, retention-LTV pages | Reusable concepts, not pure/shared | Rebuild `calculateRetentionByCohort()` over canonical orders |
-| Repeat purchase | Partial | `/api/metrics/repeat-purchases` | Reasonable first version but route-local | Extract to `calculateRepeatPurchaseRate()` and `calculateFirstToSecondOrderConversion()` |
-| First-to-second purchase | Partial | `/api/metrics/repeat-purchases` as `secondPurchaseRate` | Exists implicitly | Make explicit metric with tested output |
-| LTV | Partial | `mv_kpis.customer_lifetime_value`, `/retention-ltv/ltv-cohorts` page transforms | Page-level and average-based; not robust cohort LTV engine | Build `calculateLTVByCohort()` |
-| Contribution LTV | Missing | None | Not present | Add after margin assumptions type exists |
-| CAC | Missing | None | Not present | Add `MarketingSpend` model then `calculateCACByMonth()` |
-| LTV/CAC | Missing | None | Not present | Add after LTV and CAC are stable |
-| Payback | Missing | None | Not present | Add after contribution LTV and CAC |
-| Product-level LTV | Missing/Mock | Product pages/API mock data, `order_items` schema | Product views are not real customer-quality metrics | Build from first product purchased and future customer revenue |
-| Channel quality | Missing | No channel attribution/spend model | Not present | Define channel attribution assumptions before implementation |
-| Revenue Durability Score | Missing | Diagnosis language touches durability but no score | Not present | Build rules-based composite from retention, repeat, LTV concentration, and payback |
-| AI/rules insights | Partial | `components/ai/AIAnalysis.tsx`, `lib/diagnosis/*`, `/retention-ltv/decisions` | Good direction but mixed mock/placeholder/UI coupling | Create `/lib/insights/generateDiagnosticInsights()` with deterministic rules first |
+
+| Metric                   | Exists?      | Current Location                                                                  | Quality                                                     | Recommendation                                                                           |
+| ------------------------ | ------------ | --------------------------------------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Cohorts                  | Partial      | `mv_cohorts`, `/api/metrics/cohorts`, `CohortMatrix`, retention-LTV pages         | Useful but split between SQL/API/UI and dev dummy generator | Rebuild as `calculateCohorts()` in `/lib/metrics`, with optional SQL cache later         |
+| Retention                | Partial      | `mv_cohorts`, `mv_retention_periods`, `/api/retention/curve`, retention-LTV pages | Reusable concepts, not pure/shared                          | Rebuild `calculateRetentionByCohort()` over canonical orders                             |
+| Repeat purchase          | Partial      | `/api/metrics/repeat-purchases`                                                   | Reasonable first version but route-local                    | Extract to `calculateRepeatPurchaseRate()` and `calculateFirstToSecondOrderConversion()` |
+| First-to-second purchase | Partial      | `/api/metrics/repeat-purchases` as `secondPurchaseRate`                           | Exists implicitly                                           | Make explicit metric with tested output                                                  |
+| LTV                      | Partial      | `mv_kpis.customer_lifetime_value`, `/retention-ltv/ltv-cohorts` page transforms   | Page-level and average-based; not robust cohort LTV engine  | Build `calculateLTVByCohort()`                                                           |
+| Contribution LTV         | Missing      | None                                                                              | Not present                                                 | Add after margin assumptions type exists                                                 |
+| CAC                      | Missing      | None                                                                              | Not present                                                 | Add `MarketingSpend` model then `calculateCACByMonth()`                                  |
+| LTV/CAC                  | Missing      | None                                                                              | Not present                                                 | Add after LTV and CAC are stable                                                         |
+| Payback                  | Missing      | None                                                                              | Not present                                                 | Add after contribution LTV and CAC                                                       |
+| Product-level LTV        | Missing/Mock | Product pages/API mock data, `order_items` schema                                 | Product views are not real customer-quality metrics         | Build from first product purchased and future customer revenue                           |
+| Channel quality          | Missing      | No channel attribution/spend model                                                | Not present                                                 | Define channel attribution assumptions before implementation                             |
+| Revenue Durability Score | Missing      | Diagnosis language touches durability but no score                                | Not present                                                 | Build rules-based composite from retention, repeat, LTV concentration, and payback       |
+| AI/rules insights        | Partial      | `components/ai/AIAnalysis.tsx`, `lib/diagnosis/*`, `/retention-ltv/decisions`     | Good direction but mixed mock/placeholder/UI coupling       | Create `/lib/insights/generateDiagnosticInsights()` with deterministic rules first       |
+
 
 Current calculation placement problems:
 
@@ -371,14 +381,16 @@ Build errors:
 
 Lint errors:
 
-| File | Error Summary |
-| --- | --- |
-| `app/(protected)/retention-ltv/curves/page.tsx` | Unescaped apostrophe |
-| `app/(protected)/retention-ltv/decisions/page.tsx` | Two `any` usages |
-| `app/(protected)/retention-ltv/revenue-cohorts/page.tsx` | Two unescaped apostrophes |
-| `components/charts/RevenueCohortsChart.tsx` | `legendCohortsSet` should be `const` |
-| `components/diagnosis/UncomfortableDecisions.tsx` | Unescaped apostrophe |
-| `components/filters/FilterChip.tsx` | Explicit `any` |
+
+| File                                                     | Error Summary                        |
+| -------------------------------------------------------- | ------------------------------------ |
+| `app/(protected)/retention-ltv/curves/page.tsx`          | Unescaped apostrophe                 |
+| `app/(protected)/retention-ltv/decisions/page.tsx`       | Two `any` usages                     |
+| `app/(protected)/retention-ltv/revenue-cohorts/page.tsx` | Two unescaped apostrophes            |
+| `components/charts/RevenueCohortsChart.tsx`              | `legendCohortsSet` should be `const` |
+| `components/diagnosis/UncomfortableDecisions.tsx`        | Unescaped apostrophe                 |
+| `components/filters/FilterChip.tsx`                      | Explicit `any`                       |
+
 
 Lint warnings:
 
@@ -415,40 +427,42 @@ Security/auth issues:
 
 ## 10. Keep / Fix / Pause / Remove Matrix
 
-| Item | Type | Status | Decision | Reason | Priority |
-| --- | --- | --- | --- | --- | --- |
-| `app/(protected)/dashboard` | Route | Exists, demo/connection based | Fix | MVP executive dashboard destination | P0 |
-| `app/(protected)/cohorts` | Route | Exists, API-backed | Fix | Cohort retention MVP source | P0 |
-| `app/(protected)/retention` | Route | Exists, demo-only | Fix | Target retention route | P0 |
-| `app/(protected)/retention-ltv/revenue-cohorts` | Route | Exists, large/custom | Keep | Best current revenue cohort surface | P0 |
-| `app/(protected)/retention-ltv/curves` | Route | Exists, lint-failing | Fix | Core retention source | P0 |
-| `app/(protected)/retention-ltv/ltv-cohorts` | Route | Exists, mixed data | Fix | Core LTV source | P0 |
-| `app/(protected)/retention-ltv/repeat-rates` | Route | Exists | Fix | First-to-second/repeat MVP source | P0 |
-| `app/(protected)/retention-ltv/decisions` | Route | Exists, lint-failing/placeholders | Fix | Seed for `/insights` | P1 |
-| `/ltv` | Target route | Missing | Fix | MVP target route | P0 |
-| `/acquisition` | Target route | Missing | Fix | CAC/payback/channel quality | P1 |
-| `/products` | Route | ComingSoon | Fix | Product-level customer quality MVP | P1 |
-| `/scenarios` | Target route | Missing | Fix | Simple scenario model | P1 |
-| `/insights` | Target route | Missing | Fix | Diagnostic insight cards | P1 |
-| `/data` | Target route | Missing | Fix | Demo/CSV/upload/status | P1 |
-| `lib/database.ts` | Library | Useful but broad | Keep | Current canonical DB bridge | P0 |
-| `lib/supabaseClient.ts` | Library | Browser-only client | Fix | Move under `/lib/supabase` later | P1 |
-| `lib/demo-data/*` | Library | Useful seeded demo data | Keep | Basis for `/lib/demo` | P0 |
-| `lib/demo-mode/context.tsx` | Library | Useful, write suppression | Keep | Demo mode is MVP useful | P1 |
-| `lib/diagnosis/*` | Library | WIP rules | Fix | Move to `/lib/insights`, decouple UI | P1 |
-| `components/diagnosis/*` | Components | Useful WIP, lint issue | Fix | Good insight-card UI base | P1 |
-| `components/ai/AIAnalysis.tsx` | Component | Mock AI simulation | Pause | Should be replaced by deterministic rules first | P2 |
-| `components/charts/*` | Components | Mixed quality | Keep/Fix | Valuable chart base, needs metric extraction | P0-P1 |
-| Sidebar variants | Components | Duplicated | Fix | Consolidate to one navigation system | P1 |
-| `/connect/shopify` | Integration route | Exists | Pause | Useful later, not before metric engine | P2 |
-| `/connect/klaviyo` | Integration route | ComingSoon | Pause | Future integration | Later |
-| `/sync` | Route | Contains destructive dummy-data action | Pause/Fix | Hide dangerous actions, keep sync status later | P1 |
-| `/api/sync/dummy-data` | API | Deletes data then seeds | Pause | Risky outside controlled dev | P1 |
-| `/api/dev/generate-dummy-data` | API | Deletes data then seeds | Pause | Risky outside controlled dev | P1 |
-| `/product-economics/*` | Routes | Duplicate/future | Pause | Distracts from MVP target `/products` | P2 |
-| `/customer-intelligence/*` | Routes | Future/mock | Pause | Useful later, not core restart | Later |
-| `/reports`, `/guides`, `/roadmap` | Routes | Nice-to-have/internal | Pause | Not needed for MVP demo | Later |
-| `supabase/migrations/*` | Schema | Useful but incomplete | Keep | Documents existing DB assumptions | P1 |
+
+| Item                                            | Type              | Status                                 | Decision  | Reason                                          | Priority |
+| ----------------------------------------------- | ----------------- | -------------------------------------- | --------- | ----------------------------------------------- | -------- |
+| `app/(protected)/dashboard`                     | Route             | Exists, demo/connection based          | Fix       | MVP executive dashboard destination             | P0       |
+| `app/(protected)/cohorts`                       | Route             | Exists, API-backed                     | Fix       | Cohort retention MVP source                     | P0       |
+| `app/(protected)/retention`                     | Route             | Exists, demo-only                      | Fix       | Target retention route                          | P0       |
+| `app/(protected)/retention-ltv/revenue-cohorts` | Route             | Exists, large/custom                   | Keep      | Best current revenue cohort surface             | P0       |
+| `app/(protected)/retention-ltv/curves`          | Route             | Exists, lint-failing                   | Fix       | Core retention source                           | P0       |
+| `app/(protected)/retention-ltv/ltv-cohorts`     | Route             | Exists, mixed data                     | Fix       | Core LTV source                                 | P0       |
+| `app/(protected)/retention-ltv/repeat-rates`    | Route             | Exists                                 | Fix       | First-to-second/repeat MVP source               | P0       |
+| `app/(protected)/retention-ltv/decisions`       | Route             | Exists, lint-failing/placeholders      | Fix       | Seed for `/insights`                            | P1       |
+| `/ltv`                                          | Target route      | Missing                                | Fix       | MVP target route                                | P0       |
+| `/acquisition`                                  | Target route      | Missing                                | Fix       | CAC/payback/channel quality                     | P1       |
+| `/products`                                     | Route             | ComingSoon                             | Fix       | Product-level customer quality MVP              | P1       |
+| `/scenarios`                                    | Target route      | Missing                                | Fix       | Simple scenario model                           | P1       |
+| `/insights`                                     | Target route      | Missing                                | Fix       | Diagnostic insight cards                        | P1       |
+| `/data`                                         | Target route      | Missing                                | Fix       | Demo/CSV/upload/status                          | P1       |
+| `lib/database.ts`                               | Library           | Useful but broad                       | Keep      | Current canonical DB bridge                     | P0       |
+| `lib/supabaseClient.ts`                         | Library           | Browser-only client                    | Fix       | Move under `/lib/supabase` later                | P1       |
+| `lib/demo-data/*`                               | Library           | Useful seeded demo data                | Keep      | Basis for `/lib/demo`                           | P0       |
+| `lib/demo-mode/context.tsx`                     | Library           | Useful, write suppression              | Keep      | Demo mode is MVP useful                         | P1       |
+| `lib/diagnosis/*`                               | Library           | WIP rules                              | Fix       | Move to `/lib/insights`, decouple UI            | P1       |
+| `components/diagnosis/*`                        | Components        | Useful WIP, lint issue                 | Fix       | Good insight-card UI base                       | P1       |
+| `components/ai/AIAnalysis.tsx`                  | Component         | Mock AI simulation                     | Pause     | Should be replaced by deterministic rules first | P2       |
+| `components/charts/*`                           | Components        | Mixed quality                          | Keep/Fix  | Valuable chart base, needs metric extraction    | P0-P1    |
+| Sidebar variants                                | Components        | Duplicated                             | Fix       | Consolidate to one navigation system            | P1       |
+| `/connect/shopify`                              | Integration route | Exists                                 | Pause     | Useful later, not before metric engine          | P2       |
+| `/connect/klaviyo`                              | Integration route | ComingSoon                             | Pause     | Future integration                              | Later    |
+| `/sync`                                         | Route             | Contains destructive dummy-data action | Pause/Fix | Hide dangerous actions, keep sync status later  | P1       |
+| `/api/sync/dummy-data`                          | API               | Deletes data then seeds                | Pause     | Risky outside controlled dev                    | P1       |
+| `/api/dev/generate-dummy-data`                  | API               | Deletes data then seeds                | Pause     | Risky outside controlled dev                    | P1       |
+| `/product-economics/*`                          | Routes            | Duplicate/future                       | Pause     | Distracts from MVP target `/products`           | P2       |
+| `/customer-intelligence/*`                      | Routes            | Future/mock                            | Pause     | Useful later, not core restart                  | Later    |
+| `/reports`, `/guides`, `/roadmap`               | Routes            | Nice-to-have/internal                  | Pause     | Not needed for MVP demo                         | Later    |
+| `supabase/migrations/*`                         | Schema            | Useful but incomplete                  | Keep      | Documents existing DB assumptions               | P1       |
+
 
 ## 11. Recommended MVP Architecture
 
@@ -485,18 +499,20 @@ Target structure:
 
 Recommended route structure:
 
-| Target Route | Purpose | Current Source |
-| --- | --- | --- |
-| `/dashboard` | Executive KPI overview and Revenue Durability Score | `dashboard`, `retention-ltv/revenue-cohorts`, `mv_kpis` |
-| `/cohorts` | Cohort matrix and cohort health | `cohorts`, `retention-ltv/revenue-cohorts` |
-| `/retention` | Retention curves and repeat purchase behavior | `retention-ltv/curves`, `retention-ltv/repeat-rates` |
-| `/ltv` | Cohort LTV and contribution LTV | `retention-ltv/ltv-cohorts` |
-| `/acquisition` | CAC, LTV:CAC, payback, channel quality | Missing |
-| `/products` | First-product LTV and product customer quality | Product mock pages plus `order_items` |
-| `/scenarios` | Simple what-if model | `financials/forecasts` placeholder copy only |
-| `/insights` | Rules-based diagnosis cards and decisions | `lib/diagnosis`, `retention-ltv/decisions` |
-| `/data` | Demo mode, CSV upload, source status | `sync`, `integrations`, demo mode |
-| `/settings` | Account/settings | Current settings route |
+
+| Target Route   | Purpose                                             | Current Source                                          |
+| -------------- | --------------------------------------------------- | ------------------------------------------------------- |
+| `/dashboard`   | Executive KPI overview and Revenue Durability Score | `dashboard`, `retention-ltv/revenue-cohorts`, `mv_kpis` |
+| `/cohorts`     | Cohort matrix and cohort health                     | `cohorts`, `retention-ltv/revenue-cohorts`              |
+| `/retention`   | Retention curves and repeat purchase behavior       | `retention-ltv/curves`, `retention-ltv/repeat-rates`    |
+| `/ltv`         | Cohort LTV and contribution LTV                     | `retention-ltv/ltv-cohorts`                             |
+| `/acquisition` | CAC, LTV:CAC, payback, channel quality              | Missing                                                 |
+| `/products`    | First-product LTV and product customer quality      | Product mock pages plus `order_items`                   |
+| `/scenarios`   | Simple what-if model                                | `financials/forecasts` placeholder copy only            |
+| `/insights`    | Rules-based diagnosis cards and decisions           | `lib/diagnosis`, `retention-ltv/decisions`              |
+| `/data`        | Demo mode, CSV upload, source status                | `sync`, `integrations`, demo mode                       |
+| `/settings`    | Account/settings                                    | Current settings route                                  |
+
 
 Recommended data flow:
 

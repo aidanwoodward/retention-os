@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import type { DateRange } from "react-day-picker";
 import { Info } from "lucide-react";
 import {
   Tooltip,
@@ -24,6 +23,11 @@ interface DateRangePickerProps {
   tooltip?: string;
   showQuickSelects?: boolean; // Default true, can be disabled for specific use cases
 }
+
+type CustomDateRange = {
+  from?: Date;
+  to?: Date;
+};
 
 const QUICK_SELECT_OPTIONS: Array<{ label: string; value: QuickSelectOption }> = [
   { label: 'All data', value: 'all' },
@@ -117,7 +121,7 @@ export function DateRangePicker({
   const [activeQuickSelect, setActiveQuickSelect] = useState<QuickSelectOption | null>(null);
   
   // Track custom range selection (draft state - not applied until both dates selected)
-  const [customRange, setCustomRange] = useState<DateRange | undefined>(
+  const [customRange, setCustomRange] = useState<CustomDateRange | undefined>(
     normalizedValue
       ? { from: normalizedValue.from, to: normalizedValue.to }
       : undefined

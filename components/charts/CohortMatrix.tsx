@@ -85,11 +85,11 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
     let maxPeriods: number;
     if (viewMode === 'monthly') {
       // Monthly view: calculate from actual data (max period_number across all cohorts)
-      const maxPeriodFromData = cohorts.reduce((max, cohort) => {
+      const maxPeriodFromData = cohorts.reduce<number>((max, cohort) => {
         const cohortData = cohort as Record<string, unknown>;
         const periods = cohortData.periods as Array<Record<string, unknown>>;
         if (periods && periods.length > 0) {
-          const maxPeriodInCohort = Math.max(...periods.map(p => (p.period_number as number) || 0));
+          const maxPeriodInCohort = Math.max(...periods.map(p => Number(p.period_number) || 0));
           return Math.max(max, maxPeriodInCohort);
         }
         return max;

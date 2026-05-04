@@ -313,7 +313,7 @@ export function FilterChip({ config, value, onChange, onClear }: FilterChipProps
             minDate={new Date(2010, 0, 1)}
             // maxDate defaults to today in DateRangePicker (prevents future dates)
             placeholder="Select date range"
-            tooltip={(config as any).tooltip}
+            tooltip={config.tooltip}
             showQuickSelects={true}
           />
         );

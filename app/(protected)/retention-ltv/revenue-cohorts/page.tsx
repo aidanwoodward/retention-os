@@ -1214,7 +1214,7 @@ function RevenueCohortsContent() {
         <p className="text-lg font-semibold text-gray-700 mb-2">The Lie Detector</p>
         <p className="text-sm text-gray-600 max-w-3xl">
           Is revenue compounding or are we constantly filling a leaky bucket? 
-          Even though we're growing and it's real growth, the growth itself may be fragile. 
+          Even though we&apos;re growing and it&apos;s real growth, the growth itself may be fragile. 
           Are newer cohorts decaying faster than older ones? Are we destroying LTV because customers who buy now are not as loyal or have lower AOV?
         </p>
       </div>

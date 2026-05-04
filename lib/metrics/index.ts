@@ -30,6 +30,13 @@ export {
 export { calculateLTVByCohort, type CalculateLTVOptions } from "./ltv";
 
 export {
+  buildCohortsPageViewModel,
+  type CohortMonthTableRowView,
+  type CohortsPageSummaryView,
+  type CohortsPageViewModel,
+} from "./cohort-view-model";
+
+export {
   runDemoMetricSanityCheck,
   type DemoMetricSanityCheckResult,
 } from "./demo-sanity-check";

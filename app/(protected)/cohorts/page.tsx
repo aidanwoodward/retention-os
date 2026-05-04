@@ -1,214 +1,150 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
-import { FilterDemo } from "@/components/ui/filter-demo";
-import { CohortRetentionTable } from "@/components/charts/CohortRetentionTable";
+import { buildCohortsPageViewModel } from "@/lib/metrics/cohort-view-model";
+import type { CohortMonthTableRowView } from "@/lib/metrics/cohort-view-model";
 
-interface CohortData {
-  cohort_month: string;
-  cohort_size: number;
-  periods: Array<{
-    period_number: number;
-    order_month: string;
-    active_customers: number;
-    total_orders: number;
-    total_revenue: number;
-    retention_rate_percent: number;
-  }>;
+function formatPct(rate: number | null | undefined, digits = 1): string {
+  if (rate == null || Number.isNaN(rate)) {
+    return "—";
+  }
+  return `${(rate * 100).toFixed(digits)}%`;
 }
 
-interface CohortsResponse {
-  success: boolean;
-  data: {
-    cohorts: CohortData[];
-    total_records: number;
-    latest_calculated_at: string;
-  };
-  error?: string;
+function formatMoney(amount: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+function RateCell({ value }: { value: number | null }) {
+  return <span className="tabular-nums">{formatPct(value)}</span>;
+}
+
+function CohortEconomicsTable({ rows }: { rows: CohortMonthTableRowView[] }) {
+  return (
+    <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+      <table className="min-w-[960px] w-full border-collapse text-sm">
+        <thead className="sticky top-0 z-10 border-b border-gray-200 bg-gray-50">
+          <tr className="text-left text-xs font-semibold uppercase tracking-wide text-gray-700">
+            <th className="px-4 py-3">Cohort (first-order month)</th>
+            <th className="px-4 py-3 text-right">Cohort size</th>
+            <th className="px-4 py-3 text-right">Orders</th>
+            <th className="px-4 py-3 text-right">Net revenue</th>
+            <th className="px-4 py-3 text-right">Contribution</th>
+            <th className="px-4 py-3 text-right">Latest avg revenue LTV</th>
+            <th className="px-4 py-3 text-right">Latest avg contribution LTV</th>
+            <th className="px-4 py-3 text-right">Month +1 active</th>
+            <th className="px-4 py-3 text-right">Month +2 active</th>
+            <th className="px-4 py-3 text-right">Month +3 active</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.cohortPeriod} className="border-b border-gray-100 hover:bg-gray-50/70">
+              <td className="px-4 py-2.5 font-medium text-gray-900 tabular-nums">{row.cohortPeriod}</td>
+              <td className="px-4 py-2.5 text-right tabular-nums text-gray-800">{row.cohortSize.toLocaleString()}</td>
+              <td className="px-4 py-2.5 text-right tabular-nums text-gray-800">{row.totalOrders.toLocaleString()}</td>
+              <td className="px-4 py-2.5 text-right tabular-nums text-gray-800">{formatMoney(row.netRevenue)}</td>
+              <td className="px-4 py-2.5 text-right tabular-nums text-gray-800">{formatMoney(row.contribution)}</td>
+              <td className="px-4 py-2.5 text-right tabular-nums text-gray-800">
+                {formatMoney(row.latestAvgNetRevenueLtv)}
+              </td>
+              <td className="px-4 py-2.5 text-right tabular-nums text-gray-800">
+                {row.latestAvgContributionLtv != null ? formatMoney(row.latestAvgContributionLtv) : "—"}
+              </td>
+              <td className="px-4 py-2.5 text-right text-gray-800">
+                <RateCell value={row.nextMonthActiveRate} />
+              </td>
+              <td className="px-4 py-2.5 text-right text-gray-800">
+                <RateCell value={row.monthPlusTwoActiveRate} />
+              </td>
+              <td className="px-4 py-2.5 text-right text-gray-800">
+                <RateCell value={row.monthPlusThreeActiveRate} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 export default function CohortsPage() {
-  const [cohorts, setCohorts] = useState<CohortData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchCohorts();
-  }, []);
-
-  const fetchCohorts = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/metrics/cohorts');
-      const data: CohortsResponse = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch cohorts');
-      }
-
-      setCohorts(data.data.cohorts);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch cohorts');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-  if (loading) {
-    return (
-      <div className="p-6">
-        <div className="mx-auto max-w-7xl">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-            <div className="bg-gray-200 rounded-lg h-96"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-6">
-        <div className="mx-auto max-w-7xl">
-          <div className="rounded-xl bg-red-50 border border-red-200 p-6">
-            <div className="flex items-center">
-              <span className="text-red-400 text-xl mr-3">⚠️</span>
-              <div>
-                <h3 className="text-sm font-medium text-red-800">Error Loading Cohorts</h3>
-                <p className="text-sm text-red-700 mt-1">{error}</p>
-                <button
-                  onClick={fetchCohorts}
-                  className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
-                >
-                  Try again
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Get max periods for table width
-  const maxPeriods = Math.max(...cohorts.map(c => c.periods.length));
+  const vm = useMemo(() => buildCohortsPageViewModel(), []);
+  const { summary, cohortRows } = vm;
 
   return (
     <div className="p-6">
       <div className="mx-auto max-w-7xl space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <strong className="font-semibold">Demo dataset.</strong>{" "}
+          These cohorts use the canonical Lumin &amp; River demo from <code className="rounded bg-amber-100 px-1">getDemoDataset()</code>{" "}
+          and the <code className="rounded bg-amber-100 px-1">/lib/metrics</code> engine — not live Shopify/Supabase data.
+        </div>
+
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Cohort Analysis</h1>
-            <p className="text-gray-600">
-              Customer retention patterns by acquisition month
+            <h1 className="text-2xl font-bold text-gray-900">Cohort economics</h1>
+            <p className="mt-1 text-gray-600">
+              First-order monthly cohorts with net revenue, contribution, and next-month active rates (UTC calendar months).
             </p>
           </div>
-          <div className="flex space-x-3">
+          <div className="flex flex-wrap gap-2">
             <Link
               href="/dashboard"
               className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               Back to Dashboard
             </Link>
-            <button
-              onClick={fetchCohorts}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-            >
-              Refresh Data
-            </button>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Filter Cohorts</h3>
-            <span className="text-sm text-gray-500">Filter by date range, customer type, and more</span>
-          </div>
-          <FilterDemo />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <Kpi title="Cohort months" value={String(summary.cohortCount)} />
+          <Kpi title="Customers in demo" value={summary.totalCustomers.toLocaleString()} />
+          <Kpi
+            title="Largest cohort"
+            value={`${summary.largestCohort.cohortPeriod}`}
+            sub={`${summary.largestCohort.cohortSize.toLocaleString()} customers`}
+          />
+          <Kpi title="All-time repeat rate" value={formatPct(summary.repeatPurchaseRate)} />
+          <Kpi title="First→second (90d)" value={formatPct(summary.firstToSecondWithin90DaysRate)} />
+          <Kpi title="Aggregate net revenue" value={formatMoney(summary.aggregateNetRevenue)} />
         </div>
 
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg p-6 shadow">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Cohorts</p>
-                <p className="text-2xl font-semibold text-gray-900">{cohorts.length}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg p-6 shadow">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Avg Cohort Size</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {cohorts.length > 0 ? Math.round(cohorts.reduce((sum, c) => sum + c.cohort_size, 0) / cohorts.length) : 0}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg p-6 shadow">
-            <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Max Retention</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {cohorts.length > 0 ? Math.max(...cohorts.flatMap(c => c.periods.map(p => p.retention_rate_percent))).toFixed(0) : 0}%
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg p-6 shadow">
-            <div className="flex items-center">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  ${cohorts.length > 0 ? Math.round(cohorts.flatMap(c => c.periods.map(p => p.total_revenue)).reduce((sum, r) => sum + r, 0)).toLocaleString() : 0}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Cohort Retention Table */}
-        <div className="bg-white rounded-xl shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Retention Matrix</h2>
-            <p className="text-sm text-gray-600 mt-1">
-              Customer retention rates by cohort and week
-            </p>
-          </div>
-          
-          <CohortRetentionTable cohorts={cohorts} maxWeeks={maxPeriods} />
+        <div>
+          <h2 className="mb-2 text-lg font-semibold text-gray-900">Cohort table</h2>
+          <p className="mb-4 text-sm text-gray-600">
+            Net revenue and contribution roll up orders from cohort members. Latest average revenue LTV is cumulative{" "}
+            <strong>average net revenue per cohort customer</strong> through each cohort&apos;s latest observed month on the staircase.
+            Month +n active columns are cohort customers with ≥1 order in acquisition month&nbsp;+&nbsp;n (calendar UTC).
+          </p>
+          <CohortEconomicsTable rows={cohortRows} />
         </div>
       </div>
+    </div>
+  );
+}
+
+function Kpi({
+  title,
+  value,
+  sub,
+}: {
+  title: string;
+  value: string;
+  sub?: string;
+}) {
+  return (
+    <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{title}</p>
+      <p className="mt-2 text-xl font-semibold tabular-nums text-gray-900">{value}</p>
+      {sub ? <p className="mt-1 text-xs text-gray-600">{sub}</p> : null}
     </div>
   );
 }

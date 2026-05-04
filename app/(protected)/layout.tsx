@@ -28,89 +28,52 @@ export default function ProtectedLayout({
 
   // Generate breadcrumbs from pathname
   const getBreadcrumbs = () => {
-    const segments = pathname.split('/').filter(Boolean);
-    
-    // Special case: dashboard routes to executive
+    const segments = pathname.split('/').filter(Boolean)
+
     if (pathname === '/dashboard') {
-      return [
-        { label: 'Retention OS', path: '/executive' },
-        { label: 'Overview', path: '/executive' }
-      ];
+      return [{ label: 'Retention OS', path: '/dashboard' }, { label: 'Dashboard', path: '/dashboard' }]
     }
 
-    const breadcrumbs = [{ label: 'Retention OS', path: '/executive' }];
-    
+    const breadcrumbs = [{ label: 'Retention OS', path: '/dashboard' }]
+
     if (segments.length === 0) {
-      return breadcrumbs;
+      return breadcrumbs
     }
 
-    // Map paths to display names
     const moduleLabels: Record<string, string> = {
-      'executive': 'Executive',
-      'cohorts': 'Cohorts',
-      'retention': 'Retention',
-      'retention-ltv': 'Retention & LTV',
-      'customers': 'Customers',
-      'customer-intelligence': 'Customer Intelligence',
-      'products': 'Products',
-      'product-economics': 'Product Economics',
-      'financials': 'Financials',
-      'segments': 'Segments',
-      'integrations': 'Integrations',
-      'settings': 'Settings',
-      'feedback': 'Feedback',
-      'connect': 'Connect'
-    };
+      dashboard: 'Dashboard',
+      cohorts: 'Cohorts',
+      retention: 'Retention',
+      ltv: 'LTV',
+      insights: 'Insights',
+      data: 'Data',
+      products: 'Products',
+      acquisition: 'Acquisition',
+      scenarios: 'Scenarios',
+      settings: 'Settings',
+    }
 
     const pageLabels: Record<string, string> = {
-      'reconciliation': 'Data Health',
-      'exports': 'Exports',
-      'revenue-cohorts': 'Revenue Cohorts',
-      'curves': 'Retention Curves',
-      'ltv-cohorts': 'LTV Curves',
-      'repeat-rates': 'Repeat Purchase Rates',
-      'composition': 'Customer Composition',
-      'segments': 'Segments',
-      'profiles': 'Customer Profiles',
-      'performance': 'Product Performance',
-      'concentration': 'Product Concentration',
-      'discounts': 'Discount Impact',
-      'replenishment': 'Replenishment Frequency',
-      'revenue': 'Revenue Intelligence',
-      'ltv-summary': 'LTV Summary',
-      'forecasts': 'Forecasts & Scenarios',
-      'integrations': 'Integrations',
-      'feedback': 'Support & Feedback',
-      'category': 'Category Breakdown',
-      'list': 'Customer List',
-      'profile': 'Customer Profile',
-      'cross-sell': 'Cross-sell',
-      'sync': 'Sync Status',
-      'shopify': 'Shopify',
-      'klaviyo': 'Klaviyo'
-    };
+      integrations: 'Integrations',
+      feedback: 'Support & Feedback',
+    }
 
-    let currentPath = '';
-    segments.forEach((segment, index) => {
-      currentPath += `/${segment}`;
-      
-      // Module level
-      if (moduleLabels[segment] && index === 0) {
-        breadcrumbs.push({ label: moduleLabels[segment], path: currentPath });
-      } 
-      // Page level
-      else if (pageLabels[segment]) {
-        breadcrumbs.push({ label: pageLabels[segment], path: currentPath });
-      }
-      // Fallback for unknown segments
-      else if (index > 0 || !moduleLabels[segment]) {
-        const label = segment.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
-        breadcrumbs.push({ label, path: currentPath });
-      }
-    });
+    let currentPath = ''
+    segments.forEach((segment) => {
+      currentPath += `/${segment}`
 
-    return breadcrumbs;
-  };
+      if (moduleLabels[segment]) {
+        breadcrumbs.push({ label: moduleLabels[segment], path: currentPath })
+      } else if (pageLabels[segment]) {
+        breadcrumbs.push({ label: pageLabels[segment], path: currentPath })
+      } else {
+        const label = segment.split('-').map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(' ')
+        breadcrumbs.push({ label, path: currentPath })
+      }
+    })
+
+    return breadcrumbs
+  }
 
   const breadcrumbs = getBreadcrumbs();
 

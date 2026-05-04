@@ -135,6 +135,7 @@ const dateRangeFilter: FilterConfig = {
   id: 'dateRange',
   title: 'Date Range',
   type: 'date-range',
+  tooltip: 'Filters cohorts by customer start date',
   formatter: (v) => {
     if (typeof v === 'object' && v !== null && 'from' in v) {
       const dateRange = v as { from: string; to: string };
@@ -154,13 +155,36 @@ const dateRangeFilter: FilterConfig = {
   },
 };
 
+// Country filter (countries only, no regions)
+const countryFilter: FilterConfig = {
+  id: 'country',
+  title: 'Country',
+  type: 'checkbox',
+  options: [
+    { label: 'UK', value: 'uk' },
+    { label: 'Germany', value: 'germany' },
+    { label: 'France', value: 'france' },
+    { label: 'Spain', value: 'spain' },
+  ],
+  formatter: (v) => {
+    if (Array.isArray(v) && v.length > 0) {
+      const labels = v.map(val => {
+        const option = countryFilter.options?.find(opt => opt.value === val);
+        return option?.label || val;
+      });
+      if (labels.length > 2) {
+        return `${labels[0]} and ${labels.length - 1} more`;
+      }
+      return labels.join(', ');
+    }
+    return '';
+  },
+};
+
 export const revenueCohortsFilters: FilterConfig[] = [
-  geographyFilter,
   cohortTypeFilter,
   dateRangeFilter,
-  customerSegmentFilter,
-  productCategoryFilter,
-  customerTypeFilter,
+  countryFilter,
 ];
 
 export const revenueCohortsSearch = {
@@ -402,39 +426,15 @@ const retentionLevelFilter: FilterConfig = {
 };
 
 export const retentionCurvesFilters: FilterConfig[] = [
-  geographyFilter,
   cohortTypeFilter, // Use same cohortType filter as Revenue Cohorts (monthly/quarterly/annual)
   dateRangeFilter,
-  customerSegmentFilter,
-  productCategoryFilter,
-  customerTypeFilter,
+  countryFilter, // Countries only, no regions (replaces geographyFilter)
 ];
 
 export const retentionCurvesSearch = {
   placeholder: 'Search cohorts…',
   param: 'q',
 };
-
-/**
- * V1-Compliant Cohort Filter Configurations
- * Only includes filters that are fully supported end-to-end:
- * - Date range (filters order_month)
- * - Cohort type (monthly/quarterly/annual)
- */
-export const revenueCohortsV1Filters: FilterConfig[] = [
-  cohortTypeFilter,
-  dateRangeFilter,
-];
-
-export const retentionCurvesV1Filters: FilterConfig[] = [
-  cohortTypeFilter,
-  dateRangeFilter,
-];
-
-export const ltvCurvesV1Filters: FilterConfig[] = [
-  cohortTypeFilter,
-  dateRangeFilter,
-];
 
 /**
  * Repeat Purchase Rates filter configuration (V1)

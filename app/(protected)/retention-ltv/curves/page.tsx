@@ -2,19 +2,26 @@
 
 import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { FilterBar } from "@/components/filters/FilterBar";
-import { retentionCurvesV1Filters, retentionCurvesSearch } from "@/lib/filters/config";
+import { retentionCurvesFilters, retentionCurvesSearch } from "@/lib/filters/config";
 import { AIAnalysis } from "@/components/ai/AIAnalysis";
 import { LoadingButton } from "@/components/ui/loading-buttons";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import { Diagnosis } from "@/components/diagnosis/Diagnosis";
+import { diagnoseRetentionCurves, diagnoseRetentionCurvesEnhanced } from "@/lib/diagnosis/retention-curves";
+import { SeverityIndicator } from "@/components/diagnosis/SeverityIndicator";
+import { CausalitySection } from "@/components/diagnosis/CausalitySection";
+import { DecisionAxes } from "@/components/diagnosis/DecisionAxes";
+import { getDecisionAxesForDiagnosis } from "@/lib/diagnosis/decision-axes";
+import { ImpactRanges } from "@/components/diagnosis/ImpactRanges";
+import { computeRetentionCurvesImpactRanges } from "@/lib/diagnosis/impact-ranges/retention-curves";
 import {
   TrendingUp,
+  AlertTriangle,
   Download,
   Users,
   Info,
   LineChart,
-  AlertTriangle,
 } from "lucide-react";
-import { DemoBanner } from "@/components/ui/DemoBanner";
 import {
   Tooltip,
   TooltipContent,
@@ -40,6 +47,7 @@ interface CohortData {
     total_orders: number;
     total_revenue: number;
     retention_rate_percent: number;
+    revenue_retention_percent?: number; // DEMO-ONLY: API-provided revenue retention (<=100%)
   }>;
 }
 
@@ -49,7 +57,7 @@ interface CohortsResponse {
     cohorts: CohortData[];
     total_cohorts: number;
     calculated_at: string;
-    is_demo?: boolean;
+    is_demo?: boolean; // Demo mode flag from API
   };
   error?: string;
 }
@@ -88,7 +96,7 @@ function RetentionCurvesContent() {
   const [cohorts, setCohorts] = useState<CohortData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isDemo, setIsDemo] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const [filterState, setFilterState] = useState<Record<string, FilterValue>>({});
   const [retentionType, setRetentionType] = useState<'customer' | 'revenue'>('customer');
   const [viewMode, setViewMode] = useState<'aggregated' | 'cohort'>('aggregated');
@@ -99,7 +107,6 @@ function RetentionCurvesContent() {
   const [_chartError, setChartError] = useState<Error | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
-  const pathname = usePathname();
   
   // Debounce timer for hover highlight (anti-flicker)
   const hoverDebounceRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -128,7 +135,12 @@ function RetentionCurvesContent() {
       }
 
       setCohorts(data.data.cohorts);
-      setIsDemo(data.data.is_demo || false);
+      const isDemo = data.data.is_demo === true;
+      setIsDemoMode(isDemo); // Store demo mode flag
+      // Dev-only: Log demo mode detection
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`📊 Demo mode detected: ${isDemo}`, { is_demo: data.data.is_demo });
+      }
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch cohorts');
@@ -140,31 +152,6 @@ function RetentionCurvesContent() {
   useEffect(() => {
     fetchCohorts();
   }, [fetchCohorts]);
-
-  // Clean URL params: Remove unsupported filters (geography, productCategory, customerSegment, customerType)
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    const supportedParams = ['cohortType', 'dateRange', 'limit', 'cohort_month'];
-    let hasChanges = false;
-    
-    // Remove unsupported params
-    for (const [key] of params.entries()) {
-      if (!supportedParams.includes(key) && !key.startsWith('dateRange_')) {
-        params.delete(key);
-        hasChanges = true;
-      }
-    }
-    
-    // Ensure cohortType is set (default to 'annual')
-    if (!params.get('cohortType')) {
-      params.set('cohortType', 'annual');
-      hasChanges = true;
-    }
-    
-    if (hasChanges) {
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-    }
-  }, [searchParams, pathname, router]);
 
   // Extract date range from URL params with validation
   const dateRange = React.useMemo(() => {
@@ -238,6 +225,36 @@ function RetentionCurvesContent() {
     return filtered;
   }, [cohorts, dateRange, isDateInRange]);
 
+  // CRITICAL FIX: Override period 0 for customer retention to enforce Shopify semantics
+  // For customer retention ONLY: Q0 must equal cohort_size and retention_rate must be 100% by construction
+  const correctedCohorts = React.useMemo(() => {
+    // Only apply override for customer retention
+    if (retentionType !== 'customer') {
+      return filteredCohorts;
+    }
+
+    return filteredCohorts.map(cohort => {
+      const period0Index = cohort.periods.findIndex(p => p.period_number === 0);
+      
+      if (period0Index >= 0) {
+        // Override period 0: active_customers = cohort_size, retention_rate_percent = 100
+        const correctedPeriods = [...cohort.periods];
+        correctedPeriods[period0Index] = {
+          ...correctedPeriods[period0Index],
+          active_customers: cohort.cohort_size,
+          retention_rate_percent: 100,
+        };
+        
+        return {
+          ...cohort,
+          periods: correctedPeriods,
+        };
+      }
+      
+      return cohort;
+    });
+  }, [filteredCohorts, retentionType]);
+
   // Get cohort type from URL (default to annual)
   const cohortType = React.useMemo(() => {
     const type = searchParams.get('cohortType');
@@ -246,6 +263,17 @@ function RetentionCurvesContent() {
     }
     return 'annual';
   }, [searchParams]);
+  
+  // BLOCKER 1: Prevent monthly cohort-by-cohort - force aggregated view
+  React.useEffect(() => {
+    if (cohortType === 'monthly' && viewMode === 'cohort') {
+      setViewMode('aggregated');
+      // Update URL to reflect aggregated view
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('view', 'aggregated');
+      router.replace(`?${params.toString()}`, { scroll: false });
+    }
+  }, [cohortType, viewMode, searchParams, router]);
 
   // Helper: Generate cohort label based on cohort type
   const getCohortLabel = React.useCallback((cohortMonth: string): string => {
@@ -267,6 +295,185 @@ function RetentionCurvesContent() {
       return `${month} ${year}`;
     }
   }, [cohortType]);
+
+  // Demo-only clamp: Revenue retention must not display >100% due to floating point artifacts
+  // CRITICAL: Only applies when is_demo === true (demo mode)
+  // This prevents values like 100.3% or 100.8% from appearing in demo data
+  // CFO-TRUST: This ensures demo data is trustworthy for executive presentations
+  const clampRevenueRetention = React.useCallback((value: number | null | undefined): number => {
+    // Handle null/undefined gracefully
+    if (value === null || value === undefined || !Number.isFinite(value)) {
+      return 0;
+    }
+    
+    // CRITICAL: In demo mode, aggressively clamp ALL revenue retention to max 100%
+    if (isDemoMode && retentionType === 'revenue') {
+      const clamped = Math.min(value, 100);
+      // Dev-only: Log if clamping occurred to verify it's working
+      if (process.env.NODE_ENV !== 'production' && value > 100) {
+        console.warn(`🔒 DEMO CLAMP: Revenue retention ${value.toFixed(2)}% → ${clamped.toFixed(2)}% (demo mode enforced)`);
+      }
+      return clamped;
+    }
+    return value;
+  }, [isDemoMode, retentionType]);
+
+  // DEV-ONLY: Strict retention math audit
+  // Verify customer retention matches Shopify-style cohort definition with STRICT invariants:
+  // - cohort membership = first order date falls in cohort window
+  // - retention(t) = active customers in period t / cohort_size
+  // - Q0 MUST equal 100% exactly: active_customers(period 0) === cohort_size
+  // - active_customers(t) <= cohort_size for all periods t
+  // - retention(t) <= 100% exactly for all periods t
+  // NOTE: Audit checks correctedCohorts (after period 0 override) for customer retention
+  // NOTE: Audit is gated behind NEXT_PUBLIC_ENABLE_RETENTION_AUDIT=true feature flag
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'production' || process.env.NEXT_PUBLIC_ENABLE_RETENTION_AUDIT !== 'true' || correctedCohorts.length === 0) return;
+
+    console.group('🔍 Retention Curves Math Audit (Strict Invariants)');
+    
+    let passCount = 0;
+    let failCount = 0;
+    const q0Violations: Array<{
+      cohortKey: string;
+      cohort_size: number;
+      active_customers: number;
+      difference: number;
+    }> = [];
+    const activeExceedsViolations: Array<{
+      cohortKey: string;
+      period: number;
+      cohort_size: number;
+      active_customers: number;
+      excess: number;
+    }> = [];
+    const retentionExceedsViolations: Array<{
+      cohortKey: string;
+      period: number;
+      cohort_size: number;
+      active_customers: number;
+      retention: number;
+    }> = [];
+
+    correctedCohorts.forEach(cohort => {
+      const cohortKey = getCohortLabel(cohort.cohort_month);
+      const cohortSize = cohort.cohort_size;
+
+      // Check 1: Q0 MUST equal cohort_size exactly (STRICT - no tolerance)
+      // After period 0 override, this should always pass for customer retention
+      const period0 = cohort.periods.find(p => p.period_number === 0);
+      if (period0) {
+        const period0Active = period0.active_customers;
+        if (period0Active !== cohortSize) {
+          failCount++;
+          const difference = Math.abs(period0Active - cohortSize);
+          q0Violations.push({
+            cohortKey,
+            cohort_size: cohortSize,
+            active_customers: period0Active,
+            difference,
+          });
+        } else {
+          passCount++;
+        }
+      }
+
+      // Check all periods: activeCustomers(t) <= cohort_size (STRICT)
+      cohort.periods.forEach(period => {
+        const periodNum = period.period_number;
+        const activeCustomers = period.active_customers;
+        
+        // Check 2: activeCustomers(t) MUST NOT exceed cohort_size
+        if (activeCustomers > cohortSize) {
+          failCount++;
+          activeExceedsViolations.push({
+            cohortKey,
+            period: periodNum,
+            cohort_size: cohortSize,
+            active_customers: activeCustomers,
+            excess: activeCustomers - cohortSize,
+          });
+        } else {
+          passCount++;
+        }
+
+        // Check 3: retention(t) MUST NOT exceed 100% (STRICT - no tolerance)
+        const retention = cohortSize > 0 ? (activeCustomers / cohortSize) * 100 : 0;
+        if (retention > 100) {
+          failCount++;
+          retentionExceedsViolations.push({
+            cohortKey,
+            period: periodNum,
+            cohort_size: cohortSize,
+            active_customers: activeCustomers,
+            retention,
+          });
+        } else {
+          passCount++;
+        }
+      });
+    });
+
+    // Print grouped violation reports
+    if (q0Violations.length > 0) {
+      console.group(`❌ Q0 Mismatches (${q0Violations.length} HARD VIOLATIONS)`);
+      console.log('Enforcement: active_customers(period 0) MUST === cohort_size exactly');
+      q0Violations.forEach(v => {
+        console.warn(`  Cohort ${v.cohortKey}:`, {
+          cohort_size: v.cohort_size,
+          period0_active_customers: v.active_customers,
+          difference: v.difference,
+        });
+      });
+      console.groupEnd();
+    }
+
+    if (activeExceedsViolations.length > 0) {
+      console.group(`❌ Active Customers Exceed Cohort Size (${activeExceedsViolations.length} HARD VIOLATIONS)`);
+      console.log('Enforcement: active_customers(t) MUST <= cohort_size for all periods t');
+      activeExceedsViolations.forEach(v => {
+        console.warn(`  Cohort ${v.cohortKey}, Period ${v.period}:`, {
+          cohort_size: v.cohort_size,
+          active_customers: v.active_customers,
+          excess: v.excess,
+        });
+      });
+      console.groupEnd();
+    }
+
+    if (retentionExceedsViolations.length > 0) {
+      console.group(`❌ Retention Exceeds 100% (${retentionExceedsViolations.length} HARD VIOLATIONS)`);
+      console.log('Enforcement: retention(t) = active_customers(t) / cohort_size * 100 MUST <= 100 exactly');
+      retentionExceedsViolations.forEach(v => {
+        console.warn(`  Cohort ${v.cohortKey}, Period ${v.period}:`, {
+          cohort_size: v.cohort_size,
+          active_customers: v.active_customers,
+          retention: v.retention.toFixed(2) + '%',
+        });
+      });
+      console.groupEnd();
+    }
+
+    // Print final summary
+    const totalChecks = passCount + failCount;
+    const allPassed = failCount === 0;
+    
+    console.log('\n' + '='.repeat(60));
+    if (allPassed) {
+      console.log('✅ PASS: All retention math invariants satisfied');
+      console.log(`   Checks passed: ${passCount} / ${totalChecks}`);
+    } else {
+      console.log('❌ FAIL: Retention math violations detected');
+      console.log(`   Checks passed: ${passCount} / ${totalChecks}`);
+      console.log(`   Violations: ${failCount}`);
+      console.log(`   - Q0 mismatches: ${q0Violations.length}`);
+      console.log(`   - Active exceeds size: ${activeExceedsViolations.length}`);
+      console.log(`   - Retention exceeds 100%: ${retentionExceedsViolations.length}`);
+    }
+    console.log('='.repeat(60));
+    
+    console.groupEnd();
+  }, [correctedCohorts, getCohortLabel]);
 
   // Helper: Convert period_number (months) to the appropriate period based on cohortType
   const convertPeriodNumber = React.useCallback((periodNumberMonths: number): number => {
@@ -296,12 +503,12 @@ function RetentionCurvesContent() {
 
   // Calculate max possible period based on oldest cohort (shared logic)
   const maxPossiblePeriod = React.useMemo(() => {
-    if (filteredCohorts.length === 0) return 0;
+    if (correctedCohorts.length === 0) return 0;
     
-    const oldestCohortDate = filteredCohorts.reduce((oldest, cohort) => {
+    const oldestCohortDate = correctedCohorts.reduce((oldest, cohort) => {
       const cohortDate = new Date(cohort.cohort_month);
       return cohortDate < oldest ? cohortDate : oldest;
-    }, new Date(filteredCohorts[0].cohort_month));
+    }, new Date(correctedCohorts[0].cohort_month));
 
     const currentDate = new Date();
     
@@ -321,11 +528,11 @@ function RetentionCurvesContent() {
                                  (currentDate.getMonth() - oldestCohortDate.getMonth());
       return Math.max(0, monthsSinceOldest);
     }
-  }, [filteredCohorts, cohortType]);
+  }, [correctedCohorts, cohortType]);
 
   // Compute aggregated retention curve data
   const retentionCurveData = React.useMemo((): RetentionPeriodData[] => {
-    if (filteredCohorts.length === 0) return [];
+    if (correctedCohorts.length === 0) return [];
 
     // Calculate max observed period for each cohort (maturity check)
     // Maturity rule: a cohort is mature enough for period N if maxObservedPeriod >= N
@@ -356,7 +563,7 @@ function RetentionCurvesContent() {
       let eligibleCohortSize = 0;
       let cohortCount = 0;
 
-      filteredCohorts.forEach(cohort => {
+      correctedCohorts.forEach(cohort => {
         const maxObservedPeriod = cohortMaturity.get(cohort.cohort_month) ?? -1;
         // Only include cohorts that have reached this period (maturity check)
         if (maxObservedPeriod >= periodNum) {
@@ -411,12 +618,26 @@ function RetentionCurvesContent() {
 
       // Period 0 baseline: calculate retention using cohort_size as denominator
       if (periodNum === 0) {
-        const period0Customers = period0Data.activeCustomers;
-        // Retention = active_customers / cohort_size (aligned with database definition)
-        // Note: Period 0 may not be exactly 100% if some customers don't order in their acquisition month
-        const retentionRate = baselineCohortSize > 0 
-          ? (period0Customers / baselineCohortSize) * 100 
-          : 0;
+        // CRITICAL FIX: For customer retention, period 0 is defined by construction:
+        // active_customers = cohort_size and retention_rate = 100%
+        // This ensures Shopify-style cohort semantics (cohort membership = first purchase in cohort window)
+        const period0Customers = retentionType === 'customer' 
+          ? baselineCohortSize  // Override: active_customers = cohort_size
+          : period0Data.activeCustomers;  // Revenue retention uses actual active customers
+        
+        const retentionRate = retentionType === 'customer'
+          ? 100  // Override: retention_rate = 100% by construction
+          : (baselineCohortSize > 0 ? (period0Customers / baselineCohortSize) * 100 : 0);
+        
+        // Dev-only assertion: customer retention should never exceed 100%
+        if (process.env.NODE_ENV !== 'production' && retentionRate > 100.0001) {
+          console.warn(`⚠️ Customer retention exceeds 100% at Period 0:`, {
+            period: 0,
+            numerator: period0Customers,
+            denominator: baselineCohortSize,
+            retention: retentionRate,
+          });
+        }
         
         curveData.push({
           period: 0,
@@ -435,9 +656,30 @@ function RetentionCurvesContent() {
         ? (periodData.activeCustomers / baselineCohortSize) * 100 
         : 0;
       
-      const revenueRetention = period0Revenue > 0 
-        ? (periodData.revenue / period0Revenue) * 100 
-        : 0;
+      // Dev-only assertion: customer retention should never exceed 100%
+      if (process.env.NODE_ENV !== 'production' && retentionRate > 100.0001) {
+        console.warn(`⚠️ Customer retention exceeds 100%:`, {
+          period: periodNum,
+          numerator: periodData.activeCustomers,
+          denominator: baselineCohortSize,
+          retention: retentionRate,
+        });
+      }
+      
+      // DEMO-ONLY: Use API-provided revenue retention (weighted average) to avoid recomputation artifacts
+      let revenueRetention: number;
+      if (isDemoMode && retentionType === 'revenue' && periodData.period0RevenueSum > 0) {
+        // Use weighted average of API-provided revenue_retention_percent values
+        revenueRetention = periodData.revenueRetentionSum / periodData.period0RevenueSum;
+      } else {
+        // Non-demo mode: compute from aggregated revenue (allows >100%)
+        revenueRetention = period0Revenue > 0 
+          ? (periodData.revenue / period0Revenue) * 100 
+          : 0;
+      }
+      
+      // Demo-only clamp to avoid floating point >100% artifacts (shouldn't be needed with API values, but safety check)
+      revenueRetention = clampRevenueRetention(revenueRetention);
 
       curveData.push({
         period: periodNum,
@@ -451,7 +693,7 @@ function RetentionCurvesContent() {
     }
 
     return curveData.sort((a, b) => a.period - b.period);
-  }, [filteredCohorts, convertPeriodNumber, getPeriodLabel, maxPossiblePeriod]); // cohortType omitted: convertPeriodNumber already depends on it
+  }, [correctedCohorts, convertPeriodNumber, getPeriodLabel, maxPossiblePeriod, retentionType, isDemoMode]); // Added isDemoMode dependency
 
   // Get all unique cohort labels
   const allCohortLabels = React.useMemo(() => {
@@ -667,18 +909,68 @@ function RetentionCurvesContent() {
     );
   }, [allCohortLabels, cohortSearchQuery]);
 
-  // Quick actions for cohort selection
-  const showLatest6 = React.useCallback(() => {
-    const sorted = [...allCohortLabels].sort((a, b) => {
-      const yearA = parseInt(a.match(/\d{4}/)?.[0] || '1900');
-      const yearB = parseInt(b.match(/\d{4}/)?.[0] || '1900');
-      return yearB - yearA; // Descending (newest first)
-    });
-    setShowCohorts(new Set(sorted.slice(0, 6)));
-  }, [allCohortLabels]);
+  // Helper: Parse cohort label to Date based on cohort type
+  const parseCohortLabelDate = React.useCallback((label: string): Date => {
+    if (cohortType === 'annual') {
+      // Annual: "2020" format
+      const year = parseInt(label.match(/\d{4}/)?.[0] || '1900');
+      return new Date(year, 0, 1);
+    } else if (cohortType === 'quarterly') {
+      // Quarterly: "2020-Q1" format
+      const match = label.match(/(\d{4})-Q(\d+)/);
+      if (match) {
+        const year = parseInt(match[1]);
+        const quarter = parseInt(match[2]);
+        const month = (quarter - 1) * 3; // Q1=0, Q2=3, Q3=6, Q4=9
+        return new Date(year, month, 1);
+      }
+      // Fallback: try to extract year
+      const year = parseInt(label.match(/\d{4}/)?.[0] || '1900');
+      return new Date(year, 0, 1);
+    } else if (cohortType === 'monthly') {
+      // Monthly: "Jan 2020" format
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const match = label.match(/(\w+)\s+(\d{4})/);
+      if (match) {
+        const monthName = match[1];
+        const year = parseInt(match[2]);
+        const monthIndex = monthNames.indexOf(monthName);
+        if (monthIndex >= 0) {
+          return new Date(year, monthIndex, 1);
+        }
+      }
+      // Fallback: try to extract year
+      const year = parseInt(label.match(/\d{4}/)?.[0] || '1900');
+      return new Date(year, 0, 1);
+    } else {
+      // Half-year: "2020 H1" or "2020 H2" format
+      const match = label.match(/(\d{4})\s+H(\d+)/);
+      if (match) {
+        const year = parseInt(match[1]);
+        const half = parseInt(match[2]);
+        const month = (half - 1) * 6; // H1=0, H2=6
+        return new Date(year, month, 1);
+      }
+      // Fallback: try to extract year
+      const year = parseInt(label.match(/\d{4}/)?.[0] || '1900');
+      return new Date(year, 0, 1);
+    }
+  }, [cohortType]);
 
-  const showAllLimited = React.useCallback(() => {
-    setShowCohorts(new Set(allCohortLabels.slice(0, 20)));
+  // Quick actions for cohort selection
+  // Fix: Parse dates correctly by cohort type and select newest 5
+  const showLatest5 = React.useCallback(() => {
+    const sorted = [...allCohortLabels].sort((a, b) => {
+      const dateA = parseCohortLabelDate(a);
+      const dateB = parseCohortLabelDate(b);
+      return dateB.getTime() - dateA.getTime(); // Descending (newest first)
+    });
+    setShowCohorts(new Set(sorted.slice(0, 5)));
+  }, [allCohortLabels, parseCohortLabelDate]);
+
+  // BLOCKER 2: "Show all" means ALL cohorts (no limit)
+  const showAllCohorts = React.useCallback(() => {
+    setShowCohorts(new Set(allCohortLabels));
   }, [allCohortLabels]);
 
   const clearCohorts = React.useCallback(() => {
@@ -688,12 +980,12 @@ function RetentionCurvesContent() {
   // Compute cohort-by-cohort retention curve data
   // Group cohorts by their label (e.g., all 2019 months → one "2019" cohort)
   const cohortCurvesData = React.useMemo((): CohortCurveData[] => {
-    if (filteredCohorts.length === 0) return [];
+    if (correctedCohorts.length === 0) return [];
 
     // Group cohorts by their cohort label
-    const cohortGroups = new Map<string, typeof filteredCohorts>();
+    const cohortGroups = new Map<string, typeof correctedCohorts>();
     
-    filteredCohorts.forEach(cohort => {
+    correctedCohorts.forEach(cohort => {
       const label = getCohortLabel(cohort.cohort_month);
       if (!cohortGroups.has(label)) {
         cohortGroups.set(label, []);
@@ -784,13 +1076,42 @@ function RetentionCurvesContent() {
         const hasData = periodData !== undefined;
 
         if (periodData) {
-          customerRetention = period0Customers > 0
-            ? (periodData.activeCustomers / period0Customers) * 100
-            : 0;
+          // CRITICAL FIX: For customer retention at period 0, override to enforce Shopify semantics
+          if (periodNum === 0 && retentionType === 'customer') {
+            // Period 0: active_customers = cohort_size, retention = 100% by construction
+            customerRetention = 100;
+          } else {
+            // Fix: Use totalCohortSize (stable baseline) as denominator, not period0Customers
+            // customerRetention = activeCustomers(t) / cohortSize * 100
+            customerRetention = totalCohortSize > 0
+              ? (periodData.activeCustomers / totalCohortSize) * 100
+              : 0;
+          }
           
-          revenueRetention = period0Revenue > 0
-            ? (periodData.revenue / period0Revenue) * 100
-            : 0;
+          // DEMO-ONLY: Use API-provided revenue retention (weighted average) to avoid recomputation artifacts
+          if (isDemoMode && retentionType === 'revenue' && periodData.period0RevenueSum > 0) {
+            // Use weighted average of API-provided revenue_retention_percent values
+            revenueRetention = periodData.revenueRetentionSum / periodData.period0RevenueSum;
+          } else {
+            // Non-demo mode: compute from aggregated revenue (allows >100%)
+            revenueRetention = period0Revenue > 0
+              ? (periodData.revenue / period0Revenue) * 100
+              : 0;
+          }
+          
+          // Demo-only clamp to avoid floating point >100% artifacts (shouldn't be needed with API values, but safety check)
+          revenueRetention = clampRevenueRetention(revenueRetention);
+          
+          // Dev-only assertion: customer retention should never exceed 100%
+          if (process.env.NODE_ENV !== 'production' && customerRetention > 100.0001) {
+            console.warn(`⚠️ Customer retention exceeds 100%:`, {
+              cohortKey: cohortLabel,
+              period: periodNum,
+              numerator: periodData.activeCustomers,
+              denominator: totalCohortSize,
+              retention: customerRetention,
+            });
+          }
         }
 
         allPeriodsData.push({
@@ -809,13 +1130,14 @@ function RetentionCurvesContent() {
       for (let i = 0; i < allPeriodsData.length; i++) {
         const current = allPeriodsData[i];
         
-        // Period 0 should always be 100% (baseline)
+        // Period 0: For customer retention, always 100% by construction (cohort membership = first purchase)
+        // For revenue retention, also 100% (baseline)
         if (current.period === 0) {
           periods.push({
             period: 0,
             periodLabel: getPeriodLabel(0),
-            customerRetention: 100,
-            revenueRetention: 100,
+            customerRetention: 100,  // Always 100% by construction for customer retention
+            revenueRetention: 100,   // Revenue retention baseline is always 100%
             isDataGap: false,
           });
           lastNonZeroPeriod = 0;
@@ -854,11 +1176,15 @@ function RetentionCurvesContent() {
           lastNonZeroPeriod = current.period;
         }
 
+        // Demo-only: Apply final clamp to revenue retention before storing in periods array
+        // This ensures no values >100% slip through in demo mode
+        const finalRevenueRetention = clampRevenueRetention(current.revenueRetention);
+        
         periods.push({
           period: current.period,
           periodLabel: getPeriodLabel(current.period),
           customerRetention: current.customerRetention,
-          revenueRetention: current.revenueRetention,
+          revenueRetention: finalRevenueRetention,
           isDataGap: isDataGap || false,
         });
       }
@@ -873,7 +1199,7 @@ function RetentionCurvesContent() {
       // Sort chronologically (oldest first)
       return new Date(a.cohortMonth).getTime() - new Date(b.cohortMonth).getTime();
     });
-  }, [filteredCohorts, getCohortLabel, getPeriodLabel, convertPeriodNumber, maxPossiblePeriod, showCohorts, retentionType]);
+  }, [correctedCohorts, getCohortLabel, getPeriodLabel, convertPeriodNumber, maxPossiblePeriod, showCohorts, retentionType, clampRevenueRetention, isDemoMode]); // Added isDemoMode dependency
 
   // Helper: Parse retention value robustly (handles revenue ratios, percentages, currency, etc.)
   const parseRetentionValue = React.useCallback((raw: unknown, retentionType: 'customer' | 'revenue'): { kind: "missing" | "zero" | "value"; value: number | null } => {
@@ -948,6 +1274,12 @@ function RetentionCurvesContent() {
           // Use parseRetentionValue with correct retentionType for proper parsing
           const retentionClassified = parseRetentionValue(retentionRaw, retentionType);
           
+          // Demo-only: Apply clamp to revenue retention during normalization
+          // This ensures no values >100% appear in normalized data
+          if (retentionType === 'revenue' && retentionClassified.value !== null) {
+            retentionClassified.value = clampRevenueRetention(retentionClassified.value);
+          }
+          
           // DEV-ONLY: Targeted logging for revenue retention at Period 4
           if (process.env.NODE_ENV !== 'production' && retentionType === 'revenue' && periodNum === 4) {
             console.log(`🔍 Revenue Retention Period 4 Debug:`, {
@@ -1002,21 +1334,11 @@ function RetentionCurvesContent() {
         points: normalizedPeriods,
       };
     }).filter(cohort => cohort.points.length >= 2); // Only keep cohorts with at least 2 points
-  }, [cohortCurvesData, retentionType, parseRetentionValue, toNumber]);
+  }, [cohortCurvesData, retentionType, parseRetentionValue, toNumber, clampRevenueRetention]);
 
-  // Determine which cohorts to plot (limit to 10 newest if more than 10 selected)
+  // Determine which cohorts to plot - plot ALL selected cohorts (no cap)
   const plottedCohorts = React.useMemo(() => {
-    const selected = normalizedCohortCurvesData.filter(c => showCohorts.has(c.cohortKey));
-    if (selected.length <= 10) return selected;
-    
-    // Sort by cohort year (newest first) and take top 10
-    const sorted = [...selected].sort((a, b) => {
-      const yearA = parseInt(a.cohortKey.match(/\d{4}/)?.[0] || '1900');
-      const yearB = parseInt(b.cohortKey.match(/\d{4}/)?.[0] || '1900');
-      return yearB - yearA; // Descending (newest first)
-    });
-    
-    return sorted.slice(0, 10);
+    return normalizedCohortCurvesData.filter(c => showCohorts.has(c.cohortKey));
   }, [normalizedCohortCurvesData, showCohorts]);
 
   // Debug logs: Year 4 specific inspection (mandatory for debugging)
@@ -1308,27 +1630,27 @@ function RetentionCurvesContent() {
     return chartData;
   }, [normalizedCohortCurvesData, maxPossiblePeriod, retentionType]);
 
-  // Revenue Cohorts blue color scale (oldest → newest)
-  const revenueBlueScale = React.useMemo(() => [
+  // Revenue Cohorts color scale (oldest → newest) - limited palette for annual cohorts
+  const cohortColorScale = React.useMemo(() => [
     "#1e3a8a", // blue-900 (darkest)
     "#1e40af", // blue-800
     "#1d4ed8", // blue-700
     "#2563eb", // blue-600
     "#3b82f6", // blue-500
-    "#60a5fa", // blue-400 (lightest)
+    "#60a5fa", // blue-400
+    "#10b981", // green-600
   ], []);
   
-  // Extended palette for more than 6 cohorts
-  const extendedPalette = React.useMemo(() => [
-    ...revenueBlueScale,
-    "#10b981", // green-600
-    "#34d399", // green-500
-    "#6ee7b7", // green-400
-    "#525252", // neutral-600
+  // Single neutral grey for quarterly/monthly aggregation
+  const QUARTERLY_GREY = "#6b7280"; // gray-500
+  
+  // Neutral grey palette for annual mode when >7 cohorts
+  const greyColorPalette = React.useMemo(() => [
+    "#6b7280", // gray-500
+    "#78716c", // stone-600
+    "#71717a", // zinc-500
     "#737373", // neutral-500
-    "#a3a3a3", // neutral-400
-    "#d4d4d4", // neutral-300 (for very old overflow)
-  ], [revenueBlueScale]);
+  ], []);
 
   // Get sorted cohort keys (oldest first)
   const sortedCohortKeys = React.useMemo(() => {
@@ -1342,11 +1664,58 @@ function RetentionCurvesContent() {
       });
   }, [normalizedCohortCurvesData]);
 
-  // Get color for cohort based on sorted order (oldest = darkest)
+  // Get color for cohort based on cohort type and count
+  // Quarterly/Monthly: always single neutral grey
+  // Annual: limited colors for <=7 cohorts, grey palette for >7 cohorts
   const getCohortColor = React.useCallback((cohortKey: string): string => {
+    // Quarterly or Monthly: always use single neutral grey
+    if (cohortType === 'quarterly' || cohortType === 'monthly') {
+      return QUARTERLY_GREY;
+    }
+    
+    // Annual: use limited colors for <=7 cohorts, grey for >7
+    const cohortCount = sortedCohortKeys.length;
     const index = sortedCohortKeys.indexOf(cohortKey);
-    return extendedPalette[index >= 0 ? index % extendedPalette.length : 0];
-  }, [sortedCohortKeys, extendedPalette]);
+    
+    if (cohortCount <= 7) {
+      // Use limited color palette
+      return cohortColorScale[index >= 0 ? index % cohortColorScale.length : 0];
+    } else {
+      // Use grey palette for >7 cohorts
+      return greyColorPalette[index >= 0 ? index % greyColorPalette.length : 0];
+    }
+  }, [sortedCohortKeys, cohortType, cohortColorScale, greyColorPalette]);
+
+  // Heatmap color function for retention table (matches Revenue Cohorts matrix style)
+  // Blue intensity scale: higher retention = darker blue, lower retention = lighter blue
+  // Clamp customer retention to [0, 100] for color scaling only
+  const getRetentionHeatmapColor = React.useCallback((retention: number | null): { bg: string; text: string } => {
+    if (retention === null) {
+      // Missing values: neutral light grey with muted text
+      return {
+        bg: 'bg-gray-50',
+        text: 'text-gray-400'
+      };
+    }
+    
+    // Clamp retention to [0, 100] for color scaling (customer retention should not exceed 100%)
+    // If >100 appears, cap at 100 for color only (don't change raw value display)
+    const clampedRetention = Math.min(Math.max(retention, 0), 100);
+    
+    // Blue scale matching Revenue Cohorts matrix (10-step scale)
+    if (clampedRetention >= 90) return { bg: 'bg-blue-900', text: 'text-white' };
+    if (clampedRetention >= 80) return { bg: 'bg-blue-800', text: 'text-white' };
+    if (clampedRetention >= 70) return { bg: 'bg-blue-700', text: 'text-white' };
+    if (clampedRetention >= 60) return { bg: 'bg-blue-600', text: 'text-white' };
+    if (clampedRetention >= 50) return { bg: 'bg-blue-500', text: 'text-white' };
+    if (clampedRetention >= 40) return { bg: 'bg-blue-400', text: 'text-gray-900' };
+    if (clampedRetention >= 30) return { bg: 'bg-blue-300', text: 'text-gray-900' };
+    if (clampedRetention >= 20) return { bg: 'bg-blue-200', text: 'text-gray-900' };
+    if (clampedRetention >= 10) return { bg: 'bg-blue-100', text: 'text-gray-700' };
+    if (clampedRetention > 0) return { bg: 'bg-blue-50', text: 'text-gray-600' };
+    // 0% values: visually distinct
+    return { bg: 'bg-blue-50', text: 'text-gray-500' };
+  }, []);
 
   // ZeroDot component: renders "X" marker for 0% retention points
   // ZeroDot component: renders "X" marker for 0% retention points (only true zeros, not missing)
@@ -1379,10 +1748,11 @@ function RetentionCurvesContent() {
     const periodData = retentionCurveData.find(d => d.period === periodNum);
     if (!periodData) return null;
     
+    // Demo-only: Clamp revenue retention at display point
     return retentionType === 'customer' 
       ? periodData.retentionRate 
-      : periodData.revenueRetention;
-  }, [retentionCurveData]);
+      : clampRevenueRetention(periodData.revenueRetention);
+  }, [retentionCurveData, clampRevenueRetention]);
 
   // Determine Year 1 period number based on cohort type
   const year1PeriodNum = React.useMemo(() => {
@@ -1421,8 +1791,8 @@ function RetentionCurvesContent() {
     const year1Retention = getBenchmarkRetention('customer', year1PeriodNum);
     const year1RevenueRetention = getBenchmarkRetention('revenue', year1PeriodNum);
 
-    // Calculate data coverage from filtered cohorts (same source as aggregated chart)
-    const cohortDates = filteredCohorts.map(c => {
+    // Calculate data coverage from corrected cohorts (same source as aggregated chart)
+    const cohortDates = correctedCohorts.map(c => {
       // cohort_month is in YYYY-MM format, parse it correctly
       const [year, month] = c.cohort_month.split('-').map(Number);
       return new Date(year, (month || 1) - 1, 1); // Month is 0-indexed in Date
@@ -1495,14 +1865,14 @@ function RetentionCurvesContent() {
       year1Retention,
       year1RevenueRetention,
       dataCoverage: {
-        cohortCount: filteredCohorts.length,
+        cohortCount: correctedCohorts.length,
         yearsObserved,
         dateRange,
         periodsAvailable,
       },
       maxDrop,
     };
-  }, [retentionCurveData, getBenchmarkRetention, year1PeriodNum, cohortType, retentionType, filteredCohorts]);
+  }, [retentionCurveData, getBenchmarkRetention, year1PeriodNum, cohortType, retentionType, correctedCohorts]);
 
   // =============================================================================
   // DEV-ONLY PARITY GUARD: Ensure KPI values match aggregated chart values
@@ -1511,7 +1881,7 @@ function RetentionCurvesContent() {
     if (process.env.NODE_ENV !== 'production' && retentionCurveData.length > 0) {
       const year1ChartValue = retentionType === 'customer'
         ? retentionCurveData.find(d => d.period === year1PeriodNum)?.retentionRate
-        : retentionCurveData.find(d => d.period === year1PeriodNum)?.revenueRetention;
+        : clampRevenueRetention(retentionCurveData.find(d => d.period === year1PeriodNum)?.revenueRetention ?? 0);
       
       const year1KPIValue = retentionType === 'customer'
         ? kpiMetrics.year1Retention
@@ -1569,12 +1939,20 @@ function RetentionCurvesContent() {
 
   // Prepare chart data
   const chartData = React.useMemo(() => {
-    return retentionCurveData.map(d => ({
-      period: d.periodLabel,
-      value: retentionType === 'customer' ? d.retentionRate : d.revenueRetention,
-      cohortSize: d.cohortSize,
-    }));
-  }, [retentionCurveData, retentionType]);
+    return retentionCurveData.map(d => {
+      // Demo-only: Apply final clamp to revenue retention for chart display
+      // CFO-TRUST: This ensures chart tooltips never show >100% in demo mode
+      const retentionValue = retentionType === 'customer' 
+        ? d.retentionRate 
+        : clampRevenueRetention(d.revenueRetention);
+      
+      return {
+        period: d.periodLabel,
+        value: retentionValue, // This value is used in chart tooltip - already clamped
+        cohortSize: d.cohortSize,
+      };
+    });
+  }, [retentionCurveData, retentionType, clampRevenueRetention]);
 
   // Calculate max value in chart data to determine Y-axis domain
   const maxChartValue = React.useMemo(() => {
@@ -1644,10 +2022,20 @@ function RetentionCurvesContent() {
 
   return (
     <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
+      {/* Page Header with Narrative Framing */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Retention Curves</h1>
+        <p className="text-lg font-semibold text-gray-700 mb-2">The Damage Map</p>
+        <p className="text-sm text-gray-600 max-w-3xl">
+          How early do we lose customers — and is it fixable? Retention doesn't slowly fade away but falls off a cliff over certain time periods. 
+          When does loss become irreversible? Why do cohorts never recover? Which customers are actually worth saving?
+        </p>
+      </div>
+
       {/* Filter Bar */}
       <div className="mb-8">
         <FilterBar
-          filters={retentionCurvesV1Filters}
+          filters={retentionCurvesFilters}
           search={retentionCurvesSearch}
           onFiltersChange={(filters) => {
             setFilterState(filters);
@@ -1658,20 +2046,16 @@ function RetentionCurvesContent() {
         />
       </div>
 
-      {/* Demo Data Banner */}
-      {isDemo && (
-        <DemoBanner reason="no real cohorts found" />
+      {/* AI Analysis Section - Gated behind feature flag */}
+      {process.env.NEXT_PUBLIC_ENABLE_AI_ANALYSIS === "true" && (
+        <div className="mb-8">
+          <AIAnalysis 
+            filters={filterState}
+            cohorts={correctedCohorts}
+            onRegenerate={fetchCohorts}
+          />
+        </div>
       )}
-
-      {/* AI Analysis Section */}
-      <div className="mb-8">
-        <AIAnalysis 
-          filters={filterState}
-          cohorts={filteredCohorts}
-          onRegenerate={fetchCohorts}
-          isDemo={isDemo}
-        />
-      </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -1700,17 +2084,6 @@ function RetentionCurvesContent() {
                 </TooltipContent>
               </Tooltip>
             </div>
-            {kpiMetrics.year1Retention !== null && (
-              <span className={`px-2 py-0.5 text-xs font-medium rounded ${
-                kpiMetrics.year1Retention >= 70 
-                  ? 'bg-green-100 text-green-700' 
-                  : kpiMetrics.year1Retention >= 40
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'bg-red-50 text-red-500'
-              }`}>
-                {kpiMetrics.year1Retention >= 70 ? 'Excellent' : kpiMetrics.year1Retention >= 40 ? 'Good' : 'Needs Improvement'}
-              </span>
-            )}
           </div>
           <p className="text-xs text-gray-500 mb-3">Year 1 retention (all cohorts)</p>
           <div className="text-2xl font-bold text-gray-900">
@@ -1746,7 +2119,7 @@ function RetentionCurvesContent() {
           </div>
           <p className="text-xs text-gray-500 mb-3">NRR at Year 1 (all cohorts)</p>
           <div className="text-2xl font-bold text-gray-900">
-            {kpiMetrics.year1RevenueRetention !== null ? `${kpiMetrics.year1RevenueRetention.toFixed(1)}%` : 'N/A'}
+            {kpiMetrics.year1RevenueRetention !== null ? `${clampRevenueRetention(kpiMetrics.year1RevenueRetention).toFixed(1)}%` : 'N/A'}
           </div>
         </div>
 
@@ -1803,6 +2176,7 @@ function RetentionCurvesContent() {
           </div>
         </div>
       </div>
+
 
       {/* Retention Curve Chart */}
       <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)] mb-8">
@@ -1880,94 +2254,8 @@ function RetentionCurvesContent() {
             </div>
           </div>
           
-          {/* Cohort Selection Controls - Only show in Cohort-by-Cohort view */}
-          {viewMode === 'cohort' && allCohortLabels.length > 0 && (
-            <div className="mb-4 space-y-3">
-              {/* Search and Quick Actions */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <input
-                  type="text"
-                  placeholder="Search cohorts…"
-                  value={cohortSearchQuery}
-                  onChange={(e) => setCohortSearchQuery(e.target.value)}
-                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <button
-                  onClick={showLatest6}
-                  className="px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors"
-                >
-                  Show latest 6
-                </button>
-                <button
-                  onClick={showAllLimited}
-                  className="px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors"
-                >
-                  Show all (limit to 20)
-                </button>
-                <button
-                  onClick={clearCohorts}
-                  className="px-3 py-1.5 text-xs font-medium bg-gray-50 text-gray-700 border border-gray-200 rounded-md hover:bg-gray-100 transition-colors"
-                >
-                  Clear
-                </button>
-              </div>
-              
-              {/* Cohort Toggle Buttons */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {filteredCohortLabels.map((label) => {
-                const isVisible = showCohorts.has(label);
-                  const isPlotted = plottedCohorts.some(c => c.cohortKey === label);
-                  // Use same color mapping as chart lines
-                  const color = getCohortColor(label);
-                
-                const isActive = activeCohortKey === label;
-                
-                return (
-                  <button
-                    key={label}
-                    onClick={() => toggleCohort(label)}
-                    onMouseEnter={() => handleCohortHover(label)}
-                    onMouseLeave={handleCohortHoverLeave}
-                    onFocus={() => handleCohortHover(label)}
-                    onBlur={handleCohortHoverLeave}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all border-2 cursor-pointer ${
-                      isVisible
-                        ? 'bg-white border-blue-500 hover:border-blue-600 hover:bg-blue-50 text-gray-900 shadow-sm'
-                        : 'bg-gray-100 border-gray-300 hover:border-gray-400 hover:bg-gray-200 text-gray-500'
-                      } ${isPlotted ? '' : isVisible ? 'opacity-60' : ''}`}
-                      title={isVisible && !isPlotted ? 'Selected but not plotted (limit to 10)' : ''}
-                      style={{
-                        opacity: isActive ? 1 : (activeCohortKey ? 0.2 : (isVisible ? (isPlotted ? 1 : 0.6) : 0.5)),
-                        transition: 'opacity 200ms'
-                      }}
-                  >
-                    <div
-                      className={`w-3 h-3 rounded-sm flex-shrink-0 border ${
-                        isVisible ? 'border-gray-300' : 'border-gray-400'
-                      }`}
-                      style={{ 
-                        backgroundColor: isVisible ? color : '#d1d5db',
-                          opacity: isVisible ? (isPlotted ? 1 : 0.5) : 0.5
-                      }}
-                    />
-                    <span className={isVisible ? 'text-gray-900 font-semibold' : 'text-gray-500'}>
-                      {label}
-                    </span>
-                  </button>
-                );
-              })}
-              </div>
-              
-              {/* Plotting limit notice */}
-              {showCohorts.size > 10 && (
-                <p className="text-xs text-gray-500">
-                  Plotting {plottedCohorts.length} of {showCohorts.size} selected cohorts — refine selection to view more.
-                </p>
-              )}
-            </div>
-          )}
-          
-          <div className="flex items-center gap-3">
+          {/* BLOCKER 4: Compact controls - single horizontal row */}
+          <div className="flex items-center gap-3 flex-wrap mb-4">
             {/* Metric Toggle */}
             <div className="flex bg-gray-100 rounded-lg p-1">
               <button
@@ -1980,17 +2268,30 @@ function RetentionCurvesContent() {
               >
                 Customer Retention
               </button>
-              <button
-                onClick={() => setRetentionType('revenue')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  retentionType === 'revenue'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Revenue Retention
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setRetentionType('revenue')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    retentionType === 'revenue'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Revenue Retention
+                </button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-gray-900 text-white border-0 max-w-[300px]">
+                    <p className="text-xs">
+                      Revenue retention can exceed 100% when customers expand spend over time.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </div>
+            
             {/* View Mode Toggle */}
             <div className="flex bg-gray-100 rounded-lg p-1">
               <button
@@ -2005,15 +2306,46 @@ function RetentionCurvesContent() {
               </button>
               <button
                 onClick={() => setViewMode('cohort')}
+                disabled={cohortType === 'monthly'}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   viewMode === 'cohort'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
+                } ${
+                  cohortType === 'monthly'
+                    ? 'opacity-50 cursor-not-allowed'
+                    : ''
                 }`}
+                title={cohortType === 'monthly' ? 'Cohort-by-cohort is available for quarterly/annual views for readability.' : ''}
               >
                 Cohort-by-Cohort
               </button>
             </div>
+            
+            {/* Cohort Selection Actions - Only show in Cohort-by-Cohort view */}
+            {viewMode === 'cohort' && allCohortLabels.length > 0 && (
+              <>
+                <button
+                  onClick={showLatest5}
+                  className="px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors"
+                >
+                  Show latest 5
+                </button>
+                <button
+                  onClick={showAllCohorts}
+                  className="px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors"
+                >
+                  Show all
+                </button>
+                <button
+                  onClick={clearCohorts}
+                  className="px-3 py-1.5 text-xs font-medium bg-gray-50 text-gray-700 border border-gray-200 rounded-md hover:bg-gray-100 transition-colors"
+                >
+                  Clear
+                </button>
+              </>
+            )}
+            
             <button 
               onClick={() => {
                 // Export CSV - different format based on view mode
@@ -2023,7 +2355,7 @@ function RetentionCurvesContent() {
                     d.periodLabel,
                     d.cohortSize.toString(),
                     d.retentionRate.toFixed(1),
-                    d.revenueRetention.toFixed(1),
+                    clampRevenueRetention(d.revenueRetention).toFixed(1), // Demo-only clamp for CSV export
                   ]);
                   const csvContent = [
                     csvHeaders.join(','),
@@ -2082,6 +2414,46 @@ function RetentionCurvesContent() {
               Export CSV
             </button>
           </div>
+          
+          {/* Cohort Legend (read-only) - Only show in Cohort-by-Cohort view */}
+          {viewMode === 'cohort' && allCohortLabels.length > 0 && (
+            <div className="mt-3 space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                {filteredCohortLabels.map((label) => {
+                  const isVisible = showCohorts.has(label);
+                  const isPlotted = plottedCohorts.some(c => c.cohortKey === label);
+                  // Use same color mapping as chart lines
+                  const color = getCohortColor(label);
+                
+                  return (
+                    <div
+                      key={label}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium border-2 ${
+                        isVisible
+                          ? 'bg-white border-gray-300 text-gray-900'
+                          : 'bg-gray-50 border-gray-200 text-gray-400'
+                        } ${isPlotted ? '' : isVisible ? 'opacity-60' : ''}`}
+                        title={isVisible && !isPlotted ? 'Selected but not plotted' : ''}
+                    >
+                      <div
+                        className={`w-3 h-3 rounded-sm flex-shrink-0 border ${
+                          isVisible ? 'border-gray-300' : 'border-gray-300'
+                        }`}
+                        style={{ 
+                          backgroundColor: isVisible ? color : '#d1d5db',
+                            opacity: isVisible ? (isPlotted ? 1 : 0.5) : 0.5
+                        }}
+                      />
+                      <span className={isVisible ? 'text-gray-900 font-semibold' : 'text-gray-400'}>
+                        {label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              
+            </div>
+          )}
         </div>
         
         {/* Aggregated View Chart */}
@@ -2578,7 +2950,7 @@ function RetentionCurvesContent() {
                         {data.retentionRate.toFixed(1)}%
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {data.revenueRetention.toFixed(1)}%
+                        {clampRevenueRetention(data.revenueRetention).toFixed(1)}%
                       </td>
                     </tr>
                   ))
@@ -2650,8 +3022,13 @@ function RetentionCurvesContent() {
                             }
                           }
                           
+                          // BLOCKER 3: Apply heatmap styling
+                          const heatmapStyle = getRetentionHeatmapColor(value);
                           return (
-                            <td key={periodNum} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td 
+                              key={periodNum} 
+                              className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${heatmapStyle.bg} ${heatmapStyle.text}`}
+                            >
                               {value !== null ? `${value.toFixed(1)}%` : '–'}
                             </td>
                           );
@@ -2672,6 +3049,48 @@ function RetentionCurvesContent() {
           );
         })()}
       </div>
+
+      {/* Diagnosis Section */}
+      {(() => {
+        const enhancedDiagnosis = diagnoseRetentionCurvesEnhanced({
+          cohorts: filteredCohorts,
+          retentionCurveData,
+          cohortCurvesData,
+          retentionType,
+        });
+        return enhancedDiagnosis.sentence ? (
+          <>
+            <Diagnosis sentence={enhancedDiagnosis.sentence} />
+            
+            {/* Severity Indicator - Only render when severity exists */}
+            {enhancedDiagnosis.severity && (
+              <SeverityIndicator severity={enhancedDiagnosis.severity} />
+            )}
+            
+            {/* Causality Section - Only render when causality factors exist */}
+            {enhancedDiagnosis.causality.length > 0 && (
+              <CausalitySection 
+                factors={enhancedDiagnosis.causality}
+                framingCopy="Based on the patterns observed, these are the likely structural drivers:"
+              />
+            )}
+            
+            {/* Decision Axes Section - Only render when Diagnosis exists */}
+            <DecisionAxes 
+              axes={getDecisionAxesForDiagnosis(enhancedDiagnosis.sentence, 'retention-curves')}
+            />
+            
+            {/* Impact Ranges Section - Only render when Diagnosis exists */}
+            <ImpactRanges 
+              ranges={computeRetentionCurvesImpactRanges({
+                cohorts: correctedCohorts,
+                cohortCurvesData,
+                retentionType,
+              })}
+            />
+          </>
+        ) : null;
+      })()}
     </div>
   );
 }

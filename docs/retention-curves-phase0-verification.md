@@ -315,3 +315,4 @@
 - API endpoint: `app/api/metrics/cohorts/route.ts` (unchanged)
 - Database view: `supabase/migrations/006_create_metric_views.sql` (unchanged)
 
+

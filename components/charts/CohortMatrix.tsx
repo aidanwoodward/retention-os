@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 
 interface CohortMatrixProps {
   cohorts: unknown[];
-  viewMode: 'monthly' | 'quarterly' | 'annual';
+  viewMode: 'monthly' | 'quarterly' | 'half-year' | 'annual';
   onCellClick?: (cohort: string, period: number, data: MatrixCell) => void;
 }
 
@@ -81,7 +81,24 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
   const generateMatrixData = () => {
     const matrix: Record<string, Record<number, MatrixCell>> = {};
     
-    const maxPeriods = viewMode === 'annual' ? 10 : viewMode === 'quarterly' ? 20 : 24;
+    // Calculate maxPeriods: for monthly view, use data-driven max; for other views, use fixed caps
+    let maxPeriods: number;
+    if (viewMode === 'monthly') {
+      // Monthly view: calculate from actual data (max period_number across all cohorts)
+      const maxPeriodFromData = cohorts.reduce((max, cohort) => {
+        const cohortData = cohort as Record<string, unknown>;
+        const periods = cohortData.periods as Array<Record<string, unknown>>;
+        if (periods && periods.length > 0) {
+          const maxPeriodInCohort = Math.max(...periods.map(p => (p.period_number as number) || 0));
+          return Math.max(max, maxPeriodInCohort);
+        }
+        return max;
+      }, 0);
+      maxPeriods = maxPeriodFromData;
+    } else {
+      // Other views: use fixed caps
+      maxPeriods = viewMode === 'annual' ? 10 : viewMode === 'quarterly' ? 20 : viewMode === 'half-year' ? 10 : 24;
+    }
 
     cohorts.forEach((cohort) => {
       const cohortData = cohort as Record<string, unknown>;
@@ -98,6 +115,9 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
       } else if (viewMode === 'quarterly') {
         const cohortQuarter = Math.floor(new Date(cohortMonth).getMonth() / 3) + 1;
         cohortKey = `${cohortYear}-Q${cohortQuarter}`;
+      } else if (viewMode === 'half-year') {
+        const cohortHalf = new Date(cohortMonth).getMonth() < 6 ? 'H1' : 'H2';
+        cohortKey = `${cohortYear} ${cohortHalf}`;
       } else {
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const month = new Date(cohortMonth).getMonth();
@@ -130,9 +150,16 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
                                        (currentDate.getMonth() - cohortDate.getMonth());
         const quartersSinceAcquisition = Math.floor(monthsSinceAcquisition / 3);
         maxPossiblePeriods = Math.min(maxPeriods, Math.max(0, quartersSinceAcquisition));
-      } else {
+      } else if (viewMode === 'half-year') {
         const monthsSinceAcquisition = (currentDate.getFullYear() - cohortDate.getFullYear()) * 12 + 
                                        (currentDate.getMonth() - cohortDate.getMonth());
+        const halfYearsSinceAcquisition = Math.floor(monthsSinceAcquisition / 6);
+        maxPossiblePeriods = Math.min(maxPeriods, Math.max(0, halfYearsSinceAcquisition));
+      } else {
+        // Monthly view: use data-driven maxPeriods (already calculated from actual data)
+        const monthsSinceAcquisition = (currentDate.getFullYear() - cohortDate.getFullYear()) * 12 + 
+                                       (currentDate.getMonth() - cohortDate.getMonth());
+        // For monthly, maxPeriods is already data-driven, so use it directly (don't cap further)
         maxPossiblePeriods = Math.min(maxPeriods, Math.max(0, monthsSinceAcquisition));
       }
       
@@ -219,6 +246,8 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
       const quarterlyMatch = key.match(/^(\d{4})-Q\d+$/);
       if (quarterlyMatch) return parseInt(quarterlyMatch[1]);
       
+      const halfYearMatch = key.match(/^(\d{4})\s+H[12]$/);
+      if (halfYearMatch) return parseInt(halfYearMatch[1]);
       
       const monthlyMatch = key.match(/(\d{4})/);
       if (monthlyMatch) return parseInt(monthlyMatch[1]);
@@ -237,6 +266,10 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
       const quarterA = parseInt(a.match(/-Q(\d+)/)?.[1] || '0');
       const quarterB = parseInt(b.match(/-Q(\d+)/)?.[1] || '0');
       return quarterA - quarterB;
+    } else if (viewMode === 'half-year') {
+      const halfA = a.includes('H1') ? 1 : 2;
+      const halfB = b.includes('H1') ? 1 : 2;
+      return halfA - halfB;
     } else if (viewMode === 'monthly') {
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const monthA = monthNames.findIndex(m => a.startsWith(m));
@@ -267,6 +300,11 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
         }
       }
     });
+    // For monthly view, don't cap by maxPeriods (it's already data-driven from generateMatrixData)
+    // For other views, cap by maxPeriods to maintain existing behavior
+    if (viewMode === 'monthly') {
+      return Math.max(1, maxPeriodsWithData);
+    }
     return Math.max(1, Math.min(maxPeriodsWithData, maxPeriods));
   };
 
@@ -383,10 +421,12 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
     if (viewMode === 'annual') {
       return { line1: 'Year', line2: period.toString() };
     } else {
-      // For monthly and quarterly: show as "After X months"
+      // For monthly, quarterly, and half-year: show as "After X months"
       let months: number;
       if (viewMode === 'quarterly') {
         months = period * 3; // Each quarter = 3 months
+      } else if (viewMode === 'half-year') {
+        months = period * 6; // Each half-year = 6 months
       } else {
         months = period; // Monthly view
       }
@@ -403,6 +443,8 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
       return `Revenue after ${period} year${period === 1 ? '' : 's'}`;
     } else if (viewMode === 'quarterly') {
       return `Revenue after ${period} quarter${period === 1 ? '' : 's'}`;
+    } else if (viewMode === 'half-year') {
+      return `Revenue after ${period} half-year${period === 1 ? '' : 's'}`;
     } else {
       return `Revenue after ${period} month${period === 1 ? '' : 's'}`;
     }
@@ -455,8 +497,8 @@ export function CohortMatrix({ cohorts, viewMode, onCellClick }: CohortMatrixPro
   };
 
   return (
-    <div className="space-y-6 w-full max-w-full overflow-hidden">
-      <Card className="w-full max-w-full overflow-hidden">
+    <div className="space-y-6 w-full max-w-full overflow-hidden min-w-0">
+      <Card className="w-full max-w-full overflow-hidden min-w-0">
         <CardHeader className="pb-3 p-4 md:p-6">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="flex-1">

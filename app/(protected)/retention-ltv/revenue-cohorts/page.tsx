@@ -20,6 +20,14 @@ import {
 import { FilterValue } from "@/lib/filters/types";
 // TODO: Re-add SimpleTrendChart when needed
 import { EnhancedTrendChart } from "@/components/charts/EnhancedTrendChart";
+import { Diagnosis } from "@/components/diagnosis/Diagnosis";
+import { diagnoseRevenueCohorts, diagnoseRevenueCohortsEnhanced } from "@/lib/diagnosis/revenue-cohorts";
+import { DecisionAxes } from "@/components/diagnosis/DecisionAxes";
+import { getDecisionAxesForDiagnosis } from "@/lib/diagnosis/decision-axes";
+import { ImpactRanges } from "@/components/diagnosis/ImpactRanges";
+import { computeRevenueCohortsImpactRanges } from "@/lib/diagnosis/impact-ranges/revenue-cohorts";
+import { SeverityIndicator } from "@/components/diagnosis/SeverityIndicator";
+import { CausalitySection } from "@/components/diagnosis/CausalitySection";
 
 // TODO: Re-add custom icons (StoreIcon, WalletIcon, UsersIcon, FireIcon) when needed
 
@@ -296,6 +304,30 @@ function RevenueCohortsContent() {
     }
   }, []);
 
+  /**
+   * Get the same period from the previous year (lifecycle-aligned comparison)
+   * - Monthly: compare month t to month t-12 (same month, previous year)
+   * - Quarterly: compare quarter t to quarter t-4 (same quarter, previous year)
+   * - Annual: compare year t to year t-1 (previous year)
+   */
+  const getSamePeriodLastYear = React.useCallback((periodKey: string, mode: typeof viewMode): string => {
+    if (mode === 'annual') {
+      const year = parseInt(periodKey);
+      return (year - 1).toString();
+    } else if (mode === 'quarterly') {
+      const [year, quarter] = periodKey.split('-Q');
+      const yearNum = parseInt(year);
+      const quarterNum = parseInt(quarter);
+      // Same quarter, previous year
+      return `${yearNum - 1}-Q${quarterNum}`;
+    } else {
+      // Monthly - subtract 12 months (same month, previous year)
+      const date = new Date(periodKey);
+      date.setFullYear(date.getFullYear() - 1);
+      return date.toISOString().substring(0, 7);
+    }
+  }, []);
+
   // Helper function to aggregate cohorts by cohort type
   const getAggregatedCohorts = React.useMemo(() => {
     if (filteredCohorts.length === 0) return [];
@@ -477,18 +509,21 @@ function RevenueCohortsContent() {
 
       // Build arrays: for each time period, calculate current and previous values
       const currentData: number[] = [];
-      const previousData: number[] = [];
+      const previousData: (number | null)[] = [];
       const labels: string[] = [];
 
       periodsForChart.forEach(([periodKey, revenueInPeriod]) => {
         // Current: revenue in this time period
         currentData.push(revenueInPeriod);
         
-        // Previous: revenue in the equivalent period from previous year
-        // For period "2025", previous should be revenue in "2024" (same period, previous year)
-        const prevPeriodKey = getPreviousPeriodKey(periodKey, viewMode);
-        const prevPeriodRevenue = periodMap.get(prevPeriodKey) || 0;
-        previousData.push(prevPeriodRevenue);
+        // Previous: revenue in the equivalent period from previous year (lifecycle-aligned)
+        // Monthly: compare month t to month t-12 (same month, previous year)
+        // Quarterly: compare quarter t to quarter t-4 (same quarter, previous year)
+        // Annual: compare year t to year t-1 (previous year)
+        const prevPeriodKey = getSamePeriodLastYear(periodKey, viewMode);
+        const prevPeriodRevenue = periodMap.get(prevPeriodKey);
+        // Use null instead of 0 to indicate missing data (will show as gap)
+        previousData.push(prevPeriodRevenue !== null && prevPeriodRevenue !== undefined ? prevPeriodRevenue : null);
         
         // Format label for display
         if (viewMode === 'annual') {
@@ -505,7 +540,7 @@ function RevenueCohortsContent() {
 
       return { currentData, previousData, labels };
     };
-  }, [filteredCohorts, viewMode, getPreviousPeriodKey]);
+  }, [filteredCohorts, viewMode, getSamePeriodLastYear]);
 
   /**
    * CANONICAL DEFINITION: Current Period Key (Last Complete Period)
@@ -1172,7 +1207,18 @@ function RevenueCohortsContent() {
   }
 
   return (
-    <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
+    <div className="w-full min-w-0 max-w-full px-4 sm:px-6 lg:px-8 py-8">
+      {/* Page Header with Narrative Framing */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Revenue Cohorts</h1>
+        <p className="text-lg font-semibold text-gray-700 mb-2">The Lie Detector</p>
+        <p className="text-sm text-gray-600 max-w-3xl">
+          Is revenue compounding or are we constantly filling a leaky bucket? 
+          Even though we're growing and it's real growth, the growth itself may be fragile. 
+          Are newer cohorts decaying faster than older ones? Are we destroying LTV because customers who buy now are not as loyal or have lower AOV?
+        </p>
+      </div>
+
       {/* Filter Bar */}
       <div className="mb-8">
         <FilterBar
@@ -1188,14 +1234,16 @@ function RevenueCohortsContent() {
         />
       </div>
 
-      {/* AI Analysis Section */}
-      <div className="mb-8">
-        <AIAnalysis 
-          filters={filterState}
-          cohorts={filteredCohorts}
-          onRegenerate={fetchCohorts}
-        />
-      </div>
+      {/* AI Analysis Section - Gated behind feature flag */}
+      {process.env.NEXT_PUBLIC_ENABLE_AI_ANALYSIS === "true" && (
+        <div className="mb-8">
+          <AIAnalysis 
+            filters={filterState}
+            cohorts={filteredCohorts}
+            onRegenerate={fetchCohorts}
+          />
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -1217,7 +1265,7 @@ function RevenueCohortsContent() {
               <span className={`px-2 py-0.5 text-xs font-medium rounded ${
                 totalRevenue >= previousRevenue 
                   ? 'bg-green-100 text-green-700' 
-                  : 'bg-red-50 text-red-500'
+                  : 'bg-gray-100 text-gray-700'
               }`}>
                 {(() => {
                   const delta = totalRevenue - previousRevenue;
@@ -1237,14 +1285,14 @@ function RevenueCohortsContent() {
               <div>
                 <div className="flex items-center gap-1.5 text-xs text-gray-500">
                   <div className="w-2.5 h-2.5 rounded-sm bg-blue-600 flex-shrink-0"></div>
-                  <span>This year</span>
+                  <span>Current {getPeriodName}</span>
                 </div>
                 <div className="text-base font-bold text-gray-900">{formatCurrency(totalRevenue)}</div>
               </div>
               <div>
                 <div className="flex items-center gap-1.5 text-xs text-gray-500">
                   <div className="w-2.5 h-2.5 rounded-sm bg-gray-400 flex-shrink-0"></div>
-                  <span>Last year</span>
+                  <span>Same {getPeriodName} last year</span>
                 </div>
                 <div className="text-base font-bold text-gray-900">{formatCurrency(previousRevenue)}</div>
           </div>
@@ -1286,7 +1334,7 @@ function RevenueCohortsContent() {
               <span className={`px-2 py-0.5 text-xs font-medium rounded ${
                 totalCustomers >= previousCustomers 
                   ? 'bg-green-100 text-green-700' 
-                  : 'bg-red-50 text-red-500'
+                  : 'bg-gray-100 text-gray-700'
               }`}>
                 {(() => {
                   const delta = totalCustomers - previousCustomers;
@@ -1306,14 +1354,14 @@ function RevenueCohortsContent() {
               <div>
                 <div className="flex items-center gap-1.5 text-xs text-gray-500">
                   <div className="w-2.5 h-2.5 rounded-sm bg-blue-600 flex-shrink-0"></div>
-                  <span>This year</span>
+                  <span>Current {getPeriodName}</span>
                 </div>
                 <div className="text-base font-bold text-gray-900">{formatNumber(totalCustomers)}</div>
               </div>
               <div>
                 <div className="flex items-center gap-1.5 text-xs text-gray-500">
                   <div className="w-2.5 h-2.5 rounded-sm bg-gray-400 flex-shrink-0"></div>
-                  <span>Last year</span>
+                  <span>Same {getPeriodName} last year</span>
                 </div>
                 <div className="text-base font-bold text-gray-900">{formatNumber(previousCustomers)}</div>
           </div>
@@ -1592,7 +1640,7 @@ function RevenueCohortsContent() {
       <div className="border-t border-gray-200 mt-6 mb-8"></div>
 
       {/* Cohort Matrix */}
-      <div className="mb-8">
+      <div className="mb-8 min-w-0">
         <CohortMatrix 
           cohorts={filteredCohorts}
           viewMode={viewMode}
@@ -1601,6 +1649,57 @@ function RevenueCohortsContent() {
           }}
         />
       </div>
+
+      {/* Diagnosis Section */}
+      {(() => {
+        const enhancedDiagnosis = diagnoseRevenueCohortsEnhanced({
+          cohorts: filteredCohorts,
+          totalRevenue,
+          previousRevenue,
+          totalCustomers,
+          previousCustomers,
+          cohortCoverage,
+        });
+        
+        // Always show Diagnosis (with empty state if suppressed)
+        // Only show Decision Axes and Impact Ranges when diagnosis exists
+        return (
+          <>
+            <Diagnosis sentence={enhancedDiagnosis.sentence} showEmptyState={true} />
+            
+            {/* Severity Indicator - Only render when severity exists */}
+            {enhancedDiagnosis.severity && (
+              <SeverityIndicator severity={enhancedDiagnosis.severity} />
+            )}
+            
+            {/* Causality Section - Only render when causality factors exist */}
+            {enhancedDiagnosis.causality.length > 0 && (
+              <CausalitySection 
+                factors={enhancedDiagnosis.causality}
+                framingCopy="Based on the patterns observed, these are the likely structural drivers:"
+              />
+            )}
+            
+            {/* Decision Axes Section - Only render when Diagnosis exists */}
+            {enhancedDiagnosis.sentence && (
+              <DecisionAxes 
+                axes={getDecisionAxesForDiagnosis(enhancedDiagnosis.sentence, 'revenue-cohorts')}
+              />
+            )}
+            
+            {/* Impact Ranges Section - Only render when Diagnosis exists */}
+            {enhancedDiagnosis.sentence && (
+              <ImpactRanges 
+                ranges={computeRevenueCohortsImpactRanges({
+                  cohorts: filteredCohorts,
+                  totalRevenue,
+                  totalCustomers,
+                })}
+              />
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 }

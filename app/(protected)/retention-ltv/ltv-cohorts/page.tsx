@@ -6,6 +6,14 @@ import { FilterBar } from "@/components/filters/FilterBar";
 import { retentionCurvesFilters, retentionCurvesSearch } from "@/lib/filters/config";
 import { AIAnalysis } from "@/components/ai/AIAnalysis";
 import { useSearchParams, useRouter } from "next/navigation";
+import { Diagnosis } from "@/components/diagnosis/Diagnosis";
+import { diagnoseLTVCohorts, diagnoseLTVCohortsEnhanced } from "@/lib/diagnosis/ltv-curves";
+import { SeverityIndicator } from "@/components/diagnosis/SeverityIndicator";
+import { CausalitySection } from "@/components/diagnosis/CausalitySection";
+import { DecisionAxes } from "@/components/diagnosis/DecisionAxes";
+import { getDecisionAxesForDiagnosis } from "@/lib/diagnosis/decision-axes";
+import { ImpactRanges } from "@/components/diagnosis/ImpactRanges";
+import { computeLTVCohortsImpactRanges } from "@/lib/diagnosis/impact-ranges/ltv-curves";
 import {
   TrendingUp,
   AlertTriangle,
@@ -943,6 +951,17 @@ function CLRLTVCohortsContent() {
 
   return (
     <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8">
+      {/* Page Header with Narrative Framing */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">LTV Cohorts</h1>
+        <p className="text-lg font-semibold text-gray-700 mb-2">Quality Separation</p>
+        <p className="text-sm text-gray-600 max-w-3xl">
+          Which customers create durable value — and which ones just look good at the top? 
+          Not all growth is quality growth. Are we acquiring high-volume but low-LTV customers? 
+          Are we ignoring small but insanely durable cohorts?
+        </p>
+      </div>
+
       {/* Filter Bar */}
       <div className="mb-6">
         <FilterBar
@@ -952,14 +971,16 @@ function CLRLTVCohortsContent() {
         />
       </div>
 
-      {/* AI Analysis */}
-      <div className="mb-8">
-        <AIAnalysis
-          pageType="ltv-cohorts"
-          dataAvailable={hasRealData}
-          loading={loading}
-        />
-      </div>
+      {/* AI Analysis - Gated behind feature flag */}
+      {process.env.NEXT_PUBLIC_ENABLE_AI_ANALYSIS === "true" && (
+        <div className="mb-8">
+          <AIAnalysis
+            pageType="ltv-cohorts"
+            dataAvailable={hasRealData}
+            loading={loading}
+          />
+        </div>
+      )}
 
       {/* Error State */}
       {error && !isDev && (
@@ -1099,6 +1120,7 @@ function CLRLTVCohortsContent() {
           </div>
         </div>
       </div>
+
 
       {/* Hero Chart */}
       <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)] mb-8">
@@ -1810,6 +1832,45 @@ function CLRLTVCohortsContent() {
         </div>
       </div>
       )}
+
+      {/* Diagnosis Section */}
+      {(() => {
+        const enhancedDiagnosis = diagnoseLTVCohortsEnhanced({
+          cohorts,
+          cohortLTVData: normalizedCohortLTVData,
+          aggregatedLTVData,
+        });
+        return enhancedDiagnosis.sentence ? (
+          <>
+            <Diagnosis sentence={enhancedDiagnosis.sentence} />
+            
+            {/* Severity Indicator - Only render when severity exists */}
+            {enhancedDiagnosis.severity && (
+              <SeverityIndicator severity={enhancedDiagnosis.severity} />
+            )}
+            
+            {/* Causality Section - Only render when causality factors exist */}
+            {enhancedDiagnosis.causality.length > 0 && (
+              <CausalitySection 
+                factors={enhancedDiagnosis.causality}
+                framingCopy="Based on the patterns observed, these are the likely structural drivers:"
+              />
+            )}
+            
+            {/* Decision Axes Section - Only render when Diagnosis exists */}
+            <DecisionAxes 
+              axes={getDecisionAxesForDiagnosis(enhancedDiagnosis.sentence, 'ltv-curves')}
+            />
+            
+            {/* Impact Ranges Section - Only render when Diagnosis exists */}
+            <ImpactRanges 
+              ranges={computeLTVCohortsImpactRanges({
+                cohortLTVData: normalizedCohortLTVData,
+              })}
+            />
+          </>
+        ) : null;
+      })()}
     </div>
   );
 }

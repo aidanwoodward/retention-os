@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Bar, XAxis, YAxis, LabelList, ComposedChart, CartesianGrid } from "recharts";
 import { Download, Info } from "lucide-react";
 import {
@@ -81,11 +81,27 @@ const parseCohortLabelDate = (label: string, aggregationMode: 'quarterly' | 'ann
   }
 };
 
+// Helper function to check if a cohort label represents a pre-2020 cohort (year <= 2019)
+// Used consistently for bucketing logic to ensure no overlap
+const isPre2020Cohort = (label: string, aggregationMode: 'quarterly' | 'annual'): boolean => {
+  if (label.startsWith('≤') || label.includes('Pre-2020') || label.includes('Older')) {
+    return true;
+  }
+  
+  try {
+    const date = parseCohortLabelDate(label, aggregationMode);
+    return date.getFullYear() <= 2019;
+  } catch {
+    return false;
+  }
+};
+
 // Transform data for cohort view with quarterly aggregation
 const transformCohortData = (
   cohorts: CohortData[], 
   viewMode: 'monthly' | 'quarterly' | 'annual',
-  showCohorts: Set<string>
+  showCohorts: Set<string>,
+  historyMode: 'summarised' | 'expanded' = 'summarised'
 ) => {
   const chartData: Record<string, Record<string, number | string>> = {};
   
@@ -94,14 +110,6 @@ const transformCohortData = (
   // Monthly view aggregates to quarterly for cleaner visualization
   const aggregationMode: 'quarterly' | 'annual' = 
     viewMode === 'annual' ? 'annual' : 'quarterly';
-  
-  // Find the earliest cohort date dynamically
-  const _earliestCohortDate = cohorts.length > 0 
-    ? cohorts.reduce((earliest, cohort) => {
-        const cohortDate = new Date(cohort.cohort_month);
-        return cohortDate < earliest ? cohortDate : earliest;
-      }, new Date(cohorts[0].cohort_month))
-    : new Date();
   
   // Get all unique cohort labels using aggregation mode
   const cohortLabels = new Set<string>();
@@ -119,58 +127,29 @@ const transformCohortData = (
       return dateA.getTime() - dateB.getTime();
     });
   
-  // Determine which cohorts to group into "Older cohorts"
-  // For annual view, always group years before 2020 regardless of total count
-  // For other views, group if there are more cohorts than color scale length
+  // Determine which cohorts to group into "≤ 2019" bucket
+  // BUCKETING RULE: Use historyMode to determine grouping behavior
+  // - summarised: group ALL cohorts with year <= 2019 into "≤ 2019" bucket, exclude individual <=2019 labels
+  // - expanded: show all cohorts individually (including 2019-Qx), NEVER show bucket
   const cutoffYear = 2020;
   let olderCohorts: string[] = [];
   let individualCohorts: string[] = [];
   let olderCohortsLabel: string | null = null;
   
-  if (aggregationMode === 'annual') {
-    // For annual view, always group years before 2020
-    olderCohorts = sortedLabels.filter(label => {
-      const date = parseCohortLabelDate(label, aggregationMode);
-      return date.getFullYear() < cutoffYear;
-    });
-    individualCohorts = sortedLabels.filter(label => {
-      const date = parseCohortLabelDate(label, aggregationMode);
-      return date.getFullYear() >= cutoffYear;
-    });
+  if (historyMode === 'expanded') {
+    // Expanded mode: show all cohorts individually (including 2019-Qx), NEVER show bucket
+    individualCohorts = sortedLabels;
+    olderCohorts = [];
+    olderCohortsLabel = null;
+  } else {
+    // Summarised mode: group ALL cohorts with year <= 2019 into "≤ 2019" bucket
+    // Ensure no overlap: cohorts <= 2019 go ONLY to bucket, cohorts >= 2020 go to individual list
+    olderCohorts = sortedLabels.filter(label => isPre2020Cohort(label, aggregationMode));
+    individualCohorts = sortedLabels.filter(label => !isPre2020Cohort(label, aggregationMode));
     
-    // Only create "≤ 2019" label if it's actually selected in showCohorts
-    // This allows users to hide it by deselecting it in the filter buttons
+    // Only create "≤ 2019" label if there are pre-2020 cohorts AND it's selected in showCohorts
     if (olderCohorts.length > 0 && showCohorts.has(`≤ ${cutoffYear - 1}`)) {
       olderCohortsLabel = `≤ ${cutoffYear - 1}`;
-    }
-  } else {
-    // For quarterly view, use color scale length limit
-    const maxIndividualCohorts = COHORT_COLOR_SCALE.length;
-    individualCohorts = sortedLabels.slice(-maxIndividualCohorts); // Newest ones
-    olderCohorts = sortedLabels.slice(0, -maxIndividualCohorts); // Oldest ones
-    
-    if (olderCohorts.length > 0 && individualCohorts.length > 0) {
-      const firstIndividualLabel = individualCohorts[0];
-      
-      // For quarterly aggregation - determine the label
-      const [labelYear, labelQuarter] = firstIndividualLabel.split('-Q');
-      const quarterNum = parseInt(labelQuarter);
-      let potentialLabel: string;
-      if (quarterNum === 1) {
-        potentialLabel = `≤ ${parseInt(labelYear) - 1}`;
-      } else {
-        const q1OfSameYear = `${labelYear}-Q1`;
-        if (olderCohorts.includes(q1OfSameYear)) {
-          potentialLabel = `≤ ${parseInt(labelYear) - 1}`;
-        } else {
-          potentialLabel = `≤ ${labelYear}-Q1`;
-        }
-      }
-      
-      // Only use the label if it's actually selected in showCohorts
-      if (showCohorts.has(potentialLabel)) {
-        olderCohortsLabel = potentialLabel;
-      }
     }
   }
   
@@ -305,9 +284,22 @@ const COHORT_COLOR_SCALE = [
 
 const OLDER_COHORTS_COLOR = "#d4d4d4"; // neutral-300
 
+// Single neutral grey for quarterly aggregation (simplification)
+const QUARTERLY_GREY = "#6b7280"; // gray-500
+
+// Neutral grey palette for board-readable display when >12 cohorts (annual mode only)
+// Subtle variations to maintain visual distinction
+const GREY_COLOR_PALETTE = [
+  "#6b7280", // gray-500
+  "#78716c", // stone-600
+  "#71717a", // zinc-500
+  "#737373", // neutral-500
+  "#6b7280", // gray-500 (repeat for cycling)
+];
+
 // Get consistent color for a cohort label based on the year/period itself
 // This ensures each year always gets the same color, matching filter buttons
-const getCohortColor = (label: string, aggregationMode: 'quarterly' | 'annual'): string => {
+const getCohortColor = (label: string, aggregationMode: 'quarterly' | 'annual', minYear?: number): string => {
   // Handle "Older cohorts" or "≤ 2019" labels - always gray
   if (label.startsWith('≤') || label.includes('Pre-2020') || label.includes('Older')) {
     return OLDER_COHORTS_COLOR;
@@ -320,21 +312,11 @@ const getCohortColor = (label: string, aggregationMode: 'quarterly' | 'annual'):
     
     const year = parseInt(yearMatch[1]);
     
-    // Pre-2020: gray
-    if (year < 2020) {
-      return OLDER_COHORTS_COLOR;
-    }
-    
-    // Map years to colors:
-    // 2020 -> blue-900 (index 0)
-    // 2021 -> blue-800 (index 1)
-    // 2022 -> blue-700 (index 2)
-    // 2023 -> blue-600 (index 3)
-    // 2024 -> blue-500 (index 4)
-    // 2025 -> blue-400 (index 5)
-    // 2026+ -> continue with remaining colors
-    const colorIndex = year - 2020;
-    return COHORT_COLOR_SCALE[Math.min(colorIndex, COHORT_COLOR_SCALE.length - 1)];
+    // Map colors relative to the earliest displayed individual year
+    // If minYear is provided, use it; otherwise fall back to 2020 for backward compatibility
+    const baseYear = minYear !== undefined ? minYear : 2020;
+    const colorIndex = year - baseYear;
+    return COHORT_COLOR_SCALE[Math.min(Math.max(colorIndex, 0), COHORT_COLOR_SCALE.length - 1)];
   } else {
     // Quarterly view: each quarter gets a specific color
     // Format: "2020-Q1" or "2020-Q2"
@@ -379,7 +361,9 @@ const getCohortColor = (label: string, aggregationMode: 'quarterly' | 'annual'):
 const generateCohortConfig = (
   cohorts: CohortData[],
   viewMode: 'monthly' | 'quarterly' | 'annual',
-  showCohorts: Set<string>
+  showCohorts: Set<string>,
+  historyMode: 'summarised' | 'expanded' = 'summarised',
+  displayedPeriodCount: number = 0
 ): ChartConfig => {
   const config: ChartConfig = {};
   
@@ -403,77 +387,95 @@ const generateCohortConfig = (
       return dateA.getTime() - dateB.getTime(); // Oldest first
     });
   
-  // Determine which cohorts to group into "Older cohorts"
-  // For annual view, always group years before 2020 regardless of total count
-  // For other views, group if there are more cohorts than color scale length
+  // Determine which cohorts to group into "≤ 2019" bucket
+  // BUCKETING RULE: Use historyMode to determine grouping behavior
+  // - summarised: group ALL cohorts with year <= 2019 into "≤ 2019" bucket, exclude individual <=2019 labels
+  // - expanded: show all cohorts individually (including 2019-Qx), NEVER show bucket
   const cutoffYear = 2020;
   let olderCohorts: string[] = [];
   let individualCohorts: string[] = [];
   let olderCohortsLabel: string | null = null;
   
-  if (aggregationMode === 'annual') {
-    // For annual view, always group years before 2020
-    olderCohorts = sortedLabels.filter(label => {
-      const date = parseCohortLabelDate(label, aggregationMode);
-      return date.getFullYear() < cutoffYear;
-    });
-    individualCohorts = sortedLabels.filter(label => {
-      const date = parseCohortLabelDate(label, aggregationMode);
-      return date.getFullYear() >= cutoffYear;
-    });
+  if (historyMode === 'expanded') {
+    // Expanded mode: show all cohorts individually (including 2019-Qx), NEVER show bucket
+    individualCohorts = sortedLabels;
+    olderCohorts = [];
+    olderCohortsLabel = null;
+  } else {
+    // Summarised mode: group ALL cohorts with year <= 2019 into "≤ 2019" bucket
+    // Ensure no overlap: cohorts <= 2019 go ONLY to bucket, cohorts >= 2020 go to individual list
+    olderCohorts = sortedLabels.filter(label => isPre2020Cohort(label, aggregationMode));
+    individualCohorts = sortedLabels.filter(label => !isPre2020Cohort(label, aggregationMode));
     
-    // Only create "≤ 2019" label if it's actually selected in showCohorts
-    // This allows users to hide it by deselecting it in the filter buttons
+    // Only create "≤ 2019" label if there are pre-2020 cohorts AND it's selected in showCohorts
     if (olderCohorts.length > 0 && showCohorts.has(`≤ ${cutoffYear - 1}`)) {
       olderCohortsLabel = `≤ ${cutoffYear - 1}`;
     }
-  } else {
-    // For quarterly view, use color scale length limit
-    const maxIndividualCohorts = COHORT_COLOR_SCALE.length;
-    individualCohorts = sortedLabels.slice(-maxIndividualCohorts); // Newest ones
-    olderCohorts = sortedLabels.slice(0, -maxIndividualCohorts); // Oldest ones
-    
-    if (olderCohorts.length > 0 && individualCohorts.length > 0) {
-      const firstIndividualLabel = individualCohorts[0];
-      
-      // For quarterly aggregation - determine the label
-      const [labelYear, labelQuarter] = firstIndividualLabel.split('-Q');
-      const quarterNum = parseInt(labelQuarter);
-      let potentialLabel: string;
-      if (quarterNum === 1) {
-        potentialLabel = `≤ ${parseInt(labelYear) - 1}`;
-      } else {
-        const q1OfSameYear = `${labelYear}-Q1`;
-        if (olderCohorts.includes(q1OfSameYear)) {
-          potentialLabel = `≤ ${parseInt(labelYear) - 1}`;
-        } else {
-          potentialLabel = `≤ ${labelYear}-Q1`;
-        }
-      }
-      
-      // Only use the label if it's actually selected in showCohorts
-      if (showCohorts.has(potentialLabel)) {
-        olderCohortsLabel = potentialLabel;
-      }
-    }
   }
+  
+  // Determine if we should use grey colors
+  // V1.1 SIMPLIFICATION: Quarterly aggregation always uses single neutral grey (reduces complexity)
+  // Annual aggregation uses period-based logic: <=12 periods = colored, >12 periods = grey
+  const useGreyColors = aggregationMode === 'quarterly' 
+    ? true  // Quarterly/monthly always grey
+    : displayedPeriodCount > 12;  // Annual: period-based logic
+  
+  // Helper function to get grey color with subtle variation (annual mode only)
+  const getGreyColor = (index: number): string => {
+    return GREY_COLOR_PALETTE[index % GREY_COLOR_PALETTE.length];
+  };
   
   // Add "Older cohorts" config if needed
   if (olderCohortsLabel && olderCohorts.length > 0) {
-    config[olderCohortsLabel] = {
-      label: olderCohortsLabel,
-      color: OLDER_COHORTS_COLOR,
-    };
+    if (aggregationMode === 'quarterly') {
+      // Quarterly: bucket uses lighter grey
+      config[olderCohortsLabel] = {
+        label: olderCohortsLabel,
+        color: OLDER_COHORTS_COLOR, // #d4d4d4
+      };
+    } else {
+      // Annual: use period-based logic
+      config[olderCohortsLabel] = {
+        label: olderCohortsLabel,
+        color: useGreyColors ? getGreyColor(0) : OLDER_COHORTS_COLOR,
+      };
+    }
   }
   
-  // Assign colors to individual cohorts using consistent color mapping
-  // Each cohort label gets a consistent color based on the year/period itself
-  // This ensures the same color is used in both filter buttons and chart bars
-  // Colors don't shift when other cohorts are hidden
-  individualCohorts.forEach((label) => {
+  // Calculate minYear from individual cohorts for annual color mapping (ignore bucket labels)
+  // This ensures colors are mapped relative to the earliest displayed individual year
+  let minYear: number | undefined = undefined;
+  if (aggregationMode === 'annual' && individualCohorts.length > 0) {
+    const years = individualCohorts
+      .map(label => {
+        const yearMatch = label.match(/(\d{4})/);
+        return yearMatch ? parseInt(yearMatch[1]) : null;
+      })
+      .filter((year): year is number => year !== null);
+    
+    if (years.length > 0) {
+      minYear = Math.min(...years);
+    }
+  }
+  
+  // Assign colors to individual cohorts
+  // Quarterly: all cohorts use single neutral grey (#6b7280)
+  // Annual: use period-based logic (colored if <=12 periods, grey if >12 periods)
+  individualCohorts.forEach((label, index) => {
+    let color: string;
+    if (aggregationMode === 'quarterly') {
+      // Quarterly: single neutral grey for all cohorts
+      color = QUARTERLY_GREY; // #6b7280
+    } else {
+      // Annual: period-based logic
+      color = useGreyColors 
+        ? getGreyColor(index + (olderCohortsLabel ? 1 : 0))
+        : getCohortColor(label, aggregationMode, minYear);
+    }
+    
     config[label] = {
       label: label,
-      color: getCohortColor(label, aggregationMode),
+      color: color,
     };
   });
   
@@ -499,9 +501,6 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
   const aggregationMode: 'quarterly' | 'annual' = 
     viewMode === 'annual' ? 'annual' : 'quarterly';
   
-  // Debug: Log cohorts to see what we're receiving
-  console.log('RevenueCohortsChart - cohorts:', cohorts?.length, cohorts);
-  console.log('RevenueCohortsChart - cohorts with periods:', cohorts?.filter(c => c.periods && c.periods.length > 0).length);
   
   // Get all unique cohort labels (only from cohorts with data)
   const cohortsWithData = useMemo(() => {
@@ -520,50 +519,170 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
   // State for showing/hiding cohorts
   const [showCohorts, setShowCohorts] = useState<Set<string>>(new Set());
   const [showCohortView, setShowCohortView] = useState(true);
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
+  // State for limiting x-axis periods (null = show all periods)
+  const [periodWindow, setPeriodWindow] = useState<number | null>(null);
+  // State for history mode: summarised (bucket pre-2020) or expanded (show all individually)
+  const [historyMode, setHistoryMode] = useState<'summarised' | 'expanded'>('summarised');
   
-  // Update showCohorts when allCohortLabels changes
-  // Initialize with all cohorts selected, but ensure ≤ 2019 is included if it exists
-  useEffect(() => {
-    if (allCohortLabels.length > 0) {
-      const initialSet = new Set(allCohortLabels);
-      // Check if there are pre-2020 cohorts and add ≤ 2019 label if needed
-      const cutoffYear = 2020;
-      const hasPre2020Cohorts = allCohortLabels.some(label => {
-        try {
-          const date = parseCohortLabelDate(label, aggregationMode);
-          return date.getFullYear() < cutoffYear;
-        } catch {
-          return false;
-        }
-      });
-      
-      if (hasPre2020Cohorts) {
-        const pre2020Label = `≤ ${cutoffYear - 1}`;
-        initialSet.add(pre2020Label);
-      }
-      setShowCohorts(initialSet);
-    }
-  }, [allCohortLabels, aggregationMode]);
-  
-  // Toggle cohort visibility
-  const toggleCohort = (label: string) => {
-    setShowCohorts((prev) => {
-      const next = new Set(prev);
-      if (next.has(label)) {
-        next.delete(label);
-      } else {
-        next.add(label);
-      }
-      return next;
+  // Helper: Get default cohort selection based on viewMode
+  const getDefaultCohortSelection = useCallback((labels: string[], mode: typeof viewMode): Set<string> => {
+    const sortedLabels = [...labels].sort((a, b) => {
+      const dateA = parseCohortLabelDate(a, aggregationMode);
+      const dateB = parseCohortLabelDate(b, aggregationMode);
+      return dateB.getTime() - dateA.getTime(); // Newest first
     });
+    
+    let defaultSet: Set<string>;
+    
+    if (mode === 'annual') {
+      // Annual: latest 5 cohorts
+      defaultSet = new Set(sortedLabels.slice(0, 5));
+    } else if (mode === 'quarterly') {
+      // Quarterly: latest 12 cohorts
+      defaultSet = new Set(sortedLabels.slice(0, 12));
+    } else {
+      // Monthly: ALL cohorts (no cap)
+      defaultSet = new Set(sortedLabels);
+    }
+    
+    // Check if there are pre-2020 cohorts and add ≤ 2019 label if needed
+    const cutoffYear = 2020;
+    const hasPre2020Cohorts = labels.some(label => {
+      try {
+        const date = parseCohortLabelDate(label, aggregationMode);
+        return date.getFullYear() < cutoffYear;
+      } catch {
+        return false;
+      }
+    });
+    
+    if (hasPre2020Cohorts) {
+      const pre2020Label = `≤ ${cutoffYear - 1}`;
+      defaultSet.add(pre2020Label);
+    }
+    
+    return defaultSet;
+  }, [aggregationMode]);
+  
+  // Update showCohorts when allCohortLabels or viewMode changes
+  // Initialize with cohortType-specific defaults, but ensure ≤ 2019 is included if it exists
+  useEffect(() => {
+    if (allCohortLabels.length > 0 && !hasUserInteracted) {
+      const defaultSelection = getDefaultCohortSelection(allCohortLabels, viewMode);
+      setShowCohorts(defaultSelection);
+    }
+  }, [allCohortLabels, viewMode, hasUserInteracted, getDefaultCohortSelection]);
+  
+  // Reset hasUserInteracted and periodWindow when viewMode changes to apply new defaults
+  useEffect(() => {
+    setHasUserInteracted(false);
+    setPeriodWindow(null);
+  }, [viewMode]);
+  
+
+  // Mini cohort selector functions
+  const showLatest5 = () => {
+    setHasUserInteracted(true);
+    const sortedLabels = [...allLegendKeys].sort((a, b) => {
+      const dateA = parseCohortLabelDate(a, aggregationMode);
+      const dateB = parseCohortLabelDate(b, aggregationMode);
+      return dateB.getTime() - dateA.getTime(); // Newest first
+    });
+    // Select exactly 5 cohorts
+    const latest5 = new Set(sortedLabels.slice(0, 5));
+    
+    setShowCohorts(latest5);
+    
+    // For annual view, set periodWindow to 5 to limit x-axis to last 5 periods
+    if (viewMode === 'annual') {
+      setPeriodWindow(5);
+    } else {
+      // For quarterly/monthly, keep existing cohort selection logic (no periodWindow)
+      setPeriodWindow(null);
+    }
+  };
+
+  const showLatest12 = () => {
+    setHasUserInteracted(true);
+    const sortedLabels = [...allLegendKeys].sort((a, b) => {
+      const dateA = parseCohortLabelDate(a, aggregationMode);
+      const dateB = parseCohortLabelDate(b, aggregationMode);
+      return dateB.getTime() - dateA.getTime(); // Newest first
+    });
+    // Select exactly 12 cohorts
+    const latest12 = new Set(sortedLabels.slice(0, 12));
+    
+    setShowCohorts(latest12);
+    
+    // For quarterly OR monthly (aggregated to quarterly), set periodWindow to 12 to limit x-axis to last 12 quarter periods
+    if (viewMode === 'quarterly' || viewMode === 'monthly') {
+      setPeriodWindow(12);
+    } else {
+      setPeriodWindow(null);
+    }
+  };
+
+  const showAllLimited = () => {
+    setHasUserInteracted(true);
+    // Select ALL available cohorts (no cap)
+    const allCohorts = new Set(allLegendKeys);
+    setShowCohorts(allCohorts);
+    // Clear periodWindow to show full history
+    setPeriodWindow(null);
+  };
+
+  const clearCohorts = () => {
+    // Reset to default for current cohortType
+    const defaultSelection = getDefaultCohortSelection(allLegendKeys, viewMode);
+    setShowCohorts(defaultSelection);
+    // Mark as user-interacted to prevent auto-reinitialization after clear
+    setHasUserInteracted(true);
+    // Clear periodWindow to default behavior
+    setPeriodWindow(null);
   };
   
+  // Enforce non-overlap: remove 2019-Qx labels when "≤ 2019" bucket is selected in summarised mode
+  // In summarised mode, if "≤ 2019" is present, remove all individual 2019-Qx labels
+  // In expanded mode, remove "≤ 2019" bucket if present (expanded shows all individually, no bucket)
+  const filteredShowCohorts = useMemo(() => {
+    if (!showCohortView || showCohorts.size === 0) return showCohorts;
+    
+    const pre2019Label = '≤ 2019';
+    const hasPre2019Bucket = showCohorts.has(pre2019Label);
+    const filtered = new Set(showCohorts);
+    
+    if (historyMode === 'summarised') {
+      // Summarised mode: if bucket is present, remove all individual <=2019 labels
+      if (hasPre2019Bucket) {
+        // Remove all individual 2019-Qx labels to prevent overlap
+        filtered.delete('2019-Q1');
+        filtered.delete('2019-Q2');
+        filtered.delete('2019-Q3');
+        filtered.delete('2019-Q4');
+        // Also remove any other pre-2020 individual labels
+        allCohortLabels.forEach(label => {
+          if (isPre2020Cohort(label, aggregationMode) && label !== pre2019Label) {
+            filtered.delete(label);
+          }
+        });
+      }
+    } else {
+      // Expanded mode: remove bucket if present (expanded shows all individually, no bucket)
+      if (hasPre2019Bucket) {
+        filtered.delete(pre2019Label);
+      }
+    }
+    
+    return filtered;
+  }, [showCohorts, showCohortView, historyMode, allCohortLabels, aggregationMode]);
+  
   // Transform data based on view mode
-  const cohortData = useMemo(() => {
+  const cohortDataRaw = useMemo(() => {
     if (!cohortsWithData || cohortsWithData.length === 0) return [];
     let data;
-    if (showCohortView && showCohorts.size > 0) {
-      data = transformCohortData(cohortsWithData, viewMode, showCohorts);
+    if (showCohortView && filteredShowCohorts.size > 0) {
+      data = transformCohortData(cohortsWithData, viewMode, filteredShowCohorts, historyMode);
     } else {
       data = transformNewReturningData(cohortsWithData, viewMode);
     }
@@ -578,7 +697,29 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
       });
       return { ...period, total_revenue: total };
     });
-  }, [cohortsWithData, viewMode, showCohorts, showCohortView]);
+  }, [cohortsWithData, viewMode, filteredShowCohorts, showCohortView, historyMode]);
+  
+  // Filter cohortData by periodWindow if set (limit x-axis to last N periods)
+  const cohortData = useMemo(() => {
+    if (!cohortDataRaw || cohortDataRaw.length === 0) return [];
+    if (periodWindow === null) {
+      // No period window: show all periods
+      return cohortDataRaw;
+    }
+    
+    // Apply period window: show only the last N periods (chronologically)
+    // Data is already sorted chronologically (oldest first), so take last N entries
+    return cohortDataRaw.slice(-periodWindow);
+  }, [cohortDataRaw, periodWindow]);
+  
+  // Compute displayedPeriodCount from filtered chartData (number of periods/bars on x-axis)
+  // This reflects the current viewMode/dateRange selection, aggregation, AND periodWindow filter
+  // PERIOD-BASED: Color switching is based on number of displayed periods, not cohort count
+  const displayedPeriodCount = useMemo(() => {
+    if (!cohortData || cohortData.length === 0) return 0;
+    // The length of cohortData is the number of periods (bars) displayed on the x-axis
+    return cohortData.length;
+  }, [cohortData]);
   
   // Calculate max value and generate evenly spaced Y-axis ticks
   // Tighten Y-axis to reduce empty space at top
@@ -621,49 +762,64 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
     return { maxValue: roundedMax, yAxisTicks: ticks };
   }, [cohortData]);
   
+  // Generate config for visible cohorts only (for chart rendering)
+  const cohortConfig = useMemo(() => {
+    if (!cohortsWithData || cohortsWithData.length === 0) return {};
+    if (showCohortView) {
+      // generateCohortConfig uses displayedPeriodCount to determine color mode (period-based)
+      return generateCohortConfig(cohortsWithData, viewMode, filteredShowCohorts, historyMode, displayedPeriodCount);
+    } else {
+      return generateNewReturningConfig();
+    }
+  }, [cohortsWithData, viewMode, filteredShowCohorts, showCohortView, historyMode, displayedPeriodCount]);
+  
   // Generate config for ALL cohorts (for legend display)
   const allCohortsConfig = useMemo(() => {
     if (!cohortsWithData || cohortsWithData.length === 0) return {};
     if (showCohortView) {
-      // Generate config with all cohorts visible (use allCohortLabels as showCohorts)
-      const allCohortsSet = new Set(allCohortLabels);
-      const config = generateCohortConfig(cohortsWithData, viewMode, allCohortsSet);
+      // Generate config for legend based on historyMode
+      // Summarised: show "≤ 2019" bucket only, no individual 2019-Qx labels
+      // Expanded: show all cohorts individually (including 2019-Qx), no bucket
+      let legendCohortsSet = new Set(allCohortLabels);
       
-      // Ensure "≤ 2019" is always in the config if there are pre-2020 cohorts
-      // This ensures it appears in the legend filter buttons even if not selected
-      const cutoffYear = 2020;
-      const hasPre2020Cohorts = allCohortLabels.some(label => {
-        try {
-          const date = parseCohortLabelDate(label, aggregationMode);
-          return date.getFullYear() < cutoffYear;
-        } catch {
-          return false;
+      if (historyMode === 'summarised') {
+        // Summarised mode: remove individual <=2019 labels, ensure bucket is present if pre-2020 cohorts exist
+        const cutoffYear = 2020;
+        const hasPre2020Cohorts = allCohortLabels.some(label => {
+          try {
+            return isPre2020Cohort(label, aggregationMode) && !label.startsWith('≤');
+          } catch {
+            return false;
+          }
+        });
+        
+        // Remove all individual <=2019 labels
+        allCohortLabels.forEach(label => {
+          if (isPre2020Cohort(label, aggregationMode) && !label.startsWith('≤')) {
+            legendCohortsSet.delete(label);
+          }
+        });
+        
+        // Add bucket if pre-2020 cohorts exist
+        if (hasPre2020Cohorts) {
+          legendCohortsSet.add(`≤ ${cutoffYear - 1}`);
         }
-      });
-      
-      const pre2020Label = `≤ ${cutoffYear - 1}`;
-      if (hasPre2020Cohorts && !config[pre2020Label]) {
-        config[pre2020Label] = {
-          label: pre2020Label,
-          color: OLDER_COHORTS_COLOR,
-        };
+      } else {
+        // Expanded mode: remove bucket if present, show all individual labels
+        legendCohortsSet.delete('≤ 2019');
       }
+      
+      const config = generateCohortConfig(cohortsWithData, viewMode, legendCohortsSet, historyMode, displayedPeriodCount);
+      
+      // Legend colors are already set correctly by generateCohortConfig:
+      // - Quarterly: always grey (V1.1 simplification)
+      // - Annual: grey if >12 periods, colored if <=12 periods
       
       return config;
     } else {
       return generateNewReturningConfig();
     }
-  }, [cohortsWithData, viewMode, allCohortLabels, showCohortView, aggregationMode]);
-  
-  // Generate config for visible cohorts only (for chart rendering)
-  const cohortConfig = useMemo(() => {
-    if (!cohortsWithData || cohortsWithData.length === 0) return {};
-    if (showCohortView) {
-      return generateCohortConfig(cohortsWithData, viewMode, showCohorts);
-    } else {
-      return generateNewReturningConfig();
-    }
-  }, [cohortsWithData, viewMode, showCohorts, showCohortView]);
+  }, [cohortsWithData, viewMode, allCohortLabels, showCohortView, aggregationMode, displayedPeriodCount, historyMode]);
   
   // Get all cohort keys for legend (always show all cohorts)
   const allLegendKeys = useMemo(() => {
@@ -694,9 +850,9 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
     
     // For By Cohort: filter to only show visible cohorts
     const configKeys = Object.keys(cohortConfig).filter(key => {
-      // Include all keys that are either in showCohorts or are the "Older cohorts" label
+      // Include all keys that are either in filteredShowCohorts or are the "Older cohorts" label
       if (key.startsWith('≤')) return true;
-      return showCohorts.has(key);
+      return filteredShowCohorts.has(key);
     });
     
     // Sort by cohort date (oldest first)
@@ -707,7 +863,7 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
     });
     
     return sortedKeys;
-  }, [cohortConfig, showCohortView, showCohorts, aggregationMode]);
+  }, [cohortConfig, showCohortView, filteredShowCohorts, aggregationMode]);
   
   /**
    * CANONICAL DEFINITION: Revenue CAGR Calculation
@@ -1036,12 +1192,28 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
   };
 
   return (
-    <div className="w-full bg-white rounded-lg border border-gray-200 shadow-sm p-6 pt-6">
+    <div className="w-full min-w-0 max-w-full bg-white rounded-lg border border-gray-200 shadow-sm p-6 pt-6">
       {/* Title, CAGR, and Export - Now inside the box */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-lg font-bold text-gray-900 mb-1">Revenue Cohort Trends</h3>
-          <p className="text-sm text-gray-500">Distribution of revenue across cohort years</p>
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="text-lg font-bold text-gray-900">Revenue Cohort Trends</h3>
+            {viewMode === 'monthly' && aggregationMode === 'quarterly' && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="bg-gray-900 text-white border-0 max-w-[300px]">
+                  <p className="text-xs">Monthly cohorts are aggregated to quarterly for readability.</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+          <p className="text-sm text-gray-500">
+            {viewMode === 'monthly' && aggregationMode === 'quarterly' 
+              ? 'Distribution of revenue across cohort years (aggregated to quarterly for readability)'
+              : 'Distribution of revenue across cohort years'}
+          </p>
         </div>
         <div className="flex items-center gap-3">
           {cagrData !== null && (
@@ -1061,80 +1233,89 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
               </div>
               <span className="w-px h-4 bg-gray-300"></span>
               <span className={`text-sm font-semibold ${
-                cagrData.value >= 0 ? 'text-green-600' : 'text-red-600'
+                cagrData.value >= 0 ? 'text-green-600' : 'text-gray-700'
               }`}>
                 {cagrData.value >= 0 ? '+' : ''}{cagrData.value.toFixed(1)}%
               </span>
             </div>
           )}
-          <button
-            onClick={() => {
-              // Export chart data to CSV
-              const csvData = [];
-              
-              // Header row
-              const header = ['Period'];
-              if (showCohortView) {
-                // Get all visible cohort keys
-                cohortKeys.forEach(key => {
-                  const config = cohortConfig[key];
-                  if (config) {
-                    const label = typeof config.label === 'string' ? config.label : String(key);
-                    header.push(label);
-                  }
-                });
-              } else {
-                header.push('New Revenue', 'Returning Revenue');
-              }
-              header.push('Total');
-              csvData.push(header);
-              
-              // Data rows
-              const chartDataToExport = cohortData;
-              if (chartDataToExport && chartDataToExport.length > 0) {
-                chartDataToExport.forEach((row: Record<string, string | number>) => {
-                  const csvRow = [(row['period'] as string | undefined) || ''];
-                  if (showCohortView) {
-                    cohortKeys.forEach(key => {
-                      const value = row[key];
-                      csvRow.push(value !== undefined && value !== null ? Number(value).toFixed(2) : '0.00');
-                    });
-                  } else {
-                    csvRow.push(Number(row['new_revenue'] || 0).toFixed(2));
-                    csvRow.push(Number(row['returning_revenue'] || 0).toFixed(2));
-                  }
-                  // Calculate total
-                  let total = 0;
-                  if (showCohortView) {
-                    cohortKeys.forEach(key => {
-                      total += Number(row[key] || 0);
-                    });
-                  } else {
-                    total = Number(row['new_revenue'] || 0) + Number(row['returning_revenue'] || 0);
-                  }
-                  csvRow.push(total.toFixed(2));
-                  csvData.push(csvRow);
-                });
-              }
-              
-              // Create CSV content
-              const csvContent = csvData.map(row => row.join(',')).join('\n');
-              const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-              const link = document.createElement('a');
-              const url = URL.createObjectURL(blob);
-              link.setAttribute('href', url);
-              link.setAttribute('download', `revenue-cohort-trends-${viewMode}-${new Date().toISOString().split('T')[0]}.csv`);
-              link.style.visibility = 'hidden';
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            }}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            aria-label="Export chart data to CSV"
-          >
-            <Download className="w-4 h-4" />
-            Export CSV
-          </button>
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => {
+                    // Export chart data to CSV
+                    const csvData = [];
+                    
+                    // Header row
+                    const header = ['Period'];
+                    if (showCohortView) {
+                      // Get all visible cohort keys
+                      cohortKeys.forEach(key => {
+                        const config = cohortConfig[key];
+                        if (config) {
+                          const label = typeof config.label === 'string' ? config.label : String(key);
+                          header.push(label);
+                        }
+                      });
+                    } else {
+                      header.push('New Revenue', 'Returning Revenue');
+                    }
+                    header.push('Total');
+                    csvData.push(header);
+                    
+                    // Data rows
+                    const chartDataToExport = cohortData;
+                    if (chartDataToExport && chartDataToExport.length > 0) {
+                      chartDataToExport.forEach((row: Record<string, string | number>) => {
+                        const csvRow = [(row['period'] as string | undefined) || ''];
+                        if (showCohortView) {
+                          cohortKeys.forEach(key => {
+                            const value = row[key];
+                            csvRow.push(value !== undefined && value !== null ? Number(value).toFixed(2) : '0.00');
+                          });
+                        } else {
+                          csvRow.push(Number(row['new_revenue'] || 0).toFixed(2));
+                          csvRow.push(Number(row['returning_revenue'] || 0).toFixed(2));
+                        }
+                        // Calculate total
+                        let total = 0;
+                        if (showCohortView) {
+                          cohortKeys.forEach(key => {
+                            total += Number(row[key] || 0);
+                          });
+                        } else {
+                          total = Number(row['new_revenue'] || 0) + Number(row['returning_revenue'] || 0);
+                        }
+                        csvRow.push(total.toFixed(2));
+                        csvData.push(csvRow);
+                      });
+                    }
+                    
+                    // Create CSV content
+                    const csvContent = csvData.map(row => row.join(',')).join('\n');
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', `revenue-cohort-trends-${viewMode}-${new Date().toISOString().split('T')[0]}.csv`);
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  aria-label="Export chart data to CSV"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Export CSV (filtered view)</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-gray-900 text-white border-0 max-w-[300px]">
+                <p className="text-xs">Exports the currently filtered cohort data shown on this page. Calculations and exclusions match on-screen values.</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       </div>
       
@@ -1163,48 +1344,101 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
           </button>
         </div>
         
+        {/* Mini cohort selector (only show when in cohort view) */}
+        {showCohortView && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={showLatest5}
+              className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            >
+              Show latest 5
+            </button>
+            {(viewMode === 'quarterly' || viewMode === 'monthly') && (
+              <button
+                onClick={showLatest12}
+                className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Show latest 12 quarters
+              </button>
+            )}
+            {viewMode !== 'monthly' && (
+              <button
+                onClick={showAllLimited}
+                className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Show all
+              </button>
+            )}
+            <button
+              onClick={clearCohorts}
+              className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            >
+              Clear
+            </button>
+          </div>
+        )}
+        
+        {/* History mode toggle (only show when in cohort view) */}
+        {showCohortView && (
+          <div className="inline-flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 border border-gray-200">
+            <span className="text-xs font-medium text-gray-600">History:</span>
+            <button
+              onClick={() => setHistoryMode('summarised')}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                historyMode === 'summarised'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+              }`}
+            >
+              Summarised
+            </button>
+            <button
+              onClick={() => setHistoryMode('expanded')}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                historyMode === 'expanded'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+              }`}
+            >
+              Expanded
+            </button>
+          </div>
+        )}
+        
         {/* Cohort legend (only show when in cohort view) - ordered oldest → newest */}
         {showCohortView && (
-          <div className="flex items-center gap-2 flex-wrap">
-            {allLegendKeys.map((key) => {
-              const config = allCohortsConfig[key];
-              if (!config) return null;
-              
-              // Check if this cohort is visible
-              const isVisible = showCohorts.has(key);
-              
-              return (
-                <button
-                  key={key}
-                  onClick={() => toggleCohort(key)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all border-2 cursor-pointer ${
-                    isVisible
-                      ? 'bg-white border-blue-500 hover:border-blue-600 hover:bg-blue-50 text-gray-900 shadow-sm'
-                      : 'bg-gray-100 border-gray-300 hover:border-gray-400 hover:bg-gray-200 text-gray-500'
-                  }`}
-                >
+          <div className="overflow-x-auto -mx-6 px-6">
+            <div className="flex items-center gap-2 flex-nowrap min-w-fit">
+              {allLegendKeys.map((key) => {
+                const config = allCohortsConfig[key];
+                if (!config) return null;
+                
+                return (
                   <div
-                    className={`w-3 h-3 rounded-sm flex-shrink-0 border ${
-                      isVisible ? 'border-gray-300' : 'border-gray-400'
-                    }`}
-                    style={{ 
-                      backgroundColor: isVisible ? (config.color || '#9ca3af') : '#d1d5db',
-                      opacity: isVisible ? 1 : 0.5
-                    }}
-                  />
-                  <span className={isVisible ? 'text-gray-900 font-semibold' : 'text-gray-500'}>
-                    {config.label}
-                  </span>
-                </button>
-              );
-            })}
+                    key={key}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium bg-gray-50 border border-gray-200 text-gray-700 flex-shrink-0"
+                  >
+                    <div
+                      className="w-3 h-3 rounded-sm flex-shrink-0 border border-gray-300"
+                      style={{ 
+                        backgroundColor: config.color || '#9ca3af'
+                      }}
+                    />
+                    <span className="text-gray-700 whitespace-nowrap">
+                      {config.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
       
       {/* Chart with gradient background */}
-      <div className="relative bg-gradient-to-b from-gray-50/50 to-transparent rounded-lg border border-gray-200 p-4">
-        <ChartContainer config={cohortConfig} className="h-[350px] w-full">
+      <div className="relative bg-gradient-to-b from-gray-50/50 to-transparent rounded-lg border border-gray-200 p-4 overflow-x-auto min-w-0">
+        <div className="min-w-fit">
+          <ChartContainer config={cohortConfig} className="h-[350px] w-full">
           <ComposedChart 
             data={cohortData} 
             margin={{ top: showCohortView ? 35 : 50, right: 5, left: 20, bottom: 30 }} 
@@ -1279,6 +1513,7 @@ export function RevenueCohortsChart({ cohorts, viewMode = 'monthly' }: RevenueCo
             ))}
           </ComposedChart>
         </ChartContainer>
+        </div>
       </div>
     </div>
   );

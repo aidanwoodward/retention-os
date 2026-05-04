@@ -6,6 +6,14 @@ import { repeatRatesFilters, repeatRatesSearch } from "@/lib/filters/config";
 import { AIAnalysis } from "@/components/ai/AIAnalysis";
 import { LoadingButton } from "@/components/ui/loading-buttons";
 import { useSearchParams, useRouter } from "next/navigation";
+import { Diagnosis } from "@/components/diagnosis/Diagnosis";
+import { diagnoseRepeatRates, diagnoseRepeatRatesEnhanced } from "@/lib/diagnosis/repeat-rates";
+import { SeverityIndicator } from "@/components/diagnosis/SeverityIndicator";
+import { CausalitySection } from "@/components/diagnosis/CausalitySection";
+import { DecisionAxes } from "@/components/diagnosis/DecisionAxes";
+import { getDecisionAxesForDiagnosis } from "@/lib/diagnosis/decision-axes";
+import { ImpactRanges } from "@/components/diagnosis/ImpactRanges";
+import { computeRepeatRatesImpactRanges } from "@/lib/diagnosis/impact-ranges/repeat-rates";
 import {
   Users,
   Download,
@@ -414,6 +422,16 @@ export default function RepeatPurchaseRatesContent() {
 
   return (
     <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
+      {/* Page Header with Narrative Framing */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Repeat Purchase Rates</h1>
+        <p className="text-lg font-semibold text-gray-700 mb-2">Behavioural Truth</p>
+        <p className="text-sm text-gray-600 max-w-3xl">
+          Is repeat behaviour structural — or accidental? Are customers forming habits or being bribed to come back? 
+          Do cohorts improve naturally — or only with discounts? We need to understand if behavior is sustainable.
+        </p>
+      </div>
+
       {/* Filter Bar */}
       <div className="mb-8">
         <FilterBar
@@ -442,14 +460,16 @@ export default function RepeatPurchaseRatesContent() {
         </div>
       )}
 
-      {/* AI Analysis Section */}
-      <div className="mb-8">
-        <AIAnalysis 
-          filters={filterState}
-          cohorts={[]}
-          onRegenerate={fetchRepeatData}
-        />
-      </div>
+      {/* AI Analysis Section - Gated behind feature flag */}
+      {process.env.NEXT_PUBLIC_ENABLE_AI_ANALYSIS === "true" && (
+        <div className="mb-8">
+          <AIAnalysis 
+            filters={filterState}
+            cohorts={[]}
+            onRegenerate={fetchRepeatData}
+          />
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
@@ -540,6 +560,7 @@ export default function RepeatPurchaseRatesContent() {
             </div>
           </div>
         </div>
+
         
       {/* Core Visualization */}
       <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)] mb-8">
@@ -938,6 +959,49 @@ export default function RepeatPurchaseRatesContent() {
         </div>
       </div>
       )}
+
+      {/* Diagnosis Section */}
+      {displayData && (() => {
+        const enhancedDiagnosis = diagnoseRepeatRatesEnhanced({
+          repeatData: displayData.purchaseBreakdown,
+          secondPurchaseRate: displayData.secondPurchaseRate,
+          medianPurchases: displayData.medianPurchases,
+          customersWith3PlusPurchases: displayData.customersWith3PlusPurchases,
+          totalCustomers: displayData.totalCustomers,
+        });
+        return enhancedDiagnosis.sentence ? (
+          <>
+            <Diagnosis sentence={enhancedDiagnosis.sentence} />
+            
+            {/* Severity Indicator - Only render when severity exists */}
+            {enhancedDiagnosis.severity && (
+              <SeverityIndicator severity={enhancedDiagnosis.severity} />
+            )}
+            
+            {/* Causality Section - Only render when causality factors exist */}
+            {enhancedDiagnosis.causality.length > 0 && (
+              <CausalitySection 
+                factors={enhancedDiagnosis.causality}
+                framingCopy="Based on the patterns observed, these are the likely structural drivers:"
+              />
+            )}
+            
+            {/* Decision Axes Section - Only render when Diagnosis exists */}
+            <DecisionAxes 
+              axes={getDecisionAxesForDiagnosis(enhancedDiagnosis.sentence, 'repeat-rates')}
+            />
+            
+            {/* Impact Ranges Section - Only render when Diagnosis exists */}
+            <ImpactRanges 
+              ranges={computeRepeatRatesImpactRanges({
+                repeatData: displayData.purchaseBreakdown,
+                secondPurchaseRate: displayData.secondPurchaseRate,
+                totalCustomers: displayData.totalCustomers,
+              })}
+            />
+          </>
+        ) : null;
+      })()}
     </div>
   );
 }

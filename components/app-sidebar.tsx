@@ -97,6 +97,17 @@ const data = {
       ],
     },
     {
+      title: "Decisions",
+      url: "#",
+      icon: Target,
+      items: [
+        {
+          title: "Uncomfortable Decisions",
+          url: "/retention-ltv/decisions",
+        },
+      ],
+    },
+    {
       title: "Customer Intelligence",
       url: "#",
       icon: Users,

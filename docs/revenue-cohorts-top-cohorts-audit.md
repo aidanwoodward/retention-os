@@ -279,3 +279,4 @@ All "Top cohort" and share metrics must:
 4. Add inline comments documenting the canonical time window logic
 5. Verify all metrics align with `totalRevenue` calculation
 
+

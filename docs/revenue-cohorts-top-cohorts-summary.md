@@ -157,3 +157,4 @@ Example:
 
 **After:** All Top cohort metrics show Current Period revenue only, ensuring consistency across the entire page and accurate representation of cohort performance in the selected time window.
 
+

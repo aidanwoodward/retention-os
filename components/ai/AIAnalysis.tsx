@@ -9,13 +9,7 @@ import {
   Clock,
   ChevronDown,
   ChevronUp,
-  Info,
 } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface AIAnalysisProps {
   filters?: Record<string, unknown>;
@@ -24,7 +18,6 @@ interface AIAnalysisProps {
   dataAvailable?: boolean;
   loading?: boolean;
   onRegenerate?: () => void;
-  isDemo?: boolean; // NEW: Flag indicating if data is demo/placeholder
 }
 
 interface AIInsight {
@@ -36,14 +29,11 @@ interface AIInsight {
   trend?: 'up' | 'down' | 'stable';
 }
 
-export function AIAnalysis({ filters = {}, cohorts: _cohorts = [], pageType: _pageType, dataAvailable: _dataAvailable, loading: _externalLoading, isDemo = false }: AIAnalysisProps) {
+export function AIAnalysis({ filters = {}, cohorts: _cohorts = [], pageType: _pageType, dataAvailable: _dataAvailable, loading: _externalLoading }: AIAnalysisProps) {
   const [insights, setInsights] = useState<AIInsight[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastGenerated, setLastGenerated] = useState<Date | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
-  
-  // Determine if insights are placeholder/preview (always true currently since we use mockInsights)
-  const isPreview = true; // TODO: Set to false when real AI analysis is implemented
 
   const generateInsights = async () => {
     if (isGenerating) return;
@@ -188,12 +178,6 @@ export function AIAnalysis({ filters = {}, cohorts: _cohorts = [], pageType: _pa
   };
 
   const handleToggle = () => {
-    // Disable generation if demo data
-    if (isDemo) {
-      setIsExpanded(!isExpanded);
-      return;
-    }
-    
     if (!isExpanded && insights.length === 0) {
       // First click - generate insights
       generateInsights();
@@ -202,81 +186,27 @@ export function AIAnalysis({ filters = {}, cohorts: _cohorts = [], pageType: _pa
       setIsExpanded(!isExpanded);
     }
   };
-  
-  // Format filter context for display
-  const getFilterContext = () => {
-    const contextParts: string[] = [];
-    
-    // Cohort type
-    if (filters.cohortType && typeof filters.cohortType === 'string') {
-      const cohortTypeLabels: Record<string, string> = {
-        'monthly': 'Monthly',
-        'quarterly': 'Quarterly',
-        'annual': 'Annual',
-      };
-      contextParts.push(cohortTypeLabels[filters.cohortType] || filters.cohortType);
-    }
-    
-    // Date range
-    if (filters.dateRange && typeof filters.dateRange === 'object' && filters.dateRange !== null) {
-      const dateRange = filters.dateRange as { from?: string; to?: string };
-      if (dateRange.from && dateRange.to) {
-        const fromDate = new Date(dateRange.from).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        const toDate = new Date(dateRange.to).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        contextParts.push(`${fromDate} - ${toDate}`);
-      }
-    }
-    
-    return contextParts.length > 0 ? contextParts.join(' • ') : null;
-  };
-  
-  const filterContext = getFilterContext();
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-5">
       {/* Button Header - Always Visible */}
       <button
         onClick={handleToggle}
-        disabled={isGenerating || isDemo}
+        disabled={isGenerating}
         className="w-full p-3 flex items-center justify-between hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <div className="flex items-center gap-3">
           <Brain className="w-5 h-5 text-blue-600 flex-shrink-0" />
-          <div className="text-left flex-1">
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-medium text-gray-900">AI Analysis</p>
-              {(isPreview || isDemo) && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200">
-                      Preview
-                      <Info className="w-3 h-3 ml-1" />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent className="bg-gray-900 text-white border-0 max-w-[280px]">
-                    <p className="text-xs">
-                      {isDemo 
-                        ? "Insights are based on demo data and are example copy. Real insights will be available when data-backed analysis is enabled."
-                        : "Insights are example copy until AI is enabled / data-backed. Real insights will be computed from your actual cohort data."}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </div>
-            {filterContext && (
-              <p className="text-xs text-muted-foreground mt-0.5">Context: {filterContext}</p>
-            )}
+          <div className="text-left">
+            <p className="text-sm font-medium text-gray-900">AI Analysis</p>
             {lastGenerated && (
               <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                 <Clock className="w-3 h-3" />
                 Last generated {lastGenerated.toLocaleTimeString()}
               </p>
             )}
-            {!lastGenerated && !isGenerating && !isDemo && (
+            {!lastGenerated && !isGenerating && (
               <p className="text-xs text-muted-foreground mt-0.5">Click to generate insights</p>
-            )}
-            {isDemo && !lastGenerated && (
-              <p className="text-xs text-amber-600 mt-0.5">Demo mode: Insights disabled</p>
             )}
           </div>
         </div>
@@ -304,16 +234,6 @@ export function AIAnalysis({ filters = {}, cohorts: _cohorts = [], pageType: _pa
             </div>
           ) : insights.length > 0 ? (
             <div className="p-6 space-y-4">
-              {/* Preview/Demo Warning */}
-              {(isPreview || isDemo) && (
-                <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
-                  <p className="text-xs text-amber-800">
-                    <strong>Preview Mode:</strong> These insights are example copy and not computed from your actual data. 
-                    {isDemo && " Demo data is being displayed."}
-                  </p>
-                </div>
-              )}
-              
               {/* High-level Summary */}
               <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
                 <p className="text-sm text-gray-800 leading-relaxed">
@@ -367,20 +287,13 @@ export function AIAnalysis({ filters = {}, cohorts: _cohorts = [], pageType: _pa
                     e.stopPropagation();
                     generateInsights();
                   }}
-                  disabled={isGenerating || isDemo}
+                  disabled={isGenerating}
                   className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-                  title={isDemo ? "Regeneration disabled in demo mode" : undefined}
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
                   Regenerate
                 </button>
               </div>
-            </div>
-          ) : isDemo ? (
-            <div className="p-6 text-center">
-              <p className="text-sm text-gray-600">
-                AI Analysis is disabled when demo data is displayed. Connect your data to enable real insights.
-              </p>
             </div>
           ) : null}
         </div>

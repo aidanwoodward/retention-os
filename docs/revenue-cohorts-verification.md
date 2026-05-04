@@ -581,3 +581,4 @@ The trend chart uses `filteredCohorts` which may be filtered by `dateRange`, whi
 
 **No refactoring needed** — implementations are consistent with canonical definitions.
 
+

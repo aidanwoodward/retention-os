@@ -61,8 +61,32 @@ export async function GET(request: Request) {
 
     // Authenticate
     const { data: { session } } = await supabase.auth.getSession();
+    
+    // Check for development mode - Next.js sets NODE_ENV automatically in dev mode
+    const isDevelopment = process.env.NODE_ENV === 'development' || 
+                         process.env.NEXT_PUBLIC_ENV === 'development' ||
+                         !process.env.VERCEL; // Not on Vercel = likely local dev
+    
     if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      // In production, always require authentication
+      if (!isDevelopment) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      // In development, return empty result structure (no session found)
+      console.log("Development mode: Returning empty repeat purchases data (no session found)");
+      return NextResponse.json({
+        success: true,
+        data: {
+          purchaseBreakdown: [],
+          totalCustomers: 0,
+          secondPurchaseRate: 0,
+          medianPurchases: 0,
+          customersWith3PlusPurchases: 0,
+          medianPurchasesFor5Plus: null,
+          calculated_at: new Date().toISOString(),
+        },
+        is_demo: true
+      });
     }
 
     // Get account ID

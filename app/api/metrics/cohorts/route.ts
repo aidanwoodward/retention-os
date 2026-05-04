@@ -47,7 +47,10 @@ export async function GET(request: Request) {
 
     const { data: { session } } = await supabase.auth.getSession();
     
-    const isDevelopment = process.env.NODE_ENV === 'development';
+    // Check for development mode - Next.js sets NODE_ENV automatically in dev mode
+    const isDevelopment = process.env.NODE_ENV === 'development' || 
+                         process.env.NEXT_PUBLIC_ENV === 'development' ||
+                         !process.env.VERCEL; // Not on Vercel = likely local dev
     
     if (!session) {
       // In production, always require authentication
@@ -55,7 +58,7 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
       // In development, return dummy data with is_demo flag
-      console.log("Development mode: Returning dummy cohorts data");
+      console.log("Development mode: Returning dummy cohorts data (no session found)");
       const dummyCohorts = generateDummyCohorts();
       
       return NextResponse.json({
@@ -104,6 +107,10 @@ export async function GET(request: Request) {
       }
       // In development, return dummy data with is_demo flag
       console.log("Development mode: No real data found, returning dummy cohorts data");
+      // Temporary debug stamp: identify demo generator version
+      if (process.env.NODE_ENV !== 'production') {
+        console.log("Serving demo cohorts_dummy_v2");
+      }
       const dummyCohorts = generateDummyCohorts();
       
       return NextResponse.json({
@@ -112,7 +119,8 @@ export async function GET(request: Request) {
           cohorts: dummyCohorts,
           total_records: dummyCohorts.length,
           latest_calculated_at: new Date().toISOString(),
-          is_demo: true
+          is_demo: true,
+          __debug_demo_generator: "cohorts_dummy_v2" // Temporary debug stamp (demo only)
         }
       });
     }
@@ -239,6 +247,12 @@ function generateDummyCohorts() {
     // This ensures older cohorts (2019) can have 6+ years of data, while newer cohorts (2025) only have what's possible
     const maxPossiblePeriods = Math.min(72, monthsSinceCohort); // Up to 6 years (72 months) of data
     
+    // DEMO-ONLY: Calculate period 0 revenue once per cohort for consistent baseline
+    // This ensures revenue retention calculations are based on a stable period 0 baseline
+    const revenueGrowthFactor = 1 + (yearsAgo * 0.15); // 15% YoY growth in cohort size
+    const firstPurchaseRevenue = 250 + Math.random() * 350; // $250-$600 per customer
+    const period0Revenue = Math.floor(cohortSize * firstPurchaseRevenue * revenueGrowthFactor);
+    
     for (let period = 0; period <= maxPossiblePeriods; period++) {
       const orderDate = new Date(cohortDate.getFullYear(), cohortDate.getMonth() + period, 1);
       
@@ -264,6 +278,7 @@ function generateDummyCohorts() {
         const activeCustomers = 0;
         const totalRevenue = 0;
         const totalOrders = 0;
+        const revenueRetentionPercent = 0; // Data gap period
         
         periods.push({
           period_number: period,
@@ -272,6 +287,7 @@ function generateDummyCohorts() {
           total_orders: totalOrders,
           total_revenue: totalRevenue,
           retention_rate_percent: retentionRate,
+          revenue_retention_percent: revenueRetentionPercent, // DEMO-ONLY: API-provided revenue retention
           geographic_breakdown: {
             UK: 0,
             Germany: 0,
@@ -339,29 +355,80 @@ function generateDummyCohorts() {
       
       const activeCustomers = Math.floor((cohortSize * retentionRate) / 100);
       
-      // Revenue calculation: Original period has highest revenue, subsequent periods decrease
-      const revenueGrowthFactor = 1 + (yearsAgo * 0.15); // 15% YoY growth in cohort size (not retention)
+      // Revenue calculation: Realistic demo data with smooth decay and capped retention
+      // DEMO-ONLY: This logic only applies to dummy/demo data generation
       let totalRevenue: number;
+      let revenueRetentionPercent: number; // Store for API response
       
       if (period === 0) {
-        // Original Value: Revenue from new customers' first purchases
-        const firstPurchaseRevenue = 250 + Math.random() * 350; // $250-$600 per customer
-        totalRevenue = Math.floor(cohortSize * firstPurchaseRevenue * revenueGrowthFactor);
+        // Period 0: Use pre-calculated baseline revenue (consistent across all periods)
+        totalRevenue = period0Revenue;
+        revenueRetentionPercent = 100; // Period 0 is always 100%
       } else {
-        // After N periods: Revenue from returning customers' repeat purchases
-        // Revenue per customer is typically lower for repeat purchases
-        const repeatPurchaseRevenue = 120 + Math.random() * 180; // $120-$300 per customer (lower than first purchase)
+        // Period N: Generate realistic demo revenue with smooth monotonic decay
+        // DEMO-ONLY RULE: Revenue retention must never exceed 100% (monotonic decay from 100%)
+        // Strategy: Generate retention ratio directly (0-100%), then back-calculate revenue
         
-        // Revenue naturally decreases as activeCustomers decreases (due to churn)
-        // The revenueGrowthFactor only applies to cohort size, not to retention
-        totalRevenue = Math.floor(activeCustomers * repeatPurchaseRevenue * revenueGrowthFactor);
-      }
-      
-      // Ensure minimum revenue for visibility (but only if we have active customers)
-      if (activeCustomers > 0 && totalRevenue < 5000) {
-        totalRevenue = 5000 + Math.random() * 3000;
-      } else if (activeCustomers === 0) {
-        totalRevenue = 0; // No revenue if no active customers
+        // Realistic revenue retention curve: smooth monotonic decay from 100%
+        // Pattern: 100% → 95% → 85% → 75% → 65% → 55% → ... (no values above 100%)
+        const revenueRetentionCurve = [
+          100,   // Period 0: 100% baseline
+          95,    // Period 1: ~95% (slight decline)
+          88,    // Period 2: ~88%
+          80,    // Period 3: ~80%
+          72,    // Period 4: ~72%
+          65,    // Period 5: ~65%
+          58,    // Period 6: ~58%
+          52,    // Period 7: ~52%
+          47,    // Period 8: ~47%
+          42,    // Period 9: ~42%
+          38,    // Period 10: ~38%
+          34,    // Period 11: ~34%
+          31,    // Period 12: ~31%
+        ];
+        
+        // Get base revenue retention for this period
+        let baseRevenueRetentionPercent: number;
+        if (period < revenueRetentionCurve.length) {
+          baseRevenueRetentionPercent = revenueRetentionCurve[period];
+        } else {
+          // Smooth decay beyond curve: gradual decline
+          const lastCurveValue = revenueRetentionCurve[revenueRetentionCurve.length - 1];
+          const periodsBeyondCurve = period - revenueRetentionCurve.length + 1;
+          baseRevenueRetentionPercent = Math.max(15, lastCurveValue - (periodsBeyondCurve * 1.5));
+        }
+        
+        // Add small smooth variation (±1.5%) to avoid perfect curves, but keep it coherent
+        const variation = (Math.random() - 0.5) * 3; // ±1.5% variation
+        revenueRetentionPercent = baseRevenueRetentionPercent + variation;
+        
+        // Ensure smooth transitions: don't allow sharp jumps from previous period
+        // Enforce monotonic decay: each period must be <= previous period
+        if (period > 0) {
+          const prevBaseRetention = period === 1
+            ? 100  // Period 0 is always 100%
+            : (period < revenueRetentionCurve.length 
+                ? revenueRetentionCurve[period - 1]
+                : Math.max(15, revenueRetentionCurve[revenueRetentionCurve.length - 1] - ((period - revenueRetentionCurve.length) * 1.5)));
+          // Allow small decrease (up to 3%) or very small increase (up to 1%) for smoothness
+          const maxAllowed = Math.min(100, prevBaseRetention + 1); // Never exceed 100%, allow tiny increase for smoothness
+          const minAllowed = Math.max(0, prevBaseRetention - 3); // Allow up to 3% decrease
+          revenueRetentionPercent = Math.max(minAllowed, Math.min(maxAllowed, revenueRetentionPercent));
+        }
+        
+        // CRITICAL DEMO RULE: Cap revenue retention at 100% (never exceed 100% in demo)
+        revenueRetentionPercent = Math.min(100, Math.max(0, revenueRetentionPercent));
+        
+        // Calculate revenue based on period 0 baseline and retention percentage
+        // This ensures revenue_retention = (totalRevenue / period0Revenue) * 100 <= 100%
+        totalRevenue = Math.floor((period0Revenue * revenueRetentionPercent) / 100);
+        
+        // Ensure revenue is never negative and respects active customers
+        if (activeCustomers === 0) {
+          totalRevenue = 0; // No revenue if no active customers
+        } else if (totalRevenue < 0) {
+          totalRevenue = 0; // Safety check
+        }
       }
       
       // Order frequency improvement over time
@@ -383,6 +450,7 @@ function generateDummyCohorts() {
         total_orders: totalOrders,
         total_revenue: totalRevenue,
         retention_rate_percent: retentionRate,
+        revenue_retention_percent: revenueRetentionPercent, // DEMO-ONLY: API-provided revenue retention (<=100%)
         geographic_breakdown: geoRevenue
       });
     }
@@ -393,6 +461,45 @@ function generateDummyCohorts() {
       geographic_distribution: geoDistribution,
       periods: periods
     });
+  }
+  
+  // DEV-ONLY: Verify demo revenue retention never exceeds 100%
+  if (process.env.NODE_ENV !== 'production') {
+    let maxRevenueRetention = 0;
+    let maxCohort = '';
+    let maxPeriod = -1;
+    
+    cohorts.forEach(cohort => {
+      const period0 = cohort.periods.find(p => p.period_number === 0);
+      if (period0 && period0.total_revenue > 0) {
+        cohort.periods.forEach(period => {
+          if (period.period_number > 0 && period.total_revenue > 0) {
+            const revenueRetention = (period.total_revenue / period0.total_revenue) * 100;
+            if (revenueRetention > maxRevenueRetention) {
+              maxRevenueRetention = revenueRetention;
+              maxCohort = cohort.cohort_month;
+              maxPeriod = period.period_number;
+            }
+          }
+        });
+      }
+    });
+    
+    console.log('📊 Demo Revenue Retention Audit:', {
+      maxRevenueRetention: maxRevenueRetention.toFixed(2) + '%',
+      maxCohort,
+      maxPeriod,
+      passed: maxRevenueRetention <= 100.01, // Allow tiny floating point tolerance
+      totalCohorts: cohorts.length,
+    });
+    
+    if (maxRevenueRetention > 100.01) {
+      console.warn('⚠️ WARNING: Demo revenue retention exceeds 100%!', {
+        maxRevenueRetention: maxRevenueRetention.toFixed(2) + '%',
+        maxCohort,
+        maxPeriod,
+      });
+    }
   }
   
   return cohorts;

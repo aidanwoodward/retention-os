@@ -480,3 +480,4 @@ mv_cohorts:
   - retention_rate_percent: (active_customers / cohort_size) * 100
 ```
 
+

@@ -139,38 +139,6 @@ export function metricsBannerScopeLine(routeId: "dashboard" | "cohorts" | "reten
   }
 }
 
-/** Secondary quick links suggested per workspace (beyond top nav). */
-export function getMvpSuggestedLinks(routeId: MvpRouteId): readonly MvpNavItem[] {
-  switch (routeId) {
-    case "dashboard":
-      return [
-        { id: "insights", href: "/insights", label: "Diagnostic Insights" },
-        { id: "data", href: "/data", label: "Data" },
-        { id: "cohorts", href: "/cohorts", label: "Cohorts" },
-      ];
-    case "cohorts":
-    case "retention":
-    case "ltv":
-      return [
-        { id: "insights", href: "/insights", label: "Insights" },
-        { id: "dashboard", href: "/dashboard", label: "Dashboard" },
-        { id: "data", href: "/data", label: "Data" },
-      ];
-    case "insights":
-      return [
-        { id: "dashboard", href: "/dashboard", label: "Dashboard" },
-        { id: "data", href: "/data", label: "Data" },
-      ];
-    case "data":
-      return [
-        { id: "dashboard", href: "/dashboard", label: "Dashboard" },
-        { id: "insights", href: "/insights", label: "Insights" },
-      ];
-    default:
-      return [];
-  }
-}
-
 export const RULES_ENGINE_INSIGHTS_NOTICE =
   "Rules-based engine. Cards synthesize evidence using transparent thresholds — not LLMs, chat copilots, or hidden models." as const;
 

@@ -111,7 +111,7 @@ export default function ProtectedLayout({
             </Breadcrumb>
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0 overflow-x-hidden min-w-0">
+        <div className="flex flex-1 flex-col gap-4 overflow-x-hidden min-w-0 bg-zinc-50/80 p-4 pt-0">
           {children}
         </div>
         </SidebarInset>

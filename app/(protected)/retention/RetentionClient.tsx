@@ -25,37 +25,37 @@ function RateCell({ value }: { value: number | null }) {
 
 function RetentionCohortTable({ rows }: { rows: RetentionCohortTableRowView[] }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+    <div className="overflow-x-auto rounded-xl border border-zinc-200/90 bg-white shadow-sm ring-1 ring-black/[0.02]">
       <table className="min-w-[900px] w-full border-collapse text-sm">
-        <thead className="sticky top-0 z-10 border-b border-gray-200 bg-gray-50">
-          <tr className="text-left text-xs font-semibold uppercase tracking-wide text-gray-700">
-            <th className="px-4 py-3">Cohort (first-order month)</th>
-            <th className="px-4 py-3 text-right">Cohort size</th>
-            <th className="px-4 py-3 text-right">Month +0 active</th>
-            <th className="px-4 py-3 text-right">Month +1 active</th>
-            <th className="px-4 py-3 text-right">Month +2 active</th>
-            <th className="px-4 py-3 text-right">Month +3 active</th>
-            <th className="px-4 py-3 text-right">Month +6 active</th>
+        <thead className="sticky top-0 z-10 border-b border-zinc-200 bg-zinc-50/90">
+          <tr className="text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">
+            <th className="px-5 py-3.5">Cohort (first-order month)</th>
+            <th className="px-5 py-3.5 text-right">Cohort size</th>
+            <th className="px-5 py-3.5 text-right">Month +0 active</th>
+            <th className="px-5 py-3.5 text-right">Month +1 active</th>
+            <th className="px-5 py-3.5 text-right">Month +2 active</th>
+            <th className="px-5 py-3.5 text-right">Month +3 active</th>
+            <th className="px-5 py-3.5 text-right">Month +6 active</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.cohortPeriod} className="border-b border-gray-100 hover:bg-gray-50/70">
-              <td className="px-4 py-2.5 font-medium text-gray-900 tabular-nums">{row.cohortPeriod}</td>
-              <td className="px-4 py-2.5 text-right tabular-nums text-gray-800">{row.cohortSize.toLocaleString()}</td>
-              <td className="px-4 py-2.5 text-right text-gray-800">
+            <tr key={row.cohortPeriod} className="border-b border-zinc-100 hover:bg-zinc-50/80">
+              <td className="px-5 py-3 font-medium text-zinc-900 tabular-nums">{row.cohortPeriod}</td>
+              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">{row.cohortSize.toLocaleString()}</td>
+              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">
                 <RateCell value={row.monthPlus0ActiveRate} />
               </td>
-              <td className="px-4 py-2.5 text-right text-gray-800">
+              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">
                 <RateCell value={row.monthPlus1ActiveRate} />
               </td>
-              <td className="px-4 py-2.5 text-right text-gray-800">
+              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">
                 <RateCell value={row.monthPlus2ActiveRate} />
               </td>
-              <td className="px-4 py-2.5 text-right text-gray-800">
+              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">
                 <RateCell value={row.monthPlus3ActiveRate} />
               </td>
-              <td className="px-4 py-2.5 text-right text-gray-800">
+              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">
                 <RateCell value={row.monthPlus6ActiveRate} />
               </td>
             </tr>
@@ -87,16 +87,16 @@ export default function RetentionClient() {
           <Kpi title="Avg Month +3 active rate" value={formatPct(summary.averageMonthPlus3ActiveRate)} />
         </div>
 
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800">
-          <strong className="font-semibold">How to read these metrics.</strong> Month +N active rate is the share of the cohort who
+        <p className="rounded-lg border border-zinc-200/90 bg-white px-4 py-3.5 text-sm leading-relaxed text-zinc-700 shadow-sm ring-1 ring-black/[0.02]">
+          <strong className="font-semibold text-zinc-900">How to read these metrics.</strong> Month +N active rate is the share of the cohort who
           placed at least one order in calendar month acquisition&nbsp;month&nbsp;+&nbsp;N (UTC boundaries). First-to-second within 90 days
           is a separate journey metric: among all customers, the share whose second order occurred within 90 days of their first —
           regardless of calendar month alignment.
         </p>
 
         <div>
-          <h2 className="mb-2 text-lg font-semibold text-gray-900">Retention by cohort</h2>
-          <p className="mb-4 text-sm text-gray-600">
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-[0.1em] text-zinc-500">Retention by cohort</h2>
+          <p className="mb-4 text-sm leading-relaxed text-zinc-700">
             Each row is customers acquired in that first-order month. Active rates count shoppers with ≥1 qualifying order in the target
             calendar month (see metric engine definitions). Month +6 appears only when the demo timeline includes that horizon for a cohort.
           </p>
@@ -108,10 +108,10 @@ export default function RetentionClient() {
 
 function Kpi({ title, value, sub }: { title: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{title}</p>
-      <p className="mt-2 text-xl font-semibold tabular-nums text-gray-900">{value}</p>
-      {sub ? <p className="mt-1 text-xs text-gray-600">{sub}</p> : null}
+    <div className="rounded-lg border border-zinc-200/90 bg-white p-4 shadow-sm ring-1 ring-black/[0.02]">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">{title}</p>
+      <p className="mt-2 text-xl font-semibold tabular-nums text-zinc-900">{value}</p>
+      {sub ? <p className="mt-1 text-xs text-zinc-600">{sub}</p> : null}
     </div>
   );
 }

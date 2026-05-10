@@ -1,12 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import type { ReactNode } from "react";
 import {
   DEMO_DATASET_LABEL,
   dataModeBannerSentence,
   getMvpPageCopy,
-  getMvpSuggestedLinks,
   insightsDemoNotice,
   metricsBannerScopeLine,
   MVP_COMMAND_CENTRE_NAME,
@@ -31,6 +29,8 @@ export interface CommandCentrePageFrameProps {
   readonly children: ReactNode;
 }
 
+const codeChip = "rounded-md border border-white/10 bg-white/[0.07] px-1.5 py-0.5 font-mono text-[11px] text-zinc-200";
+
 export function CommandCentrePageFrame({
   routeId,
   maxWidth,
@@ -38,104 +38,74 @@ export function CommandCentrePageFrame({
   children,
 }: CommandCentrePageFrameProps) {
   const copy = getMvpPageCopy(routeId);
-  const quickLinks = getMvpSuggestedLinks(routeId);
 
   const isMetricSurface =
     routeId === "dashboard" || routeId === "cohorts" || routeId === "retention" || routeId === "ltv";
 
+  const activeLabel = MVP_NAV.find((n) => n.id === routeId)?.label ?? routeId;
+
   const rulesEngineBody = RULES_ENGINE_INSIGHTS_NOTICE.replace(/^Rules-based engine\.\s*/, "");
 
   return (
-    <div className="p-6">
-      <div className={`mx-auto ${maxWidthClass[maxWidth]} space-y-8`}>
-        <header className="space-y-4 border-b border-gray-100 pb-5">
-          <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">{MVP_COMMAND_CENTRE_NAME}</p>
-          <nav aria-label="Command centre sections" className="flex flex-wrap gap-2">
-            {MVP_NAV.map((item) => {
-              const active = item.id === routeId;
-              return (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
-                    active ? "bg-gray-900 text-white shadow-sm" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
+    <div className="min-w-0">
+      <div className={`mx-auto ${maxWidthClass[maxWidth]} space-y-5`}>
+        <header className="flex flex-wrap items-end justify-between gap-3 border-b border-zinc-200/90 pb-3">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+              {MVP_COMMAND_CENTRE_NAME}
+            </p>
+            <p className="mt-1 text-xs text-zinc-600">
+              <span className="text-zinc-400">View</span>{" "}
+              <span className="font-semibold text-zinc-900">{activeLabel}</span>
+              <span className="text-zinc-400"> · use the sidebar to move between workspaces</span>
+            </p>
+          </div>
         </header>
 
         {bannerKind === "metrics" && isMetricSurface ? (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-            <p>
-              <strong className="font-semibold">{DEMO_DATASET_LABEL}.</strong> {metricsBannerScopeLine(routeId)}
+          <div className="rounded-lg border border-zinc-700/90 bg-gradient-to-br from-zinc-950 via-zinc-950 to-zinc-900 px-4 py-3.5 shadow-sm ring-1 ring-black/30">
+            <p className="text-sm leading-relaxed text-zinc-100">
+              <span className="font-semibold text-white">{DEMO_DATASET_LABEL}</span>
+              <span className="text-zinc-500"> — </span>
+              <span>{metricsBannerScopeLine(routeId)}</span>
             </p>
-            <p className="mt-2 text-amber-900/95">
-              Deterministic metric engine:{" "}
-              <code className="rounded bg-amber-100 px-1 font-mono text-xs">getDemoDataset()</code>
-              {" → "}
-              <code className="rounded bg-amber-100 px-1 font-mono text-xs">/lib/metrics</code>. Live Shopify, Supabase
-              materialized views, and CSV imports are <span className="font-medium">not</span> connected on these MVP routes.
+            <p className="mt-2 border-t border-white/10 pt-2 text-xs leading-relaxed text-zinc-400">
+              Deterministic metric engine <span className={codeChip}>getDemoDataset()</span> →{" "}
+              <span className={codeChip}>/lib/metrics</span>
+              . Live Shopify, warehouse materializations, Supabase KPI paths, and CSV imports are intentionally{" "}
+              <span className="font-medium text-zinc-200">inactive</span> on these MVP routes.
             </p>
           </div>
         ) : null}
 
         {bannerKind === "insights" ? (
-          <>
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-950">
-              {insightsDemoNotice()}
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800">
-              <strong className="font-semibold">Rules-based engine.</strong> {rulesEngineBody}
-            </div>
-          </>
+          <div className="rounded-lg border border-zinc-700/90 bg-gradient-to-br from-zinc-950 via-zinc-950 to-zinc-900 px-4 py-3.5 shadow-sm ring-1 ring-black/30">
+            <p className="text-sm leading-relaxed text-zinc-100">{insightsDemoNotice()}</p>
+            <p className="mt-2 border-t border-white/10 pt-2 text-xs leading-relaxed text-zinc-400">
+              <span className="font-semibold text-zinc-200">Rules-based diagnostic engine.</span> {rulesEngineBody}
+            </p>
+          </div>
         ) : null}
 
         {bannerKind === "data" ? (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-950">
-            {dataModeBannerSentence()}
+          <div className="rounded-lg border border-zinc-700/90 bg-gradient-to-br from-zinc-950 via-zinc-950 to-zinc-900 px-4 py-3.5 shadow-sm ring-1 ring-black/30">
+            <p className="text-sm leading-relaxed text-zinc-100">{dataModeBannerSentence()}</p>
           </div>
         ) : null}
 
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{copy.title}</h1>
-          <p className="mt-2 max-w-3xl text-gray-600">{copy.hook}</p>
+          <h1 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">{copy.title}</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">{copy.hook}</p>
         </div>
 
-        {quickLinks.length > 0 ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Quick links</span>
-            {quickLinks.map((q) => (
-              <Link
-                key={q.href}
-                href={q.href}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-blue-700 shadow-sm hover:bg-gray-50"
-              >
-                {q.label}
-              </Link>
-            ))}
-          </div>
-        ) : null}
-
-        <section className="grid gap-6 rounded-xl border border-gray-200 bg-gray-50/80 p-5 md:grid-cols-3">
-          <div>
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500">What you&apos;re looking at</h2>
-            <p className="mt-2 text-sm leading-relaxed text-gray-800">{copy.lookingAt}</p>
-          </div>
-          <div>
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Why it matters</h2>
-            <p className="mt-2 text-sm leading-relaxed text-gray-800">{copy.matters}</p>
-          </div>
-          <div>
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500">What to do next</h2>
-            <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-gray-800">
+        <section className="grid gap-0 overflow-hidden rounded-lg border border-zinc-200/90 bg-white shadow-sm sm:grid-cols-3 sm:divide-x sm:divide-zinc-100">
+          <ContextColumn title="What you&apos;re looking at" body={copy.lookingAt} />
+          <ContextColumn title="Why it matters" body={copy.matters} />
+          <div className="bg-white px-4 py-3.5 sm:px-5">
+            <h2 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">What to do next</h2>
+            <ul className="mt-2 list-inside list-disc space-y-1.5 text-sm leading-relaxed text-zinc-800">
               {copy.nextSteps.map((step) => (
-                <li key={step} className="text-sm leading-relaxed">
-                  {step}
-                </li>
+                <li key={step}>{step}</li>
               ))}
             </ul>
           </div>
@@ -143,6 +113,15 @@ export function CommandCentrePageFrame({
 
         <div className="space-y-8">{children}</div>
       </div>
+    </div>
+  );
+}
+
+function ContextColumn({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="bg-white px-4 py-3.5 sm:px-5">
+      <h2 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">{title}</h2>
+      <p className="mt-2 text-sm leading-relaxed text-zinc-800">{body}</p>
     </div>
   );
 }

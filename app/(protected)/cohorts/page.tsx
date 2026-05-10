@@ -27,43 +27,43 @@ function RateCell({ value }: { value: number | null }) {
 
 function CohortEconomicsTable({ rows }: { rows: CohortMonthTableRowView[] }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+    <div className="overflow-x-auto rounded-xl border border-zinc-200/90 bg-white shadow-sm ring-1 ring-black/[0.02]">
       <table className="min-w-[960px] w-full border-collapse text-sm">
-        <thead className="sticky top-0 z-10 border-b border-gray-200 bg-gray-50">
-          <tr className="text-left text-xs font-semibold uppercase tracking-wide text-gray-700">
-            <th className="px-4 py-3">Cohort (first-order month)</th>
-            <th className="px-4 py-3 text-right">Cohort size</th>
-            <th className="px-4 py-3 text-right">Orders</th>
-            <th className="px-4 py-3 text-right">Net revenue</th>
-            <th className="px-4 py-3 text-right">Contribution</th>
-            <th className="px-4 py-3 text-right">Latest avg revenue LTV</th>
-            <th className="px-4 py-3 text-right">Latest avg contribution LTV</th>
-            <th className="px-4 py-3 text-right">Month +1 active</th>
-            <th className="px-4 py-3 text-right">Month +2 active</th>
-            <th className="px-4 py-3 text-right">Month +3 active</th>
+        <thead className="sticky top-0 z-10 border-b border-zinc-200 bg-zinc-50/90">
+          <tr className="text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">
+            <th className="px-5 py-3.5">Cohort (first-order month)</th>
+            <th className="px-5 py-3.5 text-right">Cohort size</th>
+            <th className="px-5 py-3.5 text-right">Orders</th>
+            <th className="px-5 py-3.5 text-right">Net revenue</th>
+            <th className="px-5 py-3.5 text-right">Contribution</th>
+            <th className="px-5 py-3.5 text-right">Latest avg revenue LTV</th>
+            <th className="px-5 py-3.5 text-right">Latest avg contribution LTV</th>
+            <th className="px-5 py-3.5 text-right">Month +1 active</th>
+            <th className="px-5 py-3.5 text-right">Month +2 active</th>
+            <th className="px-5 py-3.5 text-right">Month +3 active</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.cohortPeriod} className="border-b border-gray-100 hover:bg-gray-50/70">
-              <td className="px-4 py-2.5 font-medium text-gray-900 tabular-nums">{row.cohortPeriod}</td>
-              <td className="px-4 py-2.5 text-right tabular-nums text-gray-800">{row.cohortSize.toLocaleString()}</td>
-              <td className="px-4 py-2.5 text-right tabular-nums text-gray-800">{row.totalOrders.toLocaleString()}</td>
-              <td className="px-4 py-2.5 text-right tabular-nums text-gray-800">{formatMoney(row.netRevenue)}</td>
-              <td className="px-4 py-2.5 text-right tabular-nums text-gray-800">{formatMoney(row.contribution)}</td>
-              <td className="px-4 py-2.5 text-right tabular-nums text-gray-800">
+            <tr key={row.cohortPeriod} className="border-b border-zinc-100 hover:bg-zinc-50/80">
+              <td className="px-5 py-3 font-medium text-zinc-900 tabular-nums">{row.cohortPeriod}</td>
+              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">{row.cohortSize.toLocaleString()}</td>
+              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">{row.totalOrders.toLocaleString()}</td>
+              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">{formatMoney(row.netRevenue)}</td>
+              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">{formatMoney(row.contribution)}</td>
+              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">
                 {formatMoney(row.latestAvgNetRevenueLtv)}
               </td>
-              <td className="px-4 py-2.5 text-right tabular-nums text-gray-800">
+              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">
                 {row.latestAvgContributionLtv != null ? formatMoney(row.latestAvgContributionLtv) : "—"}
               </td>
-              <td className="px-4 py-2.5 text-right text-gray-800">
+              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">
                 <RateCell value={row.nextMonthActiveRate} />
               </td>
-              <td className="px-4 py-2.5 text-right text-gray-800">
+              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">
                 <RateCell value={row.monthPlusTwoActiveRate} />
               </td>
-              <td className="px-4 py-2.5 text-right text-gray-800">
+              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">
                 <RateCell value={row.monthPlusThreeActiveRate} />
               </td>
             </tr>
@@ -94,8 +94,8 @@ export default function CohortsPage() {
         </div>
 
         <div>
-          <h2 className="mb-2 text-lg font-semibold text-gray-900">Cohort table</h2>
-          <p className="mb-4 text-sm text-gray-600">
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-[0.1em] text-zinc-500">Cohort table</h2>
+          <p className="mb-4 text-sm leading-relaxed text-zinc-700">
             Net revenue and contribution roll up orders from cohort members. Latest average revenue LTV is cumulative{" "}
             <strong>average net revenue per cohort customer</strong> through each cohort&apos;s latest observed month on the staircase.
             Month +n active columns are cohort customers with ≥1 order in acquisition month&nbsp;+&nbsp;n (calendar UTC).
@@ -116,10 +116,10 @@ function Kpi({
   sub?: string;
 }) {
   return (
-    <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{title}</p>
-      <p className="mt-2 text-xl font-semibold tabular-nums text-gray-900">{value}</p>
-      {sub ? <p className="mt-1 text-xs text-gray-600">{sub}</p> : null}
+    <div className="rounded-lg border border-zinc-200/90 bg-white p-4 shadow-sm ring-1 ring-black/[0.02]">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">{title}</p>
+      <p className="mt-2 text-xl font-semibold tabular-nums text-zinc-900">{value}</p>
+      {sub ? <p className="mt-1 text-xs text-zinc-600">{sub}</p> : null}
     </div>
   );
 }

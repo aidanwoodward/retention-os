@@ -34,7 +34,7 @@ interface RevenueCohortsImpactInput {
 export function computeRevenueCohortsImpactRanges(
   input: RevenueCohortsImpactInput
 ): ImpactRange[] {
-  const { cohorts, totalRevenue, totalCustomers } = input;
+  const { cohorts, totalCustomers } = input;
 
   const MIN_COHORTS = 4; // Need at least 4 for clean comparison
   const MIN_CUSTOMERS = 100;

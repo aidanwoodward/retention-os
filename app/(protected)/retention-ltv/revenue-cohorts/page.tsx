@@ -21,7 +21,7 @@ import { FilterValue } from "@/lib/filters/types";
 // TODO: Re-add SimpleTrendChart when needed
 import { EnhancedTrendChart } from "@/components/charts/EnhancedTrendChart";
 import { Diagnosis } from "@/components/diagnosis/Diagnosis";
-import { diagnoseRevenueCohorts, diagnoseRevenueCohortsEnhanced } from "@/lib/diagnosis/revenue-cohorts";
+import { diagnoseRevenueCohortsEnhanced } from "@/lib/diagnosis/revenue-cohorts";
 import { DecisionAxes } from "@/components/diagnosis/DecisionAxes";
 import { getDecisionAxesForDiagnosis } from "@/lib/diagnosis/decision-axes";
 import { ImpactRanges } from "@/components/diagnosis/ImpactRanges";
@@ -273,38 +273,6 @@ function RevenueCohortsContent() {
   };
 
   /**
-   * CANONICAL DEFINITION: Previous Period Key Calculation
-   * 
-   * Determines the previous period key for a given period key based on viewMode.
-   * Used for comparing current period to equivalent period from previous year.
-   * 
-   * Rules:
-   * - Annual: Subtract 1 year (e.g., "2025" → "2024")
-   * - Quarterly: Previous quarter (e.g., "2025-Q1" → "2024-Q4", "2025-Q2" → "2025-Q1")
-   * - Monthly: Previous month (e.g., "2025-01" → "2024-12", "2025-02" → "2025-01")
-   */
-  const getPreviousPeriodKey = React.useCallback((periodKey: string, mode: typeof viewMode): string => {
-    if (mode === 'annual') {
-      const year = parseInt(periodKey);
-      return (year - 1).toString();
-    } else if (mode === 'quarterly') {
-      const [year, quarter] = periodKey.split('-Q');
-      const yearNum = parseInt(year);
-      const quarterNum = parseInt(quarter);
-      if (quarterNum === 1) {
-        return `${yearNum - 1}-Q4`;
-      } else {
-        return `${yearNum}-Q${quarterNum - 1}`;
-      }
-    } else {
-      // Monthly - subtract one month
-      const date = new Date(periodKey);
-      date.setMonth(date.getMonth() - 1);
-      return date.toISOString().substring(0, 7);
-    }
-  }, []);
-
-  /**
    * Get the same period from the previous year (lifecycle-aligned comparison)
    * - Monthly: compare month t to month t-12 (same month, previous year)
    * - Quarterly: compare quarter t to quarter t-4 (same quarter, previous year)
@@ -433,10 +401,7 @@ function RevenueCohortsContent() {
    * Current vs Previous Logic:
    * - Current: Revenue/customers in this time period (aggregated across all cohorts)
    * - Previous: Revenue/customers in equivalent period from previous year
-   *   - Uses getPreviousPeriodKey to determine previous period:
-   *     - Annual: year - 1
-   *     - Quarterly: Previous quarter (Q1 → previous year Q4, etc.)
-   *     - Monthly: Previous month
+   *   - Previous calendar period (prior month/quarter/year) when aligned comparisons need it.
    * 
    * Period Key Format:
    * - Annual: "2025" (year only)
@@ -852,7 +817,7 @@ function RevenueCohortsContent() {
    * 
    * 4. For cohortType=monthly/quarterly:
    *    - Periods match the cohort type
-   *    - Previous period uses getPreviousPeriodKey logic (previous month/quarter)
+   *    - Previous period uses the obvious prior calendar month/quarter/year for the aggregation mode.
    *    - Incomplete periods: Current period included if it has data
    * 
    * 5. Incomplete Cohorts Handling:

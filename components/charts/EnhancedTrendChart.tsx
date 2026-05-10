@@ -63,10 +63,7 @@ export function EnhancedTrendChart({
     };
   });
   
-  // Filtered version for rendering (excludes nulls)
-  const previousPoints = previousPointsWithNulls.filter((point): point is NonNullable<typeof point> => point !== null);
-
-  // Create area paths
+  // Filtered version for rendering (non-null segments only — path builder uses previousPointsWithNulls)
   const currentAreaPath = points.length > 0
     ? `M 0 ${height} L ${points.map(p => `${p.x} ${p.y}`).join(" L ")} L 100 ${height} Z`
     : "";
@@ -112,7 +109,7 @@ export function EnhancedTrendChart({
     const pathSegments: string[] = [];
     let currentSegment: Array<{ x: number; y: number }> = [];
     
-    previousPointsWithNulls.forEach((point, index) => {
+    previousPointsWithNulls.forEach((point, _idx) => {
       if (point === null) {
         if (currentSegment.length > 0) {
           // Close current segment
@@ -279,8 +276,6 @@ export function EnhancedTrendChart({
           return `Q${quarter} ${String(year - 1).substring(2)}`;
         }
       } else if (cohortType === 'monthly') {
-        // Format: "Jan 24" -> "Jan 23"
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const match = currentLabel.match(/(\w+)\s+(\d+)/);
         if (match) {
           const month = match[1];

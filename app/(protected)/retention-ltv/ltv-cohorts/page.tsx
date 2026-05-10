@@ -7,7 +7,7 @@ import { retentionCurvesFilters, retentionCurvesSearch } from "@/lib/filters/con
 import { AIAnalysis } from "@/components/ai/AIAnalysis";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Diagnosis } from "@/components/diagnosis/Diagnosis";
-import { diagnoseLTVCohorts, diagnoseLTVCohortsEnhanced } from "@/lib/diagnosis/ltv-curves";
+import { diagnoseLTVCohortsEnhanced } from "@/lib/diagnosis/ltv-curves";
 import { SeverityIndicator } from "@/components/diagnosis/SeverityIndicator";
 import { CausalitySection } from "@/components/diagnosis/CausalitySection";
 import { DecisionAxes } from "@/components/diagnosis/DecisionAxes";

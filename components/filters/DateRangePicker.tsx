@@ -105,7 +105,7 @@ export function DateRangePicker({
   }, []);
 
   // Use today as maxDate if not provided (prevent future dates)
-  const effectiveMaxDate = maxDate || today;
+  const _effectiveMaxDate = maxDate || today;
 
   // Normalize incoming value (ISO strings) to Date objects
   const normalizedValue = React.useMemo(() => {

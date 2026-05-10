@@ -7,7 +7,7 @@ import { AIAnalysis } from "@/components/ai/AIAnalysis";
 import { LoadingButton } from "@/components/ui/loading-buttons";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Diagnosis } from "@/components/diagnosis/Diagnosis";
-import { diagnoseRetentionCurves, diagnoseRetentionCurvesEnhanced } from "@/lib/diagnosis/retention-curves";
+import { diagnoseRetentionCurvesEnhanced } from "@/lib/diagnosis/retention-curves";
 import { SeverityIndicator } from "@/components/diagnosis/SeverityIndicator";
 import { CausalitySection } from "@/components/diagnosis/CausalitySection";
 import { DecisionAxes } from "@/components/diagnosis/DecisionAxes";
@@ -695,7 +695,16 @@ function RetentionCurvesContent() {
     }
 
     return curveData.sort((a, b) => a.period - b.period);
-  }, [correctedCohorts, convertPeriodNumber, getPeriodLabel, maxPossiblePeriod, retentionType, isDemoMode]); // Added isDemoMode dependency
+  }, [
+    clampRevenueRetention,
+    convertPeriodNumber,
+    correctedCohorts,
+    filteredCohorts,
+    getPeriodLabel,
+    isDemoMode,
+    maxPossiblePeriod,
+    retentionType,
+  ]);
 
   // Get all unique cohort labels
   const allCohortLabels = React.useMemo(() => {
@@ -887,19 +896,6 @@ function RetentionCurvesContent() {
     hoverDebounceRef.current = setTimeout(() => {
       setActiveCohortKey(null);
     }, 120);
-  }, []);
-
-  // Toggle cohort visibility
-  const toggleCohort = React.useCallback((label: string) => {
-    setShowCohorts((prev) => {
-      const next = new Set(prev);
-      if (next.has(label)) {
-        next.delete(label);
-      } else {
-        next.add(label);
-      }
-      return next;
-    });
   }, []);
 
   // Filtered cohort labels based on search
@@ -1912,7 +1908,14 @@ function RetentionCurvesContent() {
         }
       }
     }
-  }, [retentionCurveData, kpiMetrics.year1Retention, kpiMetrics.year1RevenueRetention, retentionType, year1PeriodNum]);
+  }, [
+    clampRevenueRetention,
+    kpiMetrics.year1Retention,
+    kpiMetrics.year1RevenueRetention,
+    retentionCurveData,
+    retentionType,
+    year1PeriodNum,
+  ]);
 
   // DEBUG STEP 2: DOM inspection - count recharts-curve elements
   React.useEffect(() => {

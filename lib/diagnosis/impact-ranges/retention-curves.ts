@@ -47,7 +47,6 @@ export function computeRetentionCurvesImpactRanges(
   const { cohorts, cohortCurvesData, retentionType } = input;
 
   const MIN_COHORTS = 4; // Need at least 4 for clean comparison
-  const MIN_CUSTOMERS = 100;
 
   if (cohorts.length < MIN_COHORTS || cohortCurvesData.length < 4) {
     return [];

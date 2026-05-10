@@ -7,7 +7,7 @@ import { AIAnalysis } from "@/components/ai/AIAnalysis";
 import { LoadingButton } from "@/components/ui/loading-buttons";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Diagnosis } from "@/components/diagnosis/Diagnosis";
-import { diagnoseRepeatRates, diagnoseRepeatRatesEnhanced } from "@/lib/diagnosis/repeat-rates";
+import { diagnoseRepeatRatesEnhanced } from "@/lib/diagnosis/repeat-rates";
 import { SeverityIndicator } from "@/components/diagnosis/SeverityIndicator";
 import { CausalitySection } from "@/components/diagnosis/CausalitySection";
 import { DecisionAxes } from "@/components/diagnosis/DecisionAxes";

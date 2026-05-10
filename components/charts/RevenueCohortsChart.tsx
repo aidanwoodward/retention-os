@@ -133,19 +133,15 @@ const transformCohortData = (
   // - expanded: show all cohorts individually (including 2019-Qx), NEVER show bucket
   const cutoffYear = 2020;
   let olderCohorts: string[] = [];
-  let individualCohorts: string[] = [];
   let olderCohortsLabel: string | null = null;
   
   if (historyMode === 'expanded') {
-    // Expanded mode: show all cohorts individually (including 2019-Qx), NEVER show bucket
-    individualCohorts = sortedLabels;
     olderCohorts = [];
     olderCohortsLabel = null;
   } else {
     // Summarised mode: group ALL cohorts with year <= 2019 into "≤ 2019" bucket
     // Ensure no overlap: cohorts <= 2019 go ONLY to bucket, cohorts >= 2020 go to individual list
     olderCohorts = sortedLabels.filter(label => isPre2020Cohort(label, aggregationMode));
-    individualCohorts = sortedLabels.filter(label => !isPre2020Cohort(label, aggregationMode));
     
     // Only create "≤ 2019" label if there are pre-2020 cohorts AND it's selected in showCohorts
     if (olderCohorts.length > 0 && showCohorts.has(`≤ ${cutoffYear - 1}`)) {

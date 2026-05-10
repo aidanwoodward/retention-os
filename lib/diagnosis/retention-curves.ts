@@ -59,7 +59,6 @@ export function diagnoseRetentionCurves(input: RetentionCurvesDiagnosisInput): s
 
   const MIN_COHORTS = 3;
   const MIN_PERIODS = 3;
-  const MIN_CUSTOMERS = 100;
 
   if (cohorts.length < MIN_COHORTS || retentionCurveData.length < MIN_PERIODS) {
     return null;

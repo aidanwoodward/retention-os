@@ -32,7 +32,7 @@ interface RepeatRatesDiagnosisInput {
  * - No prescriptive language, forecasts, or evaluative wording
  */
 export function diagnoseRepeatRates(input: RepeatRatesDiagnosisInput): string | null {
-  const { repeatData, secondPurchaseRate, medianPurchases, customersWith3PlusPurchases, totalCustomers } = input;
+  const { repeatData, secondPurchaseRate, medianPurchases, totalCustomers } = input;
 
   const MIN_CUSTOMERS = 100;
   const MIN_DATA_POINTS = 3;
@@ -162,7 +162,7 @@ export function diagnoseRepeatRatesEnhanced(input: RepeatRatesDiagnosisInput): E
     };
   }
 
-  const { repeatData, secondPurchaseRate, medianPurchases, totalCustomers } = input;
+  const { repeatData, secondPurchaseRate, medianPurchases } = input;
 
   let severity: SeverityInfo | null = null;
   const causalityFactors: CausalityFactor[] = [];

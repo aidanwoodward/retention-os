@@ -1,5 +1,13 @@
-import ReportsClient from "./ReportsClient"
+import ReportsClient from "./ReportsClient";
 
-export default function ReportsPage({ searchParams }: { searchParams?: Record<string, string | string[] | undefined> }) {
-  return <ReportsClient initialSearchParams={searchParams} />
+type ReportsSearchParams = Record<string, string | string[] | undefined>;
+
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<ReportsSearchParams>;
+}) {
+  const resolved =
+    searchParams !== undefined ? await searchParams : undefined;
+  return <ReportsClient initialSearchParams={resolved} />;
 }

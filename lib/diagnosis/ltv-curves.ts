@@ -60,7 +60,6 @@ export function diagnoseLTVCohorts(input: LTVDiagnosisInput): string | null {
 
   const MIN_COHORTS = 3;
   const MIN_BUCKETS = 2;
-  const MIN_CUSTOMERS = 100;
 
   if (cohorts.length < MIN_COHORTS || aggregatedLTVData.length < MIN_BUCKETS) {
     return null;

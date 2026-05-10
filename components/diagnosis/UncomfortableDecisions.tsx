@@ -75,7 +75,7 @@ export function UncomfortableDecisions({
       </div>
       
       <div className="space-y-4 mt-6">
-        {decisions.map((decision, index) => {
+        {decisions.map((decision) => {
           const CategoryIcon = categoryIcons[decision.category];
           
           return (

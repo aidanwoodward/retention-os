@@ -38,6 +38,8 @@ const data = {
         { title: "Cohorts", url: "/cohorts" },
         { title: "Retention", url: "/retention" },
         { title: "LTV", url: "/ltv" },
+        { title: "Insights", url: "/insights" },
+        { title: "Data", url: "/data" },
       ],
     },
     {
@@ -45,8 +47,6 @@ const data = {
       url: "#",
       icon: Target,
       items: [
-        { title: "Insights", url: "/insights" },
-        { title: "Data", url: "/data" },
         { title: "Products", url: "/products" },
         { title: "Acquisition", url: "/acquisition" },
         { title: "Scenarios", url: "/scenarios" },

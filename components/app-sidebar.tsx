@@ -13,6 +13,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { MVP_COMMAND_CENTRE_NAME, RETENTIONOS_MARK } from "@/lib/mvp/cohesion"
 
 const data = {
   user: {
@@ -22,9 +23,9 @@ const data = {
   },
   teams: [
     {
-      name: "Retention OS",
+      name: RETENTIONOS_MARK,
       logo: Sparkles,
-      plan: "MVP",
+      tagline: MVP_COMMAND_CENTRE_NAME,
     },
   ],
   navMain: [
@@ -65,7 +66,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <TeamSwitcher teams={data.teams} singleTeamStatic />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />

@@ -97,45 +97,57 @@ export default function LTVPage() {
 
   return (
     <CommandCentrePageFrame routeId="ltv" maxWidth="1600" bannerKind="metrics">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Kpi title="Cohort months" value={String(summary.totalCohorts)} />
-          <Kpi title="Customers in demo" value={summary.totalCustomers.toLocaleString()} />
-          <Kpi
-            title="Avg terminal net revenue LTV"
-            sub="Mean of cohort terminal staircase values"
-            value={formatMoney(summary.avgTerminalNetRevenueLtvAcrossCohorts)}
-          />
-          <Kpi
-            title="Avg terminal contribution LTV"
-            sub="Where margin model applies"
-            value={formatMoney(summary.avgTerminalContributionLtvAcrossCohorts)}
-          />
-          <Kpi
-            title="Strongest net revenue LTV cohort"
-            value={summary.bestNetRevenueLtvCohort ? summary.bestNetRevenueLtvCohort.cohortPeriod : "—"}
-            sub={
-              summary.bestNetRevenueLtvCohort
-                ? formatMoney(summary.bestNetRevenueLtvCohort.terminalNetRevenueLtv)
-                : undefined
-            }
-          />
-          <Kpi
-            title="Weakest net revenue LTV cohort"
-            value={summary.weakestNetRevenueLtvCohort ? summary.weakestNetRevenueLtvCohort.cohortPeriod : "—"}
-            sub={
-              summary.weakestNetRevenueLtvCohort
-                ? formatMoney(summary.weakestNetRevenueLtvCohort.terminalNetRevenueLtv)
-                : undefined
-            }
-          />
-          <Kpi title="All-time repeat purchase rate" sub="Customers with 2+ orders" value={formatPct(summary.repeatPurchaseRate)} />
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Staircase tails & cohort quality</h2>
+            <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <Kpi
+                title="Avg terminal net revenue LTV"
+                sub="Mean across cohort staircase terminals"
+                value={formatMoney(summary.avgTerminalNetRevenueLtvAcrossCohorts)}
+              />
+              <Kpi
+                title="Avg terminal contribution LTV"
+                sub="Where margin model applies"
+                value={formatMoney(summary.avgTerminalContributionLtvAcrossCohorts)}
+              />
+              <Kpi
+                title="Strongest net revenue LTV cohort"
+                value={summary.bestNetRevenueLtvCohort ? summary.bestNetRevenueLtvCohort.cohortPeriod : "—"}
+                sub={
+                  summary.bestNetRevenueLtvCohort
+                    ? formatMoney(summary.bestNetRevenueLtvCohort.terminalNetRevenueLtv)
+                    : undefined
+                }
+              />
+              <Kpi
+                title="Weakest net revenue LTV cohort"
+                value={summary.weakestNetRevenueLtvCohort ? summary.weakestNetRevenueLtvCohort.cohortPeriod : "—"}
+                sub={
+                  summary.weakestNetRevenueLtvCohort
+                    ? formatMoney(summary.weakestNetRevenueLtvCohort.terminalNetRevenueLtv)
+                    : undefined
+                }
+              />
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Portfolio context</h2>
+            <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <Kpi title="First-order cohort months" value={String(summary.totalCohorts)} />
+              <Kpi title="Customers in demo" value={summary.totalCustomers.toLocaleString()} />
+              <Kpi title="All-time repeat purchase rate" sub="Customers with ≥2 orders" value={formatPct(summary.repeatPurchaseRate)} />
+            </div>
+          </div>
         </div>
 
         <div>
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-[0.1em] text-zinc-500">Cohort LTV table</h2>
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-[0.1em] text-zinc-500">Cohort LTV ladder table</h2>
           <p className="mb-4 text-sm leading-relaxed text-zinc-700">
-            Each column is cumulative through the end of that cohort age (calendar month offsets from acquisition month, UTC).
-            Terminal values are through the latest month observed for that cohort in the demo window.
+            Each column is cumulative through that cohort-age offset (calendar month from acquisition month, UTC). Terminal values trace
+            the latest observed staircase month in the demo window — use strongest vs weakest rows above when judging acquisition-quality
+            variance alongside net revenue versus contribution ladders.
           </p>
           <CohortLTVTable rows={cohortRows} />
         </div>

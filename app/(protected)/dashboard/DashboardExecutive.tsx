@@ -356,7 +356,7 @@ function NavCard({ href, title, description }: { href: string; title: string; de
     >
       <p className="text-sm font-semibold text-zinc-900">{title}</p>
       <p className="mt-1.5 text-xs leading-relaxed text-zinc-600">{description}</p>
-      <p className="mt-3 text-xs font-medium text-zinc-700 group-hover:text-zinc-900">Continue →</p>
+      <p className="mt-3 text-xs font-medium text-zinc-700 group-hover:text-zinc-900">Open route →</p>
     </Link>
   );
 }

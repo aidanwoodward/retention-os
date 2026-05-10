@@ -16,8 +16,14 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { FloatingFeedbackButton } from "@/components/ui/floating-feedback-button"
+import { MVP_COMMAND_CENTRE_NAME, RETENTIONOS_MARK } from "@/lib/mvp/cohesion"
 import { usePathname } from "next/navigation"
 import { DemoModeProvider } from "@/lib/demo-mode/context"
+
+const PRODUCT_CRUMB = { label: RETENTIONOS_MARK, path: "/dashboard" } as const
+const COMMAND_CENTRE_CRUMB = { label: MVP_COMMAND_CENTRE_NAME, path: "/dashboard" } as const
+
+const MVP_ROUTE_SEGMENTS = new Set(["dashboard", "cohorts", "retention", "ltv", "insights", "data"])
 
 export default function ProtectedLayout({
   children,
@@ -26,53 +32,58 @@ export default function ProtectedLayout({
 }) {
   const pathname = usePathname();
 
-  // Generate breadcrumbs from pathname
   const getBreadcrumbs = () => {
-    const segments = pathname.split('/').filter(Boolean)
-
-    if (pathname === '/dashboard') {
-      return [{ label: 'Retention OS', path: '/dashboard' }, { label: 'Dashboard', path: '/dashboard' }]
-    }
-
-    const breadcrumbs = [{ label: 'Retention OS', path: '/dashboard' }]
-
-    if (segments.length === 0) {
-      return breadcrumbs
-    }
+    const segments = pathname.split("/").filter(Boolean)
 
     const moduleLabels: Record<string, string> = {
-      dashboard: 'Dashboard',
-      cohorts: 'Cohorts',
-      retention: 'Retention',
-      ltv: 'LTV',
-      insights: 'Insights',
-      data: 'Data',
-      products: 'Products',
-      acquisition: 'Acquisition',
-      scenarios: 'Scenarios',
-      settings: 'Settings',
+      dashboard: "Dashboard",
+      cohorts: "Cohorts",
+      retention: "Retention",
+      ltv: "LTV",
+      insights: "Insights",
+      data: "Data",
+      products: "Products",
+      acquisition: "Acquisition",
+      scenarios: "Scenarios",
+      settings: "Settings",
     }
 
     const pageLabels: Record<string, string> = {
-      integrations: 'Integrations',
-      feedback: 'Support & Feedback',
+      integrations: "Integrations",
+      feedback: "Support & Feedback",
     }
 
-    let currentPath = ''
+    const inCommandCentreSpine = segments.length > 0 && MVP_ROUTE_SEGMENTS.has(segments[0] ?? "")
+
+    const tail: { label: string; path: string }[] = []
+    let currentPath = ""
+
     segments.forEach((segment) => {
       currentPath += `/${segment}`
 
       if (moduleLabels[segment]) {
-        breadcrumbs.push({ label: moduleLabels[segment], path: currentPath })
+        tail.push({ label: moduleLabels[segment], path: currentPath })
       } else if (pageLabels[segment]) {
-        breadcrumbs.push({ label: pageLabels[segment], path: currentPath })
+        tail.push({ label: pageLabels[segment], path: currentPath })
       } else {
-        const label = segment.split('-').map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(' ')
-        breadcrumbs.push({ label, path: currentPath })
+        const label = segment.split("-").map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(" ")
+        tail.push({ label, path: currentPath })
       }
     })
 
-    return breadcrumbs
+    if (pathname === "/dashboard") {
+      return [
+        PRODUCT_CRUMB,
+        COMMAND_CENTRE_CRUMB,
+        { label: "Dashboard", path: "/dashboard" },
+      ]
+    }
+
+    if (inCommandCentreSpine) {
+      return [PRODUCT_CRUMB, COMMAND_CENTRE_CRUMB, ...tail]
+    }
+
+    return [PRODUCT_CRUMB, ...tail]
   }
 
   const breadcrumbs = getBreadcrumbs();
@@ -90,9 +101,9 @@ export default function ProtectedLayout({
               className="mr-2 data-[orientation=vertical]:h-4"
             />
             <Breadcrumb>
-              <BreadcrumbList>
+              <BreadcrumbList className="flex-wrap">
                 {breadcrumbs.map((crumb, index) => (
-                  <div key={crumb.path} className="flex items-center gap-2">
+                  <div key={`${crumb.path}-${crumb.label}`} className="flex items-center gap-2">
                     <BreadcrumbItem>
                       {index === breadcrumbs.length - 1 ? (
                         <BreadcrumbPage>{crumb.label}</BreadcrumbPage>

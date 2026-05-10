@@ -57,7 +57,7 @@ export function CommandCentrePageFrame({
             <p className="mt-1 text-xs text-zinc-600">
               <span className="text-zinc-400">View</span>{" "}
               <span className="font-semibold text-zinc-900">{activeLabel}</span>
-              <span className="text-zinc-400"> · use the sidebar to move between workspaces</span>
+              <span className="text-zinc-400"> · primary navigation is in the sidebar</span>
             </p>
           </div>
         </header>

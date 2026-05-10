@@ -3,6 +3,9 @@ import { DEMO_BRAND_NAME, DEMO_BRAND_TAGLINE } from "../demo";
 /** Product framing — used in navigation chrome and onboarding copy. */
 export const MVP_COMMAND_CENTRE_NAME = "Revenue Durability Command Centre" as const;
 
+/** One-word product mark for breadcrumbs, metadata, and sidebar (no space). */
+export const RETENTIONOS_MARK = "RetentionOS" as const;
+
 export const DEMO_DATASET_LABEL = "Demo dataset" as const;
 
 export type MvpRouteId = "dashboard" | "cohorts" | "retention" | "ltv" | "insights" | "data";

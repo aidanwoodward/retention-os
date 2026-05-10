@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CsvImportPreview } from "@/components/data/CsvImportPreview";
 import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
 import { DEMO_WINDOW_END } from "@/lib/demo/demo-config";
 import { buildDataPageViewModel } from "@/lib/metrics";
@@ -52,8 +53,23 @@ export default function DataPage() {
             <span className="font-semibold text-zinc-900">Metric engine status:</span> active on{" "}
             <span className="font-mono text-[11px]">getDemoDataset()</span> → <span className="font-mono text-[11px]">/lib/metrics</span>.
             <span className="font-semibold text-zinc-900"> Live Shopify / Supabase adapters:</span> off for these routes.{" "}
-            <span className="font-semibold text-zinc-900">CSV upload / connector UI:</span> coming next (not implemented here).
+            <span className="font-semibold text-zinc-900">CSV onboarding:</span> local preview below — does not replace demo data on other routes yet.
           </p>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-sm ring-1 ring-black/[0.02] sm:p-6">
+        <div className="border-b border-zinc-100 pb-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Upload preview — coming ingestion path</p>
+          <h2 className="mt-1 text-lg font-semibold text-zinc-900">CSV onboarding preview</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">
+            Validate a combined order + line-item export against the Sprint 3A contract in{" "}
+            <code className="rounded-md border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[11px]">/lib/import</code>. This
+            remains a trust step: see counts, errors, and warnings before any future persistence or metric-engine handoff.
+          </p>
+        </div>
+        <div className="pt-5">
+          <CsvImportPreview />
         </div>
       </section>
 

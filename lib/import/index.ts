@@ -1,8 +1,8 @@
 /**
- * Canonical CSV onboarding for RetentionOS (Sprint 3A).
+ * Canonical CSV onboarding for RetentionOS (Sprint 3A+).
  *
- * **Not wired to UI, APIs, or persistence.** Use these helpers when implementing upload flows:
- * `importCombinedOrderCsvFromText` → `Customer[]` / `Order[]` / `Product[]` compatible with `/lib/metrics`.
+ * `importCombinedOrderCsvFromText` produces `Customer[]` / `Order[]` / `Product[]` compatible with `/lib/metrics`.
+ * `buildImportedCsvMetricPreview` runs those shapes through the metric engine for **UI preview only** (no persistence).
  */
 
 export type {
@@ -29,3 +29,5 @@ export {
   parseCsvTextToMatrix,
   type ParseCombinedCsvTextResult,
 } from "./normalise-orders";
+
+export { buildImportedCsvMetricPreview, type ImportedCsvMetricPreview } from "./metric-preview";

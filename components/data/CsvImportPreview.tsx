@@ -1,7 +1,11 @@
 "use client";
 
-import { useCallback, useId, useRef, useState } from "react";
-import { importCombinedOrderCsvFromText, type CombineOrderCsvImportResult } from "@/lib/import";
+import { useCallback, useId, useMemo, useRef, useState } from "react";
+import {
+  buildImportedCsvMetricPreview,
+  importCombinedOrderCsvFromText,
+  type CombineOrderCsvImportResult,
+} from "@/lib/import";
 
 /**
  * Local-only CSV validation preview for the combined order + line-item contract (`/lib/import`).
@@ -15,6 +19,21 @@ function formatIsoDate(iso: string | undefined): string {
   } catch {
     return iso;
   }
+}
+
+function formatPct(rate: number | null | undefined, digits = 1): string {
+  if (rate == null || Number.isNaN(rate)) return "—";
+  return `${(rate * 100).toFixed(digits)}%`;
+}
+
+function formatMoney(amount: number | null | undefined): string {
+  if (amount == null || Number.isNaN(amount)) return "—";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
 }
 
 export function CsvImportPreview() {
@@ -58,6 +77,13 @@ export function CsvImportPreview() {
   const blocked = result != null && result.errors.length > 0;
   const validPreview = result != null && result.errors.length === 0 && result.summary.rawRowCount > 0;
 
+  const metricPreview = useMemo(() => {
+    if (!result || result.errors.length > 0) return null;
+    if (result.summary.rawRowCount === 0) return null;
+    if (result.customers.length === 0 || result.orders.length === 0) return null;
+    return buildImportedCsvMetricPreview(result.customers, result.orders, result.products);
+  }, [result]);
+
   return (
     <div className="space-y-5">
       <div className="rounded-lg border border-emerald-200/80 bg-emerald-50/40 px-4 py-3 text-sm leading-relaxed text-emerald-950 ring-1 ring-emerald-900/10">
@@ -68,7 +94,11 @@ export function CsvImportPreview() {
             Dashboard, Cohorts, Retention, LTV, and Insights still use{" "}
             <code className="rounded border border-emerald-300/80 bg-white/80 px-1 py-0.5 font-mono text-[11px]">getDemoDataset()</code>.
           </li>
-          <li>Next step is wiring valid imports into a metric-engine preview — not in this sprint.</li>
+          <li>
+            A <strong className="font-semibold">Metric engine preview</strong> below runs valid uploads through{" "}
+            <code className="rounded border border-emerald-300/80 bg-white/80 px-1 py-0.5 font-mono text-[11px]">/lib/metrics</code> — it
+            does not replace the command-centre demo dataset on other routes.
+          </li>
         </ul>
       </div>
 
@@ -187,6 +217,93 @@ export function CsvImportPreview() {
                   </li>
                 ))}
               </ul>
+            </div>
+          ) : null}
+
+          {metricPreview && !blocked ? (
+            <div className="rounded-xl border border-zinc-300/90 bg-gradient-to-b from-zinc-50 to-white px-4 py-4 shadow-sm ring-1 ring-black/[0.03] sm:px-5">
+              <div className="border-b border-zinc-200/80 pb-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Metric engine preview</p>
+                <p className="mt-1 text-sm font-semibold text-zinc-900">
+                  Same calculators as the command centre — your upload only, isolated to this tab
+                </p>
+                <p className="mt-2 text-xs leading-relaxed text-zinc-600">
+                  These numbers come from{" "}
+                  <code className="rounded border border-zinc-200 bg-white px-1 py-0.5 font-mono text-[11px]">calculateCohorts</code>,{" "}
+                  <code className="rounded border border-zinc-200 bg-white px-1 py-0.5 font-mono text-[11px]">calculateRetentionByCohort</code>,{" "}
+                  repeat / first-to-second, and{" "}
+                  <code className="rounded border border-zinc-200 bg-white px-1 py-0.5 font-mono text-[11px]">calculateLTVByCohort</code>. No
+                  demo margin assumptions are applied unless every imported order carries{" "}
+                  <code className="rounded border border-zinc-200 bg-white px-1 py-0.5 font-mono text-[11px]">contribution_margin</code>.
+                </p>
+                <p className="mt-2 text-xs font-medium text-zinc-800">
+                  <span className="text-amber-800">Not live on /dashboard, /cohorts, /retention, /ltv, or /insights</span> — those routes still
+                  read <code className="font-mono text-[11px]">getDemoDataset()</code>.
+                </p>
+              </div>
+
+              <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <SummaryItem label="Customers (preview)" value={String(metricPreview.customerCount)} />
+                <SummaryItem label="Orders (preview)" value={String(metricPreview.orderCount)} />
+                <SummaryItem label="Products (preview)" value={String(metricPreview.productCount)} />
+                <SummaryItem label="Cohort months" value={String(metricPreview.cohortCount)} />
+                <SummaryItem label="First cohort" value={metricPreview.firstCohort ?? "—"} />
+                <SummaryItem label="Last cohort" value={metricPreview.lastCohort ?? "—"} />
+                <SummaryItem label="Repeat purchase rate" value={formatPct(metricPreview.totalRepeatPurchaseRate)} />
+                <SummaryItem
+                  label="First → 2nd within 90d"
+                  value={formatPct(metricPreview.firstToSecondWithin90DaysRate)}
+                />
+                <SummaryItem
+                  label="Avg days to 2nd order"
+                  value={
+                    metricPreview.averageDaysToSecondOrder != null
+                      ? metricPreview.averageDaysToSecondOrder.toFixed(1)
+                      : "—"
+                  }
+                />
+                <SummaryItem
+                  label="Median days to 2nd order"
+                  value={
+                    metricPreview.medianDaysToSecondOrder != null
+                      ? metricPreview.medianDaysToSecondOrder.toFixed(1)
+                      : "—"
+                  }
+                />
+                <SummaryItem label="Avg Month +1 active" value={formatPct(metricPreview.averageMonth1ActiveRate)} />
+                <SummaryItem label="Avg Month +2 active" value={formatPct(metricPreview.averageMonth2ActiveRate)} />
+                <SummaryItem label="Avg Month +3 active" value={formatPct(metricPreview.averageMonth3ActiveRate)} />
+                <SummaryItem
+                  label="Latest avg net revenue LTV (terminal)"
+                  value={formatMoney(metricPreview.latestAverageNetRevenueLTV)}
+                />
+                <SummaryItem
+                  label="Latest avg contribution LTV"
+                  value={
+                    metricPreview.contributionLTVAvailable
+                      ? formatMoney(metricPreview.latestAverageContributionLTV)
+                      : "—"
+                  }
+                />
+              </dl>
+
+              {!metricPreview.contributionLTVAvailable ? (
+                <p className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50/90 px-3 py-2.5 text-xs leading-relaxed text-zinc-700">
+                  Contribution LTV unavailable — include <span className="font-mono">contribution_margin</span> on every order row or
+                  configure margin assumptions in a future step. This preview never borrows demo fixture margins.
+                </p>
+              ) : null}
+
+              {metricPreview.warnings.length > 0 ? (
+                <div className="mt-4 rounded-lg border border-sky-200/90 bg-sky-50/80 px-3.5 py-3">
+                  <p className="text-xs font-semibold text-sky-950">Engine caveats</p>
+                  <ul className="mt-2 list-inside list-disc space-y-1 text-xs leading-relaxed text-sky-950">
+                    {metricPreview.warnings.map((w) => (
+                      <li key={w}>{w}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </div>
           ) : null}
         </>

@@ -3,6 +3,13 @@
  * "Lumin & River" (DTC skincare + light wellness). Not domain types — wiring only.
  */
 
+/** Display identity for MVP transparency surfaces (`/data`, etc.). */
+export const DEMO_BRAND_NAME = "Lumin & River" as const;
+
+/** Short positioning line for transparency copy — aligns with simulation intent, not audited financials. */
+export const DEMO_BRAND_TAGLINE =
+  "DTC skincare plus light wellness — a deterministic spreadsheet-grade fixture for customer economics demos." as const;
+
 /** Inclusive simulation window for orders (ISO end-of-day UTC). */
 export const DEMO_WINDOW_END = "2025-03-31T23:59:59.000Z";
 

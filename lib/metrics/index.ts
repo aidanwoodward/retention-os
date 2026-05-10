@@ -41,6 +41,8 @@ export {
   type DemoMetricSanityCheckResult,
 } from "./demo-sanity-check";
 
+export { buildDataPageViewModel, type DataPageViewModel, type DataSourceMode } from "./data-view-model";
+
 /**
  * Example wiring (not executed here):
  *

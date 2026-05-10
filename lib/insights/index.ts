@@ -28,3 +28,8 @@ export {
   generateDemoDiagnosticInsights,
   type DiagnosticInsightsBundle,
 } from "./generate-diagnostic-insights";
+
+export {
+  buildInsightsPageViewModel,
+  type InsightsPageViewModel,
+} from "./insights-view-model";

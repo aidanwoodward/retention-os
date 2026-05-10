@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
+import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
 import { buildDashboardExecutiveViewModel } from "@/lib/metrics/dashboard-view-model";
 import type { RevenueDurabilityStatus } from "@/lib/metrics/dashboard-view-model";
 
@@ -47,23 +48,7 @@ export default function DashboardExecutive() {
   const { summary, durability, observations } = vm;
 
   return (
-    <div className="p-6">
-      <div className="mx-auto max-w-6xl space-y-8">
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-          <strong className="font-semibold">Demo dataset.</strong>{" "}
-          This executive view summarises the canonical Lumin &amp; River fixture from{" "}
-          <code className="rounded bg-amber-100 px-1">getDemoDataset()</code> via{" "}
-          <code className="rounded bg-amber-100 px-1">/lib/metrics</code> — not live Shopify totals.
-        </div>
-
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Customer economics overview</h1>
-          <p className="mt-1 text-gray-600">
-            High-level read on cohort scale, repeat depth, calendar-month activity, and cumulative net revenue / contribution LTV
-            ladders before you drill into dedicated diagnostics.
-          </p>
-        </div>
-
+    <CommandCentrePageFrame routeId="dashboard" maxWidth="6xl" bannerKind="metrics">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Kpi title="Customers" value={summary.totalCustomers.toLocaleString()} />
           <Kpi title="Orders" value={summary.totalOrders.toLocaleString()} />
@@ -138,7 +123,17 @@ export default function DashboardExecutive() {
 
         <section>
           <h2 className="mb-3 text-lg font-semibold text-gray-900">Go deeper</h2>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <NavCard
+              href="/insights"
+              title="Diagnostic Insights"
+              description="Rules-based engine: evidence, recommended actions, and metric references from /lib/insights."
+            />
+            <NavCard
+              href="/data"
+              title="Data & sources"
+              description="Fixture counts, canonical objects, and what is not live yet — no fake integrations."
+            />
             <NavCard
               href="/cohorts"
               title="Cohort economics"
@@ -156,8 +151,7 @@ export default function DashboardExecutive() {
             />
           </div>
         </section>
-      </div>
-    </div>
+    </CommandCentrePageFrame>
   );
 }
 

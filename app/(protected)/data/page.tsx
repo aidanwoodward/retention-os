@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
 import { buildDataPageViewModel } from "@/lib/metrics";
 
 function formatPct(fraction: number, digits = 0): string {
@@ -9,30 +10,14 @@ export default function DataPage() {
   const vm = buildDataPageViewModel();
 
   return (
-    <div className="p-6">
-      <div className="mx-auto max-w-4xl space-y-8">
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-          <strong className="font-semibold">Active data mode: Demo dataset.</strong> The MVP surfaces below read the canonical fixture from{" "}
-          <code className="rounded bg-amber-100 px-1">getDemoDataset()</code> through{" "}
-          <code className="rounded bg-amber-100 px-1">/lib/metrics</code>. This page does not connect to Shopify, Supabase-backed
-          materialized views, or CSV uploads — live ingestion is explicitly out of scope for this sprint.
-        </div>
-
-        <header>
-          <h1 className="text-2xl font-bold text-gray-900">Data &amp; sources</h1>
-          <p className="mt-2 text-gray-600">
-            Transparency for operators: what objects power customer economics today, how the demo brand is modeled, and what is intentionally
-            not wired yet.
-          </p>
-        </header>
-
+    <CommandCentrePageFrame routeId="data" maxWidth="4xl" bannerKind="data">
         <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900">Demo brand</h2>
           <p className="mt-2 text-xl font-semibold text-gray-900">{vm.demoBrandName}</p>
           <p className="mt-2 text-sm text-gray-700">{vm.demoBrandTagline}</p>
           <p className="mt-3 text-xs text-gray-500">
             Counts below are regenerated from <code className="rounded bg-gray-100 px-1">runDemoMetricSanityCheck()</code> plus order line
-            rollups — same primitives the metric engine consumes.
+            rollups — same primitives the deterministic metric engine consumes.
           </p>
         </section>
 
@@ -86,7 +71,10 @@ export default function DataPage() {
           </p>
           <ul className="mt-4 space-y-3">
             {vm.enginePoweredRoutes.map((route) => (
-              <li key={route.href} className="flex flex-col rounded-lg border border-gray-100 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <li
+                key={route.href}
+                className="flex flex-col rounded-lg border border-gray-100 p-4 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div>
                   <Link href={route.href} className="font-semibold text-blue-700 hover:underline">
                     {route.label}
@@ -129,17 +117,7 @@ export default function DataPage() {
             ))}
           </ul>
         </section>
-
-        <div className="flex flex-wrap gap-4 pb-8 text-sm">
-          <Link href="/dashboard" className="font-medium text-blue-700 hover:underline">
-            Dashboard
-          </Link>
-          <Link href="/insights" className="font-medium text-blue-700 hover:underline">
-            Diagnostic insights
-          </Link>
-        </div>
-      </div>
-    </div>
+    </CommandCentrePageFrame>
   );
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import Link from "next/link";
+import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
 import { buildCohortsPageViewModel } from "@/lib/metrics/cohort-view-model";
 import type { CohortMonthTableRowView } from "@/lib/metrics/cohort-view-model";
 
@@ -79,31 +79,7 @@ export default function CohortsPage() {
   const { summary, cohortRows } = vm;
 
   return (
-    <div className="p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-          <strong className="font-semibold">Demo dataset.</strong>{" "}
-          These cohorts use the canonical Lumin &amp; River demo from <code className="rounded bg-amber-100 px-1">getDemoDataset()</code>{" "}
-          and the <code className="rounded bg-amber-100 px-1">/lib/metrics</code> engine — not live Shopify/Supabase data.
-        </div>
-
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Cohort economics</h1>
-            <p className="mt-1 text-gray-600">
-              First-order monthly cohorts with net revenue, contribution, and next-month active rates (UTC calendar months).
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href="/dashboard"
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Back to Dashboard
-            </Link>
-          </div>
-        </div>
-
+    <CommandCentrePageFrame routeId="cohorts" maxWidth="7xl" bannerKind="metrics">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <Kpi title="Cohort months" value={String(summary.cohortCount)} />
           <Kpi title="Customers in demo" value={summary.totalCustomers.toLocaleString()} />
@@ -126,8 +102,7 @@ export default function CohortsPage() {
           </p>
           <CohortEconomicsTable rows={cohortRows} />
         </div>
-      </div>
-    </div>
+    </CommandCentrePageFrame>
   );
 }
 

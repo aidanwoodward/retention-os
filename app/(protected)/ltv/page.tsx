@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import Link from "next/link";
+import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
 import { buildLTVPageViewModel } from "@/lib/metrics/ltv-view-model";
 import type { LTVCohortTableRowView } from "@/lib/metrics/ltv-view-model";
 
@@ -96,44 +96,7 @@ export default function LTVPage() {
   const { summary, cohortRows } = vm;
 
   return (
-    <div className="p-6">
-      <div className="mx-auto max-w-[1600px] space-y-6">
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-          <strong className="font-semibold">Demo dataset.</strong>{" "}
-          LTV ladders use the canonical Lumin &amp; River demo from <code className="rounded bg-amber-100 px-1">getDemoDataset()</code>{" "}
-          and <code className="rounded bg-amber-100 px-1">/lib/metrics</code> — not live store data.
-        </div>
-
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">LTV by acquisition cohort</h1>
-            <p className="mt-1 text-gray-600">
-              Cumulative <strong>average net revenue</strong> and <strong>contribution</strong> per customer in each first-order month
-              cohort (gross revenue minus discounts and refunds for the net revenue LTV staircase).
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href="/cohorts"
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Cohort economics
-            </Link>
-            <Link
-              href="/retention"
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Retention
-            </Link>
-            <Link
-              href="/dashboard"
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Dashboard
-            </Link>
-          </div>
-        </div>
-
+    <CommandCentrePageFrame routeId="ltv" maxWidth="1600" bannerKind="metrics">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Kpi title="Cohort months" value={String(summary.totalCohorts)} />
           <Kpi title="Customers in demo" value={summary.totalCustomers.toLocaleString()} />
@@ -176,8 +139,7 @@ export default function LTVPage() {
           </p>
           <CohortLTVTable rows={cohortRows} />
         </div>
-      </div>
-    </div>
+    </CommandCentrePageFrame>
   );
 }
 

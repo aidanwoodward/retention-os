@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
 import { buildInsightsPageViewModel, type RevenueDurabilityStatus } from "@/lib/insights";
 import type { InsightSeverity } from "@/lib/types/insight";
 
@@ -50,31 +51,7 @@ export default function InsightsPage() {
   const vm = buildInsightsPageViewModel();
 
   return (
-    <div className="p-6">
-      <div className="mx-auto max-w-6xl space-y-8">
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-          <strong className="font-semibold">Canonical demo data.</strong> These cards use the Lumin &amp; River fixture from{" "}
-          <code className="rounded bg-amber-100 px-1">getDemoDataset()</code> and the deterministic rules in{" "}
-          <code className="rounded bg-amber-100 px-1">/lib/insights</code> — not live store telemetry. Replace the data
-          adapter later; keep the same engine for operators.
-        </div>
-
-        <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800">
-          <strong className="font-semibold">Rules-based diagnostics only.</strong> Output is produced by transparent
-          thresholds on net revenue LTV, contribution LTV, first-to-second within 90 days, Month +N active rates, and
-          revenue durability posture —{" "}
-          <span className="font-medium">not</span> an LLM or “AI insight” generator.
-        </div>
-
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Diagnostic Insights</h1>
-          <p className="mt-2 max-w-3xl text-gray-600">
-            Customer economics metrics are translated into executive-grade evidence, recommended operator moves, and metric
-            references so you can decide what to investigate next — acquisition-quality variance, repeat depth, reorder
-            timing, and contribution vs net revenue LTV.
-          </p>
-        </div>
-
+    <CommandCentrePageFrame routeId="insights" maxWidth="6xl" bannerKind="insights">
         <section className={`rounded-xl border p-5 ${durabilityShellClass(vm.durabilityStatus)}`}>
           <h2 className="text-lg font-semibold">Revenue durability snapshot</h2>
           <p className="mt-1 text-sm opacity-90">
@@ -148,11 +125,16 @@ export default function InsightsPage() {
 
         <section>
           <h2 className="mb-3 text-lg font-semibold text-gray-900">Explore metrics</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <NavCard
               href="/dashboard"
               title="Dashboard"
-              description="Executive KPIs, revenue durability snapshot, and demo observations."
+              description="Executive KPIs, Revenue durability snapshot, and demo observations."
+            />
+            <NavCard
+              href="/data"
+              title="Data"
+              description="Fixture lineage, canonical objects, and an honest inventory of what is not live yet."
             />
             <NavCard
               href="/cohorts"
@@ -171,8 +153,7 @@ export default function InsightsPage() {
             />
           </div>
         </section>
-      </div>
-    </div>
+    </CommandCentrePageFrame>
   );
 }
 

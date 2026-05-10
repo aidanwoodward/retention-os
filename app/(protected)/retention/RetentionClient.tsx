@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
+import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
 import { buildRetentionPageViewModel } from "@/lib/metrics/retention-view-model";
 import type { RetentionCohortTableRowView } from "@/lib/metrics/retention-view-model";
 
@@ -71,38 +71,7 @@ export default function RetentionClient() {
   const { summary, cohortRows } = vm;
 
   return (
-    <div className="p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-          <strong className="font-semibold">Demo dataset.</strong>{" "}
-          Repeat and calendar-month retention below use the canonical Lumin &amp; River demo from{" "}
-          <code className="rounded bg-amber-100 px-1">getDemoDataset()</code> and{" "}
-          <code className="rounded bg-amber-100 px-1">/lib/metrics</code>, not live store data.
-        </div>
-
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Retention &amp; repeat behaviour</h1>
-            <p className="mt-1 text-gray-600">
-              Portfolio repeat metrics and cohort-level calendar-month active rates (UTC), by first-order month.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href="/cohorts"
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Cohort economics
-            </Link>
-            <Link
-              href="/dashboard"
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Dashboard
-            </Link>
-          </div>
-        </div>
-
+    <CommandCentrePageFrame routeId="retention" maxWidth="7xl" bannerKind="metrics">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Kpi title="Customers in demo" value={summary.totalCustomers.toLocaleString()} />
           <Kpi title="All-time repeat purchase rate" sub="Share with 2+ orders" value={formatPct(summary.allTimeRepeatPurchaseRate)} />
@@ -133,8 +102,7 @@ export default function RetentionClient() {
           </p>
           <RetentionCohortTable rows={cohortRows} />
         </div>
-      </div>
-    </div>
+    </CommandCentrePageFrame>
   );
 }
 

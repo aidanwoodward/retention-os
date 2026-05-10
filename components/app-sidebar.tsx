@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Home, Sparkles, Target, User } from "lucide-react"
+import { Home, Sparkles, User } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
@@ -41,16 +41,6 @@ const data = {
         { title: "LTV", url: "/ltv" },
         { title: "Insights", url: "/insights" },
         { title: "Data", url: "/data" },
-      ],
-    },
-    {
-      title: "Coming next",
-      url: "#",
-      icon: Target,
-      items: [
-        { title: "Products", url: "/products" },
-        { title: "Acquisition", url: "/acquisition" },
-        { title: "Scenarios", url: "/scenarios" },
       ],
     },
     {

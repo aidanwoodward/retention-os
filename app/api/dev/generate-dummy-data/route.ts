@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createServiceDatabaseClient, hashEmail } from "@/lib/database";
 import { getAccountId } from "@/lib/database";
+import { assertDestructiveDevApiAllowed } from "@/lib/mvp/demo-surface-guard";
 
 interface DummyCustomer {
   id: string;
@@ -33,6 +34,9 @@ interface DummyOrder {
 }
 
 export async function POST() {
+  const forbidden = assertDestructiveDevApiAllowed();
+  if (forbidden) return forbidden;
+
   try {
     const cookieStore = await cookies();
     

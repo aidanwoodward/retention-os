@@ -90,6 +90,7 @@ Suggested flow matches how an operator diagnoses: headline → dispersion → pa
 
 **Real today (in this codebase path):**
 
+- **Demo routing guard:** Requests outside the six spine routes (except **Settings** and auth flows) **redirect to `/dashboard`**, legacy analytics URLs map back onto the command centre, and **dummy-data POST APIs return 403 in production** so demos do not surface destructive dev tools.
 - Canonical **demo dataset** and deterministic **metric engine** (`/lib/metrics`).
 - **Cohort economics**, **retention / repeat mechanics**, **LTV ladders** (net revenue and contribution surfaces where margin assumptions apply).
 - **Diagnostic insight engine** — explicit thresholds, deterministic cards, qualitative confidence tied to rule coverage (`/lib/insights`).

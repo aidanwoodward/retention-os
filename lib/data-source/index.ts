@@ -36,3 +36,9 @@ export {
   loadUploadedRetentionOSDataset,
   saveUploadedRetentionOSDataset,
 } from "./browser-session";
+
+export {
+  buildDemoCommandCentreSelection,
+  resolveCommandCentreDatasetSource,
+  type CommandCentreDatasetSelection,
+} from "./client-selected-source";

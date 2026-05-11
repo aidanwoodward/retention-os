@@ -27,6 +27,11 @@ export interface CommandCentrePageFrameProps {
   readonly maxWidth: CommandCentreMaxWidth;
   readonly bannerKind: "metrics" | "insights" | "data";
   readonly children: ReactNode;
+  /**
+   * When `bannerKind` is `metrics` on a metric-heavy route, replaces the default demo-only top banner
+   * (e.g. /dashboard with a session-uploaded dataset).
+   */
+  readonly metricsBannerSlot?: ReactNode;
 }
 
 const codeChip = "rounded-md border border-white/10 bg-white/[0.07] px-1.5 py-0.5 font-mono text-[11px] text-zinc-200";
@@ -36,6 +41,7 @@ export function CommandCentrePageFrame({
   maxWidth,
   bannerKind,
   children,
+  metricsBannerSlot,
 }: CommandCentrePageFrameProps) {
   const copy = getMvpPageCopy(routeId);
 
@@ -63,19 +69,21 @@ export function CommandCentrePageFrame({
         </header>
 
         {bannerKind === "metrics" && isMetricSurface ? (
-          <div className="rounded-lg border border-zinc-700/90 bg-gradient-to-br from-zinc-950 via-zinc-950 to-zinc-900 px-4 py-3.5 shadow-sm ring-1 ring-black/30">
-            <p className="text-sm leading-relaxed text-zinc-100">
-              <span className="font-semibold text-white">{DEMO_DATASET_LABEL}</span>
-              <span className="text-zinc-500"> — </span>
-              <span>{metricsBannerScopeLine(routeId)}</span>
-            </p>
-            <p className="mt-2 border-t border-white/10 pt-2 text-xs leading-relaxed text-zinc-400">
-              Deterministic metric engine <span className={codeChip}>getDemoDataset()</span> →{" "}
-              <span className={codeChip}>/lib/metrics</span>
-              . Live Shopify, warehouse materializations, Supabase KPI paths, and CSV imports are intentionally{" "}
-              <span className="font-medium text-zinc-200">inactive</span> on these MVP routes.
-            </p>
-          </div>
+          metricsBannerSlot ?? (
+            <div className="rounded-lg border border-zinc-700/90 bg-gradient-to-br from-zinc-950 via-zinc-950 to-zinc-900 px-4 py-3.5 shadow-sm ring-1 ring-black/30">
+              <p className="text-sm leading-relaxed text-zinc-100">
+                <span className="font-semibold text-white">{DEMO_DATASET_LABEL}</span>
+                <span className="text-zinc-500"> — </span>
+                <span>{metricsBannerScopeLine(routeId)}</span>
+              </p>
+              <p className="mt-2 border-t border-white/10 pt-2 text-xs leading-relaxed text-zinc-400">
+                Deterministic metric engine <span className={codeChip}>getDemoDataset()</span> →{" "}
+                <span className={codeChip}>/lib/metrics</span>
+                . Live Shopify, warehouse materializations, Supabase KPI paths, and CSV imports are intentionally{" "}
+                <span className="font-medium text-zinc-200">inactive</span> on these MVP routes.
+              </p>
+            </div>
+          )
         ) : null}
 
         {bannerKind === "insights" ? (

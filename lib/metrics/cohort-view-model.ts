@@ -1,4 +1,4 @@
-import { getDemoDataset } from "../demo";
+import { buildDemoRetentionOSDataset, type RetentionOSDataset } from "../data-source";
 import type { LTVPoint } from "../types";
 import { calculateCohorts, type CohortSummary } from "./cohorts";
 import { calculateLTVByCohort } from "./ltv";
@@ -86,10 +86,9 @@ function summarizeLargest(summaryRows: readonly CohortSummary[]): { cohortPeriod
   );
 }
 
-/** Thin adapter from canonical demo + metric engine outputs to `/cohorts` presentation props (numeric only). */
-export function buildCohortsPageViewModel(seed?: number): CohortsPageViewModel {
-  const ds = getDemoDataset(seed);
-  const { customers, orders, marginAssumptions } = ds;
+/** Thin adapter from a command-centre dataset + metric engine outputs to `/cohorts` presentation props (numeric only). */
+export function buildCohortsPageViewModelFromDataset(dataset: RetentionOSDataset): CohortsPageViewModel {
+  const { customers, orders, marginAssumptions } = dataset;
 
   const cohortSummaries = calculateCohorts(customers, orders, marginAssumptions);
   const retention = calculateRetentionByCohort(customers, orders);
@@ -131,4 +130,8 @@ export function buildCohortsPageViewModel(seed?: number): CohortsPageViewModel {
     },
     cohortRows,
   };
+}
+
+export function buildCohortsPageViewModel(seed?: number): CohortsPageViewModel {
+  return buildCohortsPageViewModelFromDataset(buildDemoRetentionOSDataset(seed));
 }

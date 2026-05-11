@@ -1,4 +1,4 @@
-import { getDemoDataset } from "../demo";
+import { buildDemoRetentionOSDataset, type RetentionOSDataset } from "../data-source";
 import type { Insight } from "../types/insight";
 import type { RevenueDurabilityStatus } from "./context";
 import {
@@ -27,12 +27,14 @@ export interface InsightsPageViewModel {
 }
 
 /**
- * Demo-backed insights page payload: canonical fixture → metrics bundle → deterministic insights.
- * Keeps React free of metric math.
+ * Command-centre dataset → metrics bundle → deterministic insights. Keeps React free of metric math.
  */
-export function buildInsightsPageViewModel(seed?: number): InsightsPageViewModel {
-  const ds = getDemoDataset(seed);
-  const bundle = buildDiagnosticInsightsBundle(ds.customers, ds.orders, ds.marginAssumptions);
+export function buildInsightsPageViewModelFromDataset(dataset: RetentionOSDataset): InsightsPageViewModel {
+  const bundle = buildDiagnosticInsightsBundle(
+    dataset.customers,
+    dataset.orders,
+    dataset.marginAssumptions,
+  );
   const { recentOffsetLtvComparison, ...input } = bundle;
 
   const insights = generateDiagnosticInsights(input, recentOffsetLtvComparison);
@@ -50,4 +52,11 @@ export function buildInsightsPageViewModel(seed?: number): InsightsPageViewModel
     insightsEngineMethodologyNotes: methodologyNotesSnapshot(),
     insights,
   };
+}
+
+/**
+ * Demo-backed insights page payload: same as {@link buildInsightsPageViewModelFromDataset} with the canonical demo fixture.
+ */
+export function buildInsightsPageViewModel(seed?: number): InsightsPageViewModel {
+  return buildInsightsPageViewModelFromDataset(buildDemoRetentionOSDataset(seed));
 }

@@ -31,5 +31,6 @@ export {
 
 export {
   buildInsightsPageViewModel,
+  buildInsightsPageViewModelFromDataset,
   type InsightsPageViewModel,
 } from "./insights-view-model";

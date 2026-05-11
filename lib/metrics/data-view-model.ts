@@ -1,4 +1,5 @@
-import { DEMO_BRAND_NAME, DEMO_BRAND_TAGLINE, getDemoDataset } from "../demo";
+import { buildDemoRetentionOSDataset, type RetentionOSDataset } from "../data-source";
+import { DEMO_BRAND_NAME, DEMO_BRAND_TAGLINE } from "../demo";
 import type { DemoMetricSanityCheckResult } from "./demo-sanity-check";
 import { runDemoMetricSanityCheck } from "./demo-sanity-check";
 
@@ -42,19 +43,22 @@ function countOrderLineItems(orders: readonly { lineItems: readonly unknown[] }[
 
 /**
  * `/data` page payload — deterministic counts and copy anchors only (no uploads, APIs, or IO).
+ * `sanity` stays separate: it is the existing smoke harness over the metric engine (still demo-seeded in the wrapper).
  */
-export function buildDataPageViewModel(seed?: number): DataPageViewModel {
-  const ds = getDemoDataset(seed);
-  const sanity = runDemoMetricSanityCheck(seed);
+export function buildDataPageViewModelFromDataset(
+  dataset: RetentionOSDataset,
+  sanity: DemoMetricSanityCheckResult,
+): DataPageViewModel {
+  const margin = dataset.marginAssumptions;
 
   return {
     dataMode: "demo",
     demoBrandName: DEMO_BRAND_NAME,
     demoBrandTagline: DEMO_BRAND_TAGLINE,
     sanity,
-    marginContributionPct: ds.marginAssumptions.contributionMarginPct,
-    netRevenueMultiplier: ds.marginAssumptions.netRevenueMultiplier,
-    orderLineItemCount: countOrderLineItems(ds.orders),
+    marginContributionPct: margin?.contributionMarginPct ?? 0,
+    netRevenueMultiplier: margin?.netRevenueMultiplier,
+    orderLineItemCount: countOrderLineItems(dataset.orders),
     enginePoweredRoutes: [
       {
         href: "/dashboard",
@@ -135,4 +139,8 @@ export function buildDataPageViewModel(seed?: number): DataPageViewModel {
       },
     ],
   };
+}
+
+export function buildDataPageViewModel(seed?: number): DataPageViewModel {
+  return buildDataPageViewModelFromDataset(buildDemoRetentionOSDataset(seed), runDemoMetricSanityCheck(seed));
 }

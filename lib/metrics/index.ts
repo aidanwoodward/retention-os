@@ -31,6 +31,7 @@ export { calculateLTVByCohort, type CalculateLTVOptions } from "./ltv";
 
 export {
   buildCohortsPageViewModel,
+  buildCohortsPageViewModelFromDataset,
   type CohortMonthTableRowView,
   type CohortsPageSummaryView,
   type CohortsPageViewModel,
@@ -41,7 +42,37 @@ export {
   type DemoMetricSanityCheckResult,
 } from "./demo-sanity-check";
 
-export { buildDataPageViewModel, type DataPageViewModel, type DataSourceMode } from "./data-view-model";
+export {
+  buildDataPageViewModel,
+  buildDataPageViewModelFromDataset,
+  type DataPageViewModel,
+  type DataSourceMode,
+} from "./data-view-model";
+
+export {
+  buildDashboardExecutiveViewModel,
+  buildDashboardExecutiveViewModelFromDataset,
+  type DashboardExecutiveViewModel,
+  type DashboardSummaryView,
+  type RevenueDurabilitySnapshotView,
+  type RevenueDurabilityStatus,
+} from "./dashboard-view-model";
+
+export {
+  buildLTVPageViewModel,
+  buildLTVPageViewModelFromDataset,
+  type LTVPageSummaryView,
+  type LTVPageViewModel,
+  type LTVCohortTableRowView,
+} from "./ltv-view-model";
+
+export {
+  buildRetentionPageViewModel,
+  buildRetentionPageViewModelFromDataset,
+  type RetentionCohortTableRowView,
+  type RetentionPageSummaryView,
+  type RetentionPageViewModel,
+} from "./retention-view-model";
 
 /**
  * Example wiring (not executed here):

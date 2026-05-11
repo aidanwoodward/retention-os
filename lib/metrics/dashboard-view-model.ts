@@ -1,4 +1,4 @@
-import { getDemoDataset } from "../demo";
+import { buildDemoRetentionOSDataset, type RetentionOSDataset } from "../data-source";
 import type { LTVPoint } from "../types";
 import { calculateCohorts, type CohortSummary } from "./cohorts";
 import {
@@ -228,9 +228,8 @@ function buildObservations(s: DashboardSummaryView): readonly string[] {
   return obs.slice(0, 5);
 }
 
-export function buildDashboardExecutiveViewModel(seed?: number): DashboardExecutiveViewModel {
-  const ds = getDemoDataset(seed);
-  const { customers, orders, marginAssumptions } = ds;
+export function buildDashboardExecutiveViewModelFromDataset(dataset: RetentionOSDataset): DashboardExecutiveViewModel {
+  const { customers, orders, marginAssumptions } = dataset;
 
   const cohortSummaries = calculateCohorts(customers, orders, marginAssumptions);
   const retentionSeries = calculateRetentionByCohort(customers, orders);
@@ -312,4 +311,8 @@ export function buildDashboardExecutiveViewModel(seed?: number): DashboardExecut
   const observations = buildObservations(summary);
 
   return { summary, durability, observations };
+}
+
+export function buildDashboardExecutiveViewModel(seed?: number): DashboardExecutiveViewModel {
+  return buildDashboardExecutiveViewModelFromDataset(buildDemoRetentionOSDataset(seed));
 }

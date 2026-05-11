@@ -1,4 +1,4 @@
-import { getDemoDataset } from "../demo";
+import { buildDemoRetentionOSDataset, type RetentionOSDataset } from "../data-source";
 import type { LTVPoint } from "../types";
 import { calculateCohorts, type CohortSummary } from "./cohorts";
 import { calculateRepeatPurchaseRate } from "./repeat-purchase";
@@ -132,10 +132,9 @@ function buildCohortRows(
   });
 }
 
-/** Adapter: canonical demo + `/lib/metrics` → `/ltv` presentation props (currency unformatted numbers). */
-export function buildLTVPageViewModel(seed?: number): LTVPageViewModel {
-  const ds = getDemoDataset(seed);
-  const { customers, orders, marginAssumptions } = ds;
+/** Adapter: command-centre dataset + `/lib/metrics` → `/ltv` presentation props (currency unformatted numbers). */
+export function buildLTVPageViewModelFromDataset(dataset: RetentionOSDataset): LTVPageViewModel {
+  const { customers, orders, marginAssumptions } = dataset;
 
   const cohortSummaries = calculateCohorts(customers, orders, marginAssumptions);
   const repeat = calculateRepeatPurchaseRate(customers, orders);
@@ -199,4 +198,8 @@ export function buildLTVPageViewModel(seed?: number): LTVPageViewModel {
     },
     cohortRows,
   };
+}
+
+export function buildLTVPageViewModel(seed?: number): LTVPageViewModel {
+  return buildLTVPageViewModelFromDataset(buildDemoRetentionOSDataset(seed));
 }

@@ -1,4 +1,4 @@
-import { getDemoDataset } from "../demo";
+import { buildDemoRetentionOSDataset, type RetentionOSDataset } from "../data-source";
 import { calculateCohorts, type CohortSummary } from "./cohorts";
 import {
   calculateFirstToSecondOrderConversion,
@@ -78,10 +78,9 @@ function buildCohortTableRows(
   }));
 }
 
-/** Adapter: canonical demo dataset + `/lib/metrics` → `/retention` props (rates as fractions). */
-export function buildRetentionPageViewModel(seed?: number): RetentionPageViewModel {
-  const ds = getDemoDataset(seed);
-  const { customers, orders, marginAssumptions } = ds;
+/** Adapter: command-centre dataset + `/lib/metrics` → `/retention` props (rates as fractions). */
+export function buildRetentionPageViewModelFromDataset(dataset: RetentionOSDataset): RetentionPageViewModel {
+  const { customers, orders, marginAssumptions } = dataset;
 
   const cohortSummaries = calculateCohorts(customers, orders, marginAssumptions);
   const retention = calculateRetentionByCohort(customers, orders);
@@ -101,4 +100,8 @@ export function buildRetentionPageViewModel(seed?: number): RetentionPageViewMod
     },
     cohortRows: buildCohortTableRows(cohortSummaries, retention),
   };
+}
+
+export function buildRetentionPageViewModel(seed?: number): RetentionPageViewModel {
+  return buildRetentionPageViewModelFromDataset(buildDemoRetentionOSDataset(seed));
 }

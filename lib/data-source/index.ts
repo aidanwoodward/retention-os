@@ -29,3 +29,10 @@ export {
   type ImportedDatasetBuildResult,
   type ImportedDatasetBuildSuccess,
 } from "./imported-source";
+
+export {
+  clearUploadedRetentionOSDataset,
+  getUploadedDatasetSessionSummary,
+  loadUploadedRetentionOSDataset,
+  saveUploadedRetentionOSDataset,
+} from "./browser-session";

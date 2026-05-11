@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  buildImportedRetentionOSDataset,
+  clearUploadedRetentionOSDataset,
+  getUploadedDatasetSessionSummary,
+  saveUploadedRetentionOSDataset,
+  type RetentionOSDatasetSummary,
+} from "@/lib/data-source";
 import {
   buildImportedCsvMetricPreview,
   importCombinedOrderCsvFromText,
@@ -43,12 +50,65 @@ export function CsvImportPreview() {
   const [result, setResult] = useState<CombineOrderCsvImportResult | null>(null);
   const [readError, setReadError] = useState<string | null>(null);
 
+  const [sessionSummary, setSessionSummary] = useState<RetentionOSDatasetSummary | null>(null);
+  const [sessionSaveError, setSessionSaveError] = useState<string | null>(null);
+  const [sessionSaveToast, setSessionSaveToast] = useState<string | null>(null);
+
+  const refreshSessionSummary = useCallback(() => {
+    setSessionSummary(getUploadedDatasetSessionSummary());
+  }, []);
+
+  useEffect(() => {
+    refreshSessionSummary();
+  }, [refreshSessionSummary]);
+
   const reset = useCallback(() => {
     setFileName(null);
     setResult(null);
     setReadError(null);
+    setSessionSaveError(null);
+    setSessionSaveToast(null);
     if (fileRef.current) fileRef.current.value = "";
   }, []);
+
+  const onClearStoredUpload = useCallback(() => {
+    clearUploadedRetentionOSDataset();
+    setSessionSummary(null);
+    setSessionSaveError(null);
+    setSessionSaveToast(null);
+  }, []);
+
+  const onSaveSessionDataset = useCallback(() => {
+    setSessionSaveError(null);
+    setSessionSaveToast(null);
+    if (!result || result.errors.length > 0) {
+      setSessionSaveError("Fix import errors before saving — blocked datasets are not stored.");
+      return;
+    }
+    const built = buildImportedRetentionOSDataset(result, {
+      importedAt: new Date().toISOString(),
+      sourceLabel: fileName ? `Uploaded: ${fileName}` : undefined,
+    });
+    if (!built.ok) {
+      setSessionSaveError("This import still has errors in the pipeline — nothing was saved.");
+      return;
+    }
+    try {
+      saveUploadedRetentionOSDataset(built.dataset);
+    } catch (e) {
+      const msg =
+        e instanceof Error
+          ? e.message
+          : "Could not save (storage may be full or unavailable in this browser).";
+      setSessionSaveError(msg);
+      return;
+    }
+    refreshSessionSummary();
+    const m = built.dataset.meta;
+    setSessionSaveToast(
+      `Saved: ${m.customerCount.toLocaleString()} customers, ${m.orderCount.toLocaleString()} orders, ${m.lineItemCount.toLocaleString()} line items.`,
+    );
+  }, [fileName, refreshSessionSummary, result]);
 
   const onFile = useCallback((fileList: FileList | null) => {
     setReadError(null);
@@ -89,10 +149,19 @@ export function CsvImportPreview() {
       <div className="rounded-lg border border-emerald-200/80 bg-emerald-50/40 px-4 py-3 text-sm leading-relaxed text-emerald-950 ring-1 ring-emerald-900/10">
         <p className="font-semibold">Local preview only</p>
         <ul className="mt-2 list-inside list-disc space-y-1 text-emerald-900/90">
-          <li>Files stay in this browser tab — nothing is uploaded to a server or saved.</li>
+          <li>Files stay in this browser tab until you explicitly save — nothing is uploaded to a server.</li>
+          <li>
+            <strong className="font-semibold">Session-only:</strong> you can save a valid import to{" "}
+            <code className="rounded border border-emerald-300/80 bg-white/80 px-1 py-0.5 font-mono text-[11px]">sessionStorage</code>{" "}
+            for this tab (see below). <strong className="font-semibold">Not persisted to Supabase.</strong>
+          </li>
           <li>
             Dashboard, Cohorts, Retention, LTV, and Insights still use{" "}
-            <code className="rounded border border-emerald-300/80 bg-white/80 px-1 py-0.5 font-mono text-[11px]">getDemoDataset()</code>.
+            <code className="rounded border border-emerald-300/80 bg-white/80 px-1 py-0.5 font-mono text-[11px]">getDemoDataset()</code> —{" "}
+            <strong className="font-semibold">saved uploads do not yet replace the command-centre demo dataset.</strong>
+          </li>
+          <li>
+            <strong className="font-semibold">Next step:</strong> switch the command centre to use uploaded data (coming in a later sprint).
           </li>
           <li>
             A <strong className="font-semibold">Metric engine preview</strong> below runs valid uploads through{" "}
@@ -101,6 +170,26 @@ export function CsvImportPreview() {
           </li>
         </ul>
       </div>
+
+      <SessionStoredDatasetCard summary={sessionSummary} onClear={onClearStoredUpload} />
+
+      {sessionSaveError ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-950">
+          <p className="font-semibold">Session save</p>
+          <p className="mt-1">{sessionSaveError}</p>
+        </div>
+      ) : null}
+
+      {sessionSaveToast ? (
+        <div className="rounded-lg border border-emerald-200/90 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-950">
+          <p className="font-semibold">Saved for this browser session</p>
+          <p className="mt-1">{sessionSaveToast}</p>
+          <p className="mt-2 text-xs leading-relaxed opacity-90">
+            Session-only — not persisted to Supabase. Command-centre routes still use the demo dataset. Refresh this page and the summary
+            above should still appear until you clear it or close the tab.
+          </p>
+        </div>
+      ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <input
@@ -168,6 +257,22 @@ export function CsvImportPreview() {
               <p className="mt-1 text-xs opacity-90">
                 Counts below reflect the normalised import only. Demo fixture counts elsewhere on this page are unchanged.
               </p>
+            ) : null}
+            {!blocked && validPreview ? (
+              <div className="mt-3 flex flex-col gap-2 border-t border-emerald-200/60 pt-3 sm:flex-row sm:flex-wrap sm:items-center">
+                <button
+                  type="button"
+                  onClick={onSaveSessionDataset}
+                  className="inline-flex items-center justify-center rounded-lg border border-emerald-600 bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800"
+                >
+                  Save for this browser session
+                </button>
+                <p className="text-xs leading-relaxed text-emerald-950/90">
+                  Stores the normalised <code className="font-mono text-[11px]">RetentionOSDataset</code> in{" "}
+                  <code className="font-mono text-[11px]">sessionStorage</code> — session-only, not Supabase, does not switch /dashboard or
+                  other command-centre routes yet.
+                </p>
+              </div>
             ) : null}
           </div>
 
@@ -308,6 +413,55 @@ export function CsvImportPreview() {
           ) : null}
         </>
       ) : null}
+    </div>
+  );
+}
+
+function SessionStoredDatasetCard({
+  summary,
+  onClear,
+}: {
+  summary: RetentionOSDatasetSummary | null;
+  onClear: () => void;
+}) {
+  if (!summary) {
+    return (
+      <div className="rounded-lg border border-dashed border-zinc-300/90 bg-zinc-50/80 px-4 py-3 text-sm text-zinc-700">
+        <p className="font-semibold text-zinc-900">No uploaded dataset in this session yet</p>
+        <p className="mt-1 text-xs leading-relaxed text-zinc-600">
+          After you save a valid CSV import, a summary will appear here and survive a refresh for this browser tab (session-only — not
+          Supabase). Command-centre routes still use the demo dataset until a future switch.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-sky-200/90 bg-sky-50/70 px-4 py-3 text-sm text-sky-950 ring-1 ring-sky-900/10">
+      <p className="font-semibold">Uploaded dataset available in this browser session</p>
+      <p className="mt-1 text-xs leading-relaxed opacity-95">
+        <strong className="font-semibold">Session-only.</strong> Not persisted to Supabase.{" "}
+        <strong className="font-semibold">Does not yet replace the command-centre demo dataset</strong> on /dashboard, /cohorts, /retention,
+        /ltv, or /insights. <strong className="font-semibold">Next step:</strong> switch the command centre to use uploaded data.
+      </p>
+      <dl className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <SummaryItem label="Source label" value={summary.sourceLabel} />
+        <SummaryItem label="Customers" value={summary.customerCount.toLocaleString()} />
+        <SummaryItem label="Orders" value={summary.orderCount.toLocaleString()} />
+        <SummaryItem label="Products" value={summary.productCount.toLocaleString()} />
+        <SummaryItem label="Line items" value={summary.lineItemCount.toLocaleString()} />
+        <SummaryItem label="Warnings (import)" value={String(summary.warningCount ?? 0)} />
+        <SummaryItem label="First order (UTC)" value={formatIsoDate(summary.firstOrderAt)} />
+        <SummaryItem label="Last order (UTC)" value={formatIsoDate(summary.lastOrderAt)} />
+        <SummaryItem label="Saved at (UTC)" value={formatIsoDate(summary.importedAt)} />
+      </dl>
+      <button
+        type="button"
+        onClick={onClear}
+        className="mt-3 inline-flex items-center justify-center rounded-lg border border-sky-300 bg-white px-4 py-2 text-sm font-semibold text-sky-950 hover:bg-sky-50"
+      >
+        Clear uploaded dataset
+      </button>
     </div>
   );
 }

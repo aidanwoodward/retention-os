@@ -16,7 +16,7 @@ import {
 
 /**
  * Local-only CSV validation preview for the combined order + line-item contract (`/lib/import`).
- * Does not persist files, call APIs, or replace `getDemoDataset()` on command-centre routes.
+ * Does not persist files or call APIs. Saved session datasets steer command-centre routes in this browser tab only.
  */
 
 function formatIsoDate(iso: string | undefined): string {
@@ -156,17 +156,16 @@ export function CsvImportPreview() {
             for this tab (see below). <strong className="font-semibold">Not persisted to Supabase.</strong>
           </li>
           <li>
-            Dashboard, Cohorts, Retention, LTV, and Insights still use{" "}
-            <code className="rounded border border-emerald-300/80 bg-white/80 px-1 py-0.5 font-mono text-[11px]">getDemoDataset()</code> —{" "}
-            <strong className="font-semibold">saved uploads do not yet replace the command-centre demo dataset.</strong>
-          </li>
-          <li>
-            <strong className="font-semibold">Next step:</strong> switch the command centre to use uploaded data (coming in a later sprint).
+            When you save below,{" "}
+            <strong className="font-semibold">this uploaded dataset powers Dashboard, Cohorts, Retention, LTV, and Insights in this browser session</strong>
+            {' '}
+            (via <code className="rounded border border-emerald-300/80 bg-white/80 px-1 py-0.5 font-mono text-[11px]">
+              sessionStorage</code>). Clear the dataset on this page whenever you want the command centre to fall back to the canonical demo fixture.
           </li>
           <li>
             A <strong className="font-semibold">Metric engine preview</strong> below runs valid uploads through{" "}
-            <code className="rounded border border-emerald-300/80 bg-white/80 px-1 py-0.5 font-mono text-[11px]">/lib/metrics</code> — it
-            does not replace the command-centre demo dataset on other routes.
+            <code className="rounded border border-emerald-300/80 bg-white/80 px-1 py-0.5 font-mono text-[11px]">/lib/metrics</code> —
+            mirrored on command-centre routes after you session-save.
           </li>
         </ul>
       </div>
@@ -185,8 +184,9 @@ export function CsvImportPreview() {
           <p className="font-semibold">Saved for this browser session</p>
           <p className="mt-1">{sessionSaveToast}</p>
           <p className="mt-2 text-xs leading-relaxed opacity-90">
-            Session-only — not persisted to Supabase. Command-centre routes still use the demo dataset. Refresh this page and the summary
-            above should still appear until you clear it or close the tab.
+            Session-only — not persisted to Supabase. Dashboard, Cohorts, Retention, LTV, and Insights now consume this snapshot on this tab;
+            revisit those routes after saving so their source banner reflects the uploaded slice. Refresh this page and the summary above persists
+            until you clear it or close the tab.
           </p>
         </div>
       ) : null}
@@ -250,7 +250,7 @@ export function CsvImportPreview() {
               {blocked
                 ? "Blocked by errors — no Customer/Order/Product model was produced"
                 : validPreview
-                  ? "Valid preview — parse and validation passed (still not powering command-centre routes)"
+                  ? "Valid preview — parse and validation passed"
                   : "No data rows — fix the file or header"}
             </p>
             {!blocked && validPreview ? (
@@ -269,8 +269,8 @@ export function CsvImportPreview() {
                 </button>
                 <p className="text-xs leading-relaxed text-emerald-950/90">
                   Stores the normalised <code className="font-mono text-[11px]">RetentionOSDataset</code> in{" "}
-                  <code className="font-mono text-[11px]">sessionStorage</code> — session-only, not Supabase, does not switch /dashboard or
-                  other command-centre routes yet.
+                  <code className="font-mono text-[11px]">sessionStorage</code> — session-only, not Supabase. After save, KPI routes listed in the
+                  session banner use this snapshot until you clear it.
                 </p>
               </div>
             ) : null}
@@ -342,8 +342,9 @@ export function CsvImportPreview() {
                   <code className="rounded border border-zinc-200 bg-white px-1 py-0.5 font-mono text-[11px]">contribution_margin</code>.
                 </p>
                 <p className="mt-2 text-xs font-medium text-zinc-800">
-                  <span className="text-amber-800">Not live on /dashboard, /cohorts, /retention, /ltv, or /insights</span> — those routes still
-                  read <code className="font-mono text-[11px]">getDemoDataset()</code>.
+                  After you{" "}
+                  <span className="text-emerald-800">session-save above</span>, /dashboard, /cohorts, /retention, /ltv, and /insights honour this
+                  snapshot for this browser tab until you clear the upload.
                 </p>
               </div>
 
@@ -430,7 +431,7 @@ function SessionStoredDatasetCard({
         <p className="font-semibold text-zinc-900">No uploaded dataset in this session yet</p>
         <p className="mt-1 text-xs leading-relaxed text-zinc-600">
           After you save a valid CSV import, a summary will appear here and survive a refresh for this browser tab (session-only — not
-          Supabase). Command-centre routes still use the demo dataset until a future switch.
+          Supabase). Saving also points Dashboard, Cohorts, Retention, LTV, and Insights at that snapshot on this tab.
         </p>
       </div>
     );
@@ -441,8 +442,8 @@ function SessionStoredDatasetCard({
       <p className="font-semibold">Uploaded dataset available in this browser session</p>
       <p className="mt-1 text-xs leading-relaxed opacity-95">
         <strong className="font-semibold">Session-only.</strong> Not persisted to Supabase.{" "}
-        <strong className="font-semibold">Does not yet replace the command-centre demo dataset</strong> on /dashboard, /cohorts, /retention,
-        /ltv, or /insights. <strong className="font-semibold">Next step:</strong> switch the command centre to use uploaded data.
+        <strong className="font-semibold">This upload powers Dashboard, Cohorts, Retention, LTV, and Insights in this browser tab.</strong>{" "}
+        Clear storage here to revert those routes to the canonical demo fixture.
       </p>
       <dl className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         <SummaryItem label="Source label" value={summary.sourceLabel} />

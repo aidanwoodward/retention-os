@@ -1,5 +1,9 @@
 import Link from "next/link";
 import { CsvImportPreview } from "@/components/data/CsvImportPreview";
+import {
+  DataPageCanonicalRoutesIntroBody,
+  DataPageMetricEngineRibbonBody,
+} from "@/components/data/DataPageSourceAwareParagraphs";
 import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
 import { DEMO_WINDOW_END } from "@/lib/demo/demo-config";
 import { buildDataPageViewModel } from "@/lib/metrics";
@@ -28,14 +32,14 @@ export default function DataPage() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Transparency mode</p>
           <h2 className="mt-1 text-lg font-semibold text-zinc-900">Trust ledger for what powers the command centre</h2>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-600">
-            Every MVP route consumes the same deterministic demo dataset builder and metric engine primitives — no storefront mirage, no
-            invented connectivity.
+            Transparency ledger for canonical demo fixtures alongside session CSV onboarding: command-centre KPI routes can optionally read an
+            upload saved here for this browser tab only — no storefront mirage, no invented connectivity.
           </p>
         </div>
         <dl className="grid gap-0 sm:grid-cols-2 sm:divide-x sm:divide-zinc-100">
           <div className="border-b border-zinc-100 px-5 py-4 sm:border-b-0 sm:px-6">
-            <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Current source mode</dt>
-            <dd className="mt-1 text-sm font-semibold capitalize text-zinc-900">{vm.dataMode} dataset</dd>
+            <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Transparency snapshot</dt>
+            <dd className="mt-1 text-sm font-semibold text-zinc-900">Canonical demo dataset</dd>
             <p className="mt-2 text-xs leading-relaxed text-zinc-600">
               Fixture-driven only — not live multi-tenant pipelines in this checkpoint.
             </p>
@@ -50,10 +54,7 @@ export default function DataPage() {
         </dl>
         <div className="border-t border-zinc-100 bg-zinc-50/60 px-5 py-3.5 sm:px-6">
           <p className="text-xs leading-relaxed text-zinc-700">
-            <span className="font-semibold text-zinc-900">Metric engine status:</span> active on{" "}
-            <span className="font-mono text-[11px]">getDemoDataset()</span> → <span className="font-mono text-[11px]">/lib/metrics</span>.
-            <span className="font-semibold text-zinc-900"> Live Shopify / Supabase adapters:</span> off for these routes.{" "}
-            <span className="font-semibold text-zinc-900">CSV onboarding:</span> local preview below — does not replace demo data on other routes yet.
+            <DataPageMetricEngineRibbonBody />
           </p>
         </div>
       </section>
@@ -63,10 +64,11 @@ export default function DataPage() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Upload preview — coming ingestion path</p>
           <h2 className="mt-1 text-lg font-semibold text-zinc-900">CSV onboarding preview</h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">
-            Validate a combined order + line-item export against the Sprint 3A contract in{" "}
-            <code className="rounded-md border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[11px]">/lib/import</code>. This
-            remains a trust step: see counts, errors, and warnings before any future persistence or metric-engine handoff.
-          </p>
+          Validate a combined order + line-item export against the Sprint 3A contract in{" "}
+          <code className="rounded-md border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[11px]">/lib/import</code>. See counts,
+          errors, and warnings locally; save a passing import to steer Dashboard, Cohorts, Retention, LTV, and Insights on this tab (session-only —
+          still not persisted to Supabase).
+        </p>
         </div>
         <div className="pt-5">
           <CsvImportPreview />
@@ -127,8 +129,7 @@ export default function DataPage() {
       <section className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-sm sm:p-6">
         <h2 className="text-sm font-semibold text-zinc-900">Canonical metric routes</h2>
         <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-          Each link below consumes <code className="rounded-md border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[11px]">getDemoDataset()</code> —{" "}
-          <strong className="font-medium text-zinc-900">not</strong> live telemetry in this MVP stack.
+          <DataPageCanonicalRoutesIntroBody />
         </p>
         <ul className="mt-4 space-y-2">
           {vm.enginePoweredRoutes.map((route) => (

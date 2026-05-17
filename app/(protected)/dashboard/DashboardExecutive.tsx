@@ -173,7 +173,11 @@ export default function DashboardExecutive() {
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Deterministic signals</p>
                 {riskSignals.length === 0 ? (
-                  <p className="mt-2 text-sm text-zinc-600">No warning or critical diagnostics in this fixture slice.</p>
+                  <p className="mt-2 text-sm text-zinc-600">
+                    {selection.isUploaded ?
+                      "No warning or critical diagnostics in this upload slice."
+                    : "No warning or critical diagnostics in this demo slice."}
+                  </p>
                 ) : (
                   <ul className="mt-2 space-y-2">
                     {riskSignals.map((s) => (
@@ -321,7 +325,9 @@ export default function DashboardExecutive() {
       </div>
 
       <section className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-sm sm:p-6">
-        <h2 className="text-sm font-semibold text-zinc-900">What we see in this demo</h2>
+        <h2 className="text-sm font-semibold text-zinc-900">
+          {selection.isUploaded ? "What we&apos;re seeing in this upload" : "What we see in this demo"}
+        </h2>
         <ul className="mt-3 list-inside list-disc space-y-2 text-sm leading-relaxed text-zinc-700">
           {observations.map((line) => (
             <li key={line}>{line}</li>

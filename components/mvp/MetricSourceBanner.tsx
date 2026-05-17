@@ -6,7 +6,7 @@ import { metricsBannerScopeLine } from "@/lib/mvp/cohesion";
 const CHIP =
   "rounded-md border border-white/10 bg-white/[0.07] px-1.5 py-0.5 font-mono text-[11px] text-zinc-200";
 
-export type MetricSourceBannerRouteId = "dashboard" | "cohorts" | "retention" | "ltv";
+export type MetricSourceBannerRouteId = "dashboard" | "cohorts" | "retention" | "ltv" | "insights";
 
 export function MetricSourceBanner({
   routeId,
@@ -29,25 +29,29 @@ export function MetricSourceBanner({
           <>
             <span className="font-semibold text-zinc-200">Session-only</span> in <span className={CHIP}>sessionStorage</span> —{" "}
             <strong>not persisted to Supabase</strong>.{" "}
-            {routeId === "dashboard" ? (
+            {routeId === "insights" ?
               <>
-                KPIs and on-page diagnostic cards use this upload through <span className={CHIP}>/lib/metrics</span> and{" "}
-                <span className={CHIP}>/lib/insights</span> view models.{" "}
+                Diagnostic cards synthesize deterministic evidence bundles from your upload via <span className={CHIP}>
+                  /lib/metrics
+                </span>
+                routed through <span className={CHIP}>/lib/insights</span>.
               </>
-            ) : (
+            : routeId === "dashboard" ?
               <>
-                KPIs and tables on this page use this upload through <span className={CHIP}>/lib/metrics</span> view models.{" "}
+                KPIs plus on-page diagnostic cards use this upload through <span className={CHIP}>/lib/metrics</span> and{" "}
+                <span className={CHIP}>/lib/insights</span> view models.
               </>
-            )}
-            The dedicated <span className={CHIP}>/insights</span> route still uses <span className={CHIP}>getDemoDataset()</span> until
-            wired.
+            : <>
+                KPIs and tables on this page use this upload through <span className={CHIP}>/lib/metrics</span> view models.
+              </>
+            }
           </>
         ) : (
           <>
             Deterministic metric engine <span className={CHIP}>getDemoDataset()</span> → <span className={CHIP}>/lib/metrics</span>. Live
             Shopify, warehouse materializations, and Supabase KPI paths are <span className="font-medium text-zinc-200">inactive</span> on
             this MVP surface. Save a valid CSV on <span className={CHIP}>/data</span> to <span className={CHIP}>sessionStorage</span> and
-            revisit to analyse that slice on Dashboard, Cohorts, Retention, and LTV.
+            revisit to analyse that slice on Dashboard, Cohorts, Retention, LTV, and Insights.
           </>
         )}
       </p>

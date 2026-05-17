@@ -33,8 +33,10 @@ export interface CommandCentrePageFrameProps {
    * (e.g. /dashboard with a session-uploaded dataset).
    */
   readonly metricsBannerSlot?: ReactNode;
+  /** When `bannerKind` is `insights`, replaces the default demo-static top banner with source-aware METRIC-style slot. */
+  readonly insightsBannerSlot?: ReactNode;
   /**
-   * For dashboard / cohorts / retention / ltv: switches the white context card “What you’re looking at”
+   * For dashboard / cohorts / retention / ltv / insights: switches the white context card “What you’re looking at”
    * so it does not claim the demo fixture when `uploaded_csv` is active.
    */
   readonly activeMetricDatasetSource?: "demo" | "uploaded_csv";
@@ -48,10 +50,11 @@ export function CommandCentrePageFrame({
   bannerKind,
   children,
   metricsBannerSlot,
+  insightsBannerSlot,
   activeMetricDatasetSource = "demo",
 }: CommandCentrePageFrameProps) {
   const copy =
-    routeId === "dashboard" || routeId === "cohorts" || routeId === "retention" || routeId === "ltv"
+    routeId === "dashboard" || routeId === "cohorts" || routeId === "retention" || routeId === "ltv" || routeId === "insights"
       ? getMvpPageCopyForActiveSource(routeId, activeMetricDatasetSource)
       : getMvpPageCopy(routeId);
 
@@ -97,12 +100,14 @@ export function CommandCentrePageFrame({
         ) : null}
 
         {bannerKind === "insights" ? (
-          <div className="rounded-lg border border-zinc-700/90 bg-gradient-to-br from-zinc-950 via-zinc-950 to-zinc-900 px-4 py-3.5 shadow-sm ring-1 ring-black/30">
-            <p className="text-sm leading-relaxed text-zinc-100">{insightsDemoNotice()}</p>
-            <p className="mt-2 border-t border-white/10 pt-2 text-xs leading-relaxed text-zinc-400">
-              <span className="font-semibold text-zinc-200">Rules-based diagnostic engine.</span> {rulesEngineBody}
-            </p>
-          </div>
+          insightsBannerSlot ?? (
+            <div className="rounded-lg border border-zinc-700/90 bg-gradient-to-br from-zinc-950 via-zinc-950 to-zinc-900 px-4 py-3.5 shadow-sm ring-1 ring-black/30">
+              <p className="text-sm leading-relaxed text-zinc-100">{insightsDemoNotice()}</p>
+              <p className="mt-2 border-t border-white/10 pt-2 text-xs leading-relaxed text-zinc-400">
+                <span className="font-semibold text-zinc-200">Rules-based diagnostic engine.</span> {rulesEngineBody}
+              </p>
+            </div>
+          )
         ) : null}
 
         {bannerKind === "data" ? (

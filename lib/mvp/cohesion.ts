@@ -124,20 +124,22 @@ export function getMvpPageCopy(routeId: MvpRouteId): MvpPageCopy {
   return MVP_PAGE_COPY[routeId];
 }
 
-/** Command-centre metric routes: adjust “What you’re looking at” when the active dataset is a session upload. */
+/** Command-centre routes: adjust “What you’re looking at” when the active dataset is a session upload. */
 export function getMvpPageCopyForActiveSource(
-  routeId: "dashboard" | "cohorts" | "retention" | "ltv",
+  routeId: "dashboard" | "cohorts" | "retention" | "ltv" | "insights",
   source: "demo" | "uploaded_csv",
 ): MvpPageCopy {
   const base = MVP_PAGE_COPY[routeId];
   if (source === "demo") {
     return base;
   }
-  const lookingAt: Record<typeof routeId, string> = {
+  type SourceAwareRoute = "dashboard" | "cohorts" | "retention" | "ltv" | "insights";
+  const lookingAt: Record<SourceAwareRoute, string> = {
     dashboard: `A single-plane summary of cohort scale, repeat depth, first-to-second within 90 days, Month +N active rates, and cumulative net revenue / contribution LTV — computed on your session-saved uploaded CSV (this browser tab only; not the ${DEMO_BRAND_NAME} demo fixture).`,
     cohorts: `First-order monthly cohorts with net merchandise revenue, modeled contribution, and Month +N active rates from your session-saved uploaded CSV (UTC cohort months; sessionStorage in this tab only).`,
     retention: `Portfolio repeat rate, first-to-second within 90 days, average spacing to second order, and cohort Month +0/+N active rates from your session-saved uploaded CSV (sessionStorage in this tab only).`,
     ltv: `Average cumulative net revenue per customer by cohort-age offset, with parallel contribution ladders where margin assumptions apply — from your session-saved uploaded CSV (sessionStorage in this tab only).`,
+    insights: `Executive evidence cards from deterministic rules on your session-saved uploaded CSV outputs (wired through /lib/metrics → /lib/insights — sessionStorage in this tab only, not persisted to Supabase).`,
   };
   return { ...base, lookingAt: lookingAt[routeId] };
 }
@@ -147,7 +149,7 @@ export type MetricsBannerScopeFn = (
   routeId: "dashboard" | "cohorts" | "retention" | "ltv",
 ) => string;
 
-export function metricsBannerScopeLine(routeId: "dashboard" | "cohorts" | "retention" | "ltv"): string {
+export function metricsBannerScopeLine(routeId: "dashboard" | "cohorts" | "retention" | "ltv" | "insights"): string {
   switch (routeId) {
     case "dashboard":
       return `This Dashboard summarises cohort scale, reorder behaviour, Revenue durability primitives, and LTV ladders in one executive canvas.`;
@@ -155,6 +157,8 @@ export function metricsBannerScopeLine(routeId: "dashboard" | "cohorts" | "reten
       return `These cohort economics tables quantify acquisition-month dispersion and Month +N active breadth.`;
     case "retention":
       return `These retention KPIs juxtapose ninety-day reorder timing with cohort calendar-month strips.`;
+    case "insights":
+      return `These Diagnostic Insights cards interpret the same deterministic bundle as Dashboard / KPI routes — prioritized operator moves tied to thresholds.`;
     default:
       return `These ladders show cumulative averages for net revenue LTV versus modeled contribution LTV.`;
   }
@@ -164,7 +168,7 @@ export const RULES_ENGINE_INSIGHTS_NOTICE =
   "Rules-based engine. Cards synthesize evidence using transparent thresholds — not LLMs, chat copilots, or hidden models." as const;
 
 export function insightsDemoNotice(): string {
-  return `${DEMO_DATASET_LABEL}. ${DEMO_BRAND_NAME} — ${DEMO_BRAND_TAGLINE} Insights mirror the deterministic metric engine (/lib/metrics) — live Shopify telemetry, warehouse exports, Supabase KPI rows, or CSV ingestion are inactive in this checkpoint.`;
+  return `${DEMO_DATASET_LABEL}. ${DEMO_BRAND_NAME} — ${DEMO_BRAND_TAGLINE} Insight cards derive from deterministic /lib/metrics inputs on the canonical demo fixture; save a validated CSV session snapshot on /data to steer this route toward your uploaded slice instead.`;
 }
 
 export function dataModeBannerSentence(): string {

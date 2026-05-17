@@ -134,6 +134,15 @@ The **strict** onboarding contract today is the **combined order + line-item** C
 - **Current behaviour:** Headers are **strict** (canonical names; case-insensitive match in parser). No synonym mapping in production yet.
 - **Why this MVP shape:** Matches Shopify-style line exports, preserves **Layer 1 + 2** in one file, and feeds the existing metric engine without a separate orders join step.
 
+### Sample CSV fixtures (`docs/`)
+
+| File | Role |
+|------|------|
+| `sample-retentionos-orders.csv` | Default **combined order + line-item** sample: small cohort-friendly dataset with optional `contribution_margin` populated on most rows. |
+| `sample-retentionos-orders-no-margin.csv` | Same row shape as the order sample; **`contribution_margin` left blank** on every line so Sprint **4A** margin-assumption and contribution-LTV paths can be exercised without imported dollars. |
+| `sample-retentionos-marketing-spend.csv` | Larger **Layer 4** spend sheet (~tens of kUSD over three months) for stress-testing imports and previews alongside the small order fixture. |
+| `sample-retentionos-marketing-spend-small.csv` | **Paired acquisition smoke** spend for the tiny order sample: ~**$335** total over **2024-01** and **2024-02** only, 3 channels in January and 2 in February, channel labels loosely aligned with order rows (e.g. `meta_paid`, `google_paid`). Totals are sized so **blended CAC** lands in a sensible band (total spend ÷ four customers in that snapshot). **January and February** are the only months with positive spend so calendar overlap matches **first-order cohort months** in `sample-retentionos-orders.csv` (that fixture has no March **first** orders); use the larger marketing spend file if you need a full **Q1** spend grid without extra acquisition UI notes. |
+
 ---
 
 ## 3. Metric unlock matrix

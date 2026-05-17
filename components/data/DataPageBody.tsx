@@ -8,6 +8,7 @@ import { DataPageRouteCoverageSection } from "@/components/data/DataPageRouteCov
 import type { DataPageDemoLedgerSnapshot } from "@/components/data/DataPageSourceHero";
 import { DataPageSourceHero } from "@/components/data/DataPageSourceHero";
 import { DataUploadedMarginAssumptionsSection } from "@/components/data/DataUploadedMarginAssumptionsSection";
+import { AcquisitionDataPreview } from "@/components/data/AcquisitionDataPreview";
 import { MarketingSpendCsvPreview } from "@/components/data/MarketingSpendCsvPreview";
 import { useDataPageSessionSummary } from "@/components/data/useDataPageSessionSummary";
 import type { DataPageViewModel } from "@/lib/metrics";
@@ -112,12 +113,26 @@ export function DataPageBody({
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Layer 4 prep · marketing spend</p>
           <h2 className="mt-1 text-lg font-semibold text-zinc-900">Marketing spend preview</h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">
-            Validate a month × channel spend file against the RetentionOS import contract. This session does not compute CAC, LTV:CAC, or payback — it only
-            parses, checks, and previews rows for a future cohort join.
+            Validate a month × channel spend file against the RetentionOS import contract, optionally save to session for this tab, then review CAC / LTV:CAC /
+            payback <span className="font-medium text-zinc-800">previews</span> in the acquisition section below — not a full /acquisition workspace yet.
           </p>
         </div>
         <div className="pt-5">
-          <MarketingSpendCsvPreview />
+          <MarketingSpendCsvPreview sessionSyncEpoch={sessionEpoch} onSessionSpendChange={reconcileSessionSlices} />
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-sm ring-1 ring-black/[0.02] sm:p-6">
+        <div className="border-b border-zinc-100 pb-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Acquisition economics preview</p>
+          <h2 className="mt-1 text-lg font-semibold text-zinc-900">CAC · LTV:CAC · payback readiness</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">
+            Uses the metric engine’s LTV ladders with explicit marketing spend (session or merged upload). Not a full acquisition workspace — transparency for
+            Layer 4 onboarding only.
+          </p>
+        </div>
+        <div className="pt-5">
+          <AcquisitionDataPreview sessionEpoch={sessionEpoch} />
         </div>
       </section>
 

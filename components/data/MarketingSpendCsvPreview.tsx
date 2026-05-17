@@ -1,14 +1,20 @@
 "use client";
 
-import { useCallback, useId, useRef, useState } from "react";
+import { useCallback, useId, useLayoutEffect, useRef, useState } from "react";
+import {
+  clearUploadedMarketingSpend,
+  getUploadedMarketingSpendSessionSummary,
+  saveUploadedMarketingSpend,
+  type UploadedMarketingSpendSessionSummary,
+} from "@/lib/data-source";
 import {
   importMarketingSpendCsvFromText,
   type MarketingSpendCsvImportResult,
 } from "@/lib/import";
 
 /**
- * Browser-only marketing spend CSV preview (Sprint 4C).
- * Does not persist, does not alter KPI routes, does not compute CAC/payback.
+ * Browser-only marketing spend CSV preview + optional session persistence (Sprint 4C–4D).
+ * Session spend enriches uploaded orders in the command-centre resolver and powers /data acquisition previews.
  */
 
 function formatMoney(amount: number): string {
@@ -29,23 +35,44 @@ function SummaryItem({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function MarketingSpendCsvPreview() {
+export function MarketingSpendCsvPreview({
+  sessionSyncEpoch = 0,
+  onSessionSpendChange,
+}: {
+  readonly sessionSyncEpoch?: number;
+  readonly onSessionSpendChange?: () => void;
+}) {
   const inputId = useId();
   const fileRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [result, setResult] = useState<MarketingSpendCsvImportResult | null>(null);
   const [readError, setReadError] = useState<string | null>(null);
+  const [sessionSummary, setSessionSummary] = useState<UploadedMarketingSpendSessionSummary | null>(null);
+  const [sessionSaveError, setSessionSaveError] = useState<string | null>(null);
+  const [sessionSaveToast, setSessionSaveToast] = useState<string | null>(null);
+
+  const refreshSessionSummary = useCallback(() => {
+    setSessionSummary(getUploadedMarketingSpendSessionSummary());
+  }, []);
+
+  useLayoutEffect(() => {
+    refreshSessionSummary();
+  }, [sessionSyncEpoch, refreshSessionSummary]);
 
   const reset = useCallback(() => {
     setFileName(null);
     setResult(null);
     setReadError(null);
+    setSessionSaveError(null);
+    setSessionSaveToast(null);
     if (fileRef.current) fileRef.current.value = "";
   }, []);
 
   const onFile = useCallback((fileList: FileList | null) => {
     setReadError(null);
     setResult(null);
+    setSessionSaveError(null);
+    setSessionSaveToast(null);
     const file = fileList?.[0];
     if (!file) {
       setFileName(null);
@@ -67,27 +94,82 @@ export function MarketingSpendCsvPreview() {
     reader.readAsText(file, "UTF-8");
   }, []);
 
+  const onSaveSessionSpend = useCallback(() => {
+    setSessionSaveError(null);
+    setSessionSaveToast(null);
+    if (!result || result.marketingSpend.length === 0) {
+      setSessionSaveError("Import valid spend rows before saving to session.");
+      return;
+    }
+    try {
+      saveUploadedMarketingSpend(result.marketingSpend);
+    } catch (e) {
+      setSessionSaveError(e instanceof Error ? e.message : "Could not save marketing spend to session storage.");
+      return;
+    }
+    refreshSessionSummary();
+    onSessionSpendChange?.();
+    setSessionSaveToast(
+      `Saved ${result.marketingSpend.length} spend row(s) to this tab’s session — uploaded orders will pick this up automatically; demo fixture uses it only on /data previews.`,
+    );
+  }, [onSessionSpendChange, refreshSessionSummary, result]);
+
+  const onClearSessionSpend = useCallback(() => {
+    setSessionSaveError(null);
+    setSessionSaveToast(null);
+    clearUploadedMarketingSpend();
+    refreshSessionSummary();
+    onSessionSpendChange?.();
+  }, [onSessionSpendChange, refreshSessionSummary]);
+
   const hasRowErrors = result != null && result.errors.length > 0;
   const hasSpend = result != null && result.marketingSpend.length > 0;
+  const hasSessionSpend = sessionSummary != null;
 
   return (
     <div className="space-y-5">
       <div className="rounded-lg border border-slate-200/90 bg-slate-50/50 px-4 py-3 text-sm leading-relaxed text-slate-950 ring-1 ring-slate-900/10">
-        <p className="font-semibold">Preview only — no CAC yet</p>
+        <p className="font-semibold">Marketing spend CSV (Layer 4 prep)</p>
         <ul className="mt-2 list-inside list-disc space-y-1 text-slate-900/95">
           <li>
-            This control validates a <strong className="font-medium">marketing spend CSV contract</strong> in your browser only. Nothing is written to
-            sessionStorage or Supabase in this sprint.
+            Parse and validate in-browser. <strong className="font-medium">Saving to session</strong> stores spend in{" "}
+            <code className="rounded border border-slate-300/80 bg-white/80 px-1 py-0.5 font-mono text-[11px]">sessionStorage</code> for this tab
+            only — <strong className="font-medium">not Supabase</strong>.
           </li>
           <li>
-            <strong className="font-medium">Dashboard, Cohorts, Retention, LTV, and Insights are unchanged</strong> by spend uploads here.
+            <strong className="font-medium">Uploaded orders</strong> merge session spend in the command-centre dataset resolver (alongside margin
+            assumptions). <strong className="font-medium">KPI routes do not add CAC cards yet</strong> — this sprint prepares economics and /data previews
+            only.
           </li>
           <li>
-            A <strong className="font-medium">future sprint</strong> will join this spend shape to cohorts to calculate <strong>CAC</strong>,{" "}
-            <strong>LTV:CAC</strong>, and <strong>payback</strong> on the selected dataset — not in this release.
+            <strong className="font-medium">This enables CAC / LTV:CAC / payback previews on /data</strong> but does not ship a full{" "}
+            <code className="font-mono text-[11px]">/acquisition</code> page.
           </li>
         </ul>
       </div>
+
+      {sessionSummary ?
+        <div className="rounded-lg border border-indigo-200/80 bg-indigo-50/50 px-4 py-3 text-sm text-indigo-950 ring-1 ring-indigo-900/10">
+          <p className="font-semibold">Saved marketing spend (session)</p>
+          <p className="mt-2 text-indigo-950/90">
+            {sessionSummary.rowCount.toLocaleString()} rows · {sessionSummary.monthCount} month(s) · {sessionSummary.channelCount} channel(s) ·{" "}
+            <span className="font-medium">{formatMoney(sessionSummary.totalSpend)}</span> total
+            {sessionSummary.firstMonth && sessionSummary.lastMonth ?
+              <>
+                {" "}
+                · {sessionSummary.firstMonth} → {sessionSummary.lastMonth}
+              </>
+            : null}
+          </p>
+          <button
+            type="button"
+            onClick={onClearSessionSpend}
+            className="mt-3 inline-flex items-center justify-center rounded-lg border border-indigo-300 bg-white px-3 py-2 text-xs font-semibold text-indigo-950 hover:bg-indigo-50"
+          >
+            Clear marketing spend from session
+          </button>
+        </div>
+      : null}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <input
@@ -135,6 +217,20 @@ export function MarketingSpendCsvPreview() {
         </div>
       : null}
 
+      {sessionSaveError ?
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-950">
+          <p className="font-semibold">Session save</p>
+          <p className="mt-1">{sessionSaveError}</p>
+        </div>
+      : null}
+
+      {sessionSaveToast ?
+        <div className="rounded-lg border border-emerald-200/90 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-950">
+          <p className="font-semibold">Marketing spend saved for this tab</p>
+          <p className="mt-1">{sessionSaveToast}</p>
+        </div>
+      : null}
+
       {result ?
         <>
           <div
@@ -154,6 +250,31 @@ export function MarketingSpendCsvPreview() {
               : "Valid preview — CSV parsed and normalised"}
             </p>
           </div>
+
+          {hasSpend ?
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+              <button
+                type="button"
+                onClick={onSaveSessionSpend}
+                className="inline-flex items-center justify-center rounded-lg border border-indigo-600 bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
+              >
+                Save marketing spend for this browser session
+              </button>
+              {hasSessionSpend ?
+                <button
+                  type="button"
+                  onClick={onClearSessionSpend}
+                  className="inline-flex items-center justify-center rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-800 shadow-sm hover:bg-zinc-50"
+                >
+                  Clear saved spend (session)
+                </button>
+              : null}
+              <p className="text-xs leading-relaxed text-zinc-600">
+                Session key is tab-scoped. Clearing orders upload does <span className="font-medium">not</span> auto-clear spend — revert both from /data if
+                you need a clean slate.
+              </p>
+            </div>
+          : null}
 
           <div>
             <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Import summary</h3>

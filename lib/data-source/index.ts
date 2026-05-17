@@ -48,6 +48,17 @@ export {
 } from "./margin-session";
 
 export {
+  applyUploadedSessionMarketingSpend,
+  clearUploadedMarketingSpend,
+  getMarketingSpendForAcquisitionPreview,
+  getUploadedMarketingSpendSessionSummary,
+  loadUploadedMarketingSpend,
+  normaliseMarketingSpendForSession,
+  saveUploadedMarketingSpend,
+  type UploadedMarketingSpendSessionSummary,
+} from "./marketing-spend-session";
+
+export {
   buildDemoCommandCentreSelection,
   resolveCommandCentreDatasetSource,
   type CommandCentreDatasetSelection,

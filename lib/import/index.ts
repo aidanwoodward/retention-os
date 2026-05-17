@@ -49,5 +49,6 @@ export {
   importMarketingSpendCsvFromText,
   normaliseMarketingSpendMonthKey,
   parseMarketingSpendCsvText,
+  spendBucketToCohortMonthKey,
   type ParseMarketingSpendCsvTextResult,
 } from "./normalise-marketing-spend";

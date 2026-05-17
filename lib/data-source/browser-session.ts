@@ -10,6 +10,7 @@ import type {
 } from "./dataset-types";
 import { getDatasetSummary } from "./dataset-helpers";
 import { applyUploadedSessionMarginAssumptions, clearUploadedMarginAssumptions } from "./margin-session";
+import { applyUploadedSessionMarketingSpend } from "./marketing-spend-session";
 
 const STORAGE_KEY = "retentionos:uploadedDataset:v1";
 
@@ -177,5 +178,7 @@ export function clearUploadedRetentionOSDataset(): void {
 /** Summary for trust UI — null when nothing valid is in session. */
 export function getUploadedDatasetSessionSummary(): RetentionOSDatasetSummary | null {
   const ds = loadUploadedRetentionOSDataset();
-  return ds ? getDatasetSummary(applyUploadedSessionMarginAssumptions(ds)) : null;
+  return ds
+    ? getDatasetSummary(applyUploadedSessionMarketingSpend(applyUploadedSessionMarginAssumptions(ds)))
+    : null;
 }

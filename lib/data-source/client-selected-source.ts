@@ -7,6 +7,7 @@ import type { RetentionOSDataset, RetentionOSSourceType } from "./dataset-types"
 import { buildDemoRetentionOSDataset } from "./demo-source";
 import { loadUploadedRetentionOSDataset } from "./browser-session";
 import { applyUploadedSessionMarginAssumptions } from "./margin-session";
+import { applyUploadedSessionMarketingSpend } from "./marketing-spend-session";
 
 /** Resolved source for view models — mirrors key fields from `dataset.meta` for convenient UI binding. */
 export interface CommandCentreDatasetSelection {
@@ -43,7 +44,9 @@ export function resolveCommandCentreDatasetSource(seed?: number): CommandCentreD
   }
   const uploaded = loadUploadedRetentionOSDataset();
   if (uploaded != null) {
-    return selectionFromDataset(applyUploadedSessionMarginAssumptions(uploaded));
+    return selectionFromDataset(
+      applyUploadedSessionMarketingSpend(applyUploadedSessionMarginAssumptions(uploaded)),
+    );
   }
   return buildDemoCommandCentreSelection(seed);
 }

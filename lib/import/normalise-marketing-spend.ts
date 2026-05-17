@@ -60,6 +60,14 @@ export function normaliseMarketingSpendMonthKey(raw: string): string | null {
   return null;
 }
 
+/**
+ * Normalise a marketing spend bucket (`YYYY-MM`, `YYYY-MM-DD`, or parseable date) to the cohort key `YYYY-MM`.
+ * Use when aligning spend rows to first-order cohort months.
+ */
+export function spendBucketToCohortMonthKey(raw: string): string | null {
+  return normaliseMarketingSpendMonthKey(raw);
+}
+
 interface HeaderParseOk {
   ok: true;
   colIndex: Record<string, number>;

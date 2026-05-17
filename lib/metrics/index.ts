@@ -30,6 +30,23 @@ export {
 export { calculateLTVByCohort, type CalculateLTVOptions } from "./ltv";
 
 export {
+  buildAcquisitionPreviewFromDataset,
+  calculateBlendedCAC,
+  calculateCACByMonth,
+  calculateLtvToCac,
+  calculatePaybackPeriod,
+  cacMapFromRows,
+  type AcquisitionPreviewModel,
+  type BlendedCacResult,
+  type CacByMonthResult,
+  type CacByMonthRow,
+  type LtvCacResult,
+  type LtvCacRow,
+  type PaybackPreviewResult,
+  type PaybackPreviewRow,
+} from "./acquisition";
+
+export {
   buildCohortsPageViewModel,
   buildCohortsPageViewModelFromDataset,
   type CohortMonthTableRowView,

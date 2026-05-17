@@ -8,6 +8,7 @@ import { DataPageRouteCoverageSection } from "@/components/data/DataPageRouteCov
 import type { DataPageDemoLedgerSnapshot } from "@/components/data/DataPageSourceHero";
 import { DataPageSourceHero } from "@/components/data/DataPageSourceHero";
 import { DataUploadedMarginAssumptionsSection } from "@/components/data/DataUploadedMarginAssumptionsSection";
+import { MarketingSpendCsvPreview } from "@/components/data/MarketingSpendCsvPreview";
 import { useDataPageSessionSummary } from "@/components/data/useDataPageSessionSummary";
 import type { DataPageViewModel } from "@/lib/metrics";
 
@@ -103,6 +104,20 @@ export function DataPageBody({
         </div>
         <div className="pt-5">
           <CsvImportPreview sessionSyncEpoch={sessionEpoch} onSessionDatasetChange={reconcileSessionSlices} />
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-sm ring-1 ring-black/[0.02] sm:p-6">
+        <div className="border-b border-zinc-100 pb-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Layer 4 prep · marketing spend</p>
+          <h2 className="mt-1 text-lg font-semibold text-zinc-900">Marketing spend preview</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">
+            Validate a month × channel spend file against the RetentionOS import contract. This session does not compute CAC, LTV:CAC, or payback — it only
+            parses, checks, and previews rows for a future cohort join.
+          </p>
+        </div>
+        <div className="pt-5">
+          <MarketingSpendCsvPreview />
         </div>
       </section>
 

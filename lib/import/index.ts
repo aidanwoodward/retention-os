@@ -31,3 +31,23 @@ export {
 } from "./normalise-orders";
 
 export { buildImportedCsvMetricPreview, type ImportedCsvMetricPreview } from "./metric-preview";
+
+export {
+  MARKETING_SPEND_CSV_COLUMNS,
+  MARKETING_SPEND_CSV_FIELD_HELP,
+  MARKETING_SPEND_CSV_REQUIRED_COLUMNS,
+  type MarketingSpendCsvColumn,
+} from "./marketing-spend-schema";
+
+export type {
+  MarketingSpendCsvImportResult,
+  MarketingSpendCsvImportSummary,
+  MarketingSpendImported,
+} from "./marketing-spend-types";
+
+export {
+  importMarketingSpendCsvFromText,
+  normaliseMarketingSpendMonthKey,
+  parseMarketingSpendCsvText,
+  type ParseMarketingSpendCsvTextResult,
+} from "./normalise-marketing-spend";

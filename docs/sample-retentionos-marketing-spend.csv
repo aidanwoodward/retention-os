@@ -1,0 +1,15 @@
+month,channel,spend,platform,campaign
+2024-01,paid_social,12500,Meta,Prospecting_Q1
+2024-01,paid_search,8200,Google,Search_Brand
+2024-01,tiktok,4800,TikTok,Spark_Ads_Test
+2024-01,email,1200,,Lifecycle_Welcome
+2024-01,organic,0,,Organic_placeholder
+2024-02,paid_social,13200,Meta,Prospecting_Q1
+2024-02,paid_search,9100,Google,Search_NB
+2024-02,tiktok,5100,TikTok,Spark_Ads_Test
+2024-02,influencer,3500,,Creator_Pack_A
+2024-03,paid_social,11800,Meta,Prospecting_Q2
+2024-03,paid_search,8750,Google,Search_Brand
+2024-03,tiktok,4950,TikTok,Video_Complete
+2024-03,email,950,,Lifecycle_PostPurchase
+2024-03,influencer,2900,,Creator_Pack_B

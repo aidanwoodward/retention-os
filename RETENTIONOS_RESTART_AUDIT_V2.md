@@ -1,5 +1,7 @@
 # RetentionOS Restart Audit V2
 
+**For the post-upload-data MVP state, see RETENTIONOS_UPLOADED_DATA_MVP_CHECKPOINT.md.**
+
 **Purpose:** Re-baseline progress after the restart sprints (post-`804ef25` audit). This document compares the **original** restart audit snapshot to the **current** codebase as of the latest accountability checkpoint. It is founder/operator-facing: honest about what is real, what is demo, and what still carries risk.
 
 **Companion documents:** `RETENTIONOS_RESTART_AUDIT.md` (historical baseline — do not treat as current truth), `docs/RETENTIONOS_MVP_DEMO_SCRIPT.md` (demo narrative for the six-route spine).

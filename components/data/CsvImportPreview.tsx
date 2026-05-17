@@ -13,6 +13,7 @@ import {
   importCombinedOrderCsvFromText,
   type CombineOrderCsvImportResult,
 } from "@/lib/import";
+import { UploadedSessionDatasetDl } from "@/components/data/UploadedSessionDatasetSnapshot";
 
 /**
  * Local-only CSV validation preview for the combined order + line-item contract (`/lib/import`).
@@ -43,7 +44,13 @@ function formatMoney(amount: number | null | undefined): string {
   }).format(amount);
 }
 
-export function CsvImportPreview() {
+export function CsvImportPreview({
+  sessionSyncEpoch = 0,
+  onSessionDatasetChange,
+}: {
+  readonly sessionSyncEpoch?: number;
+  readonly onSessionDatasetChange?: () => void;
+}) {
   const inputId = useId();
   const fileRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -60,7 +67,7 @@ export function CsvImportPreview() {
 
   useEffect(() => {
     refreshSessionSummary();
-  }, [refreshSessionSummary]);
+  }, [sessionSyncEpoch, refreshSessionSummary]);
 
   const reset = useCallback(() => {
     setFileName(null);
@@ -76,7 +83,8 @@ export function CsvImportPreview() {
     setSessionSummary(null);
     setSessionSaveError(null);
     setSessionSaveToast(null);
-  }, []);
+    onSessionDatasetChange?.();
+  }, [onSessionDatasetChange]);
 
   const onSaveSessionDataset = useCallback(() => {
     setSessionSaveError(null);
@@ -104,11 +112,12 @@ export function CsvImportPreview() {
       return;
     }
     refreshSessionSummary();
+    onSessionDatasetChange?.();
     const m = built.dataset.meta;
     setSessionSaveToast(
       `Saved: ${m.customerCount.toLocaleString()} customers, ${m.orderCount.toLocaleString()} orders, ${m.lineItemCount.toLocaleString()} line items.`,
     );
-  }, [fileName, refreshSessionSummary, result]);
+  }, [fileName, onSessionDatasetChange, refreshSessionSummary, result]);
 
   const onFile = useCallback((fileList: FileList | null) => {
     setReadError(null);
@@ -170,8 +179,9 @@ export function CsvImportPreview() {
         </ul>
       </div>
 
-      <SessionStoredDatasetCard summary={sessionSummary} onClear={onClearStoredUpload} />
-
+      {sessionSummary ?
+        <SessionStoredDatasetCard summary={sessionSummary} onClear={onClearStoredUpload} />
+      : <SessionStoredDatasetCardEmptyState />}
       {sessionSaveError ? (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-950">
           <p className="font-semibold">Session save</p>
@@ -418,51 +428,49 @@ export function CsvImportPreview() {
   );
 }
 
+function SessionStoredDatasetCardEmptyState() {
+  return (
+    <div className="rounded-lg border border-dashed border-zinc-300/90 bg-zinc-50/80 px-4 py-3 text-sm text-zinc-700">
+      <p className="font-semibold text-zinc-900">No uploaded CSV in sessionStorage yet</p>
+      <p className="mt-2 text-xs leading-relaxed text-zinc-600">
+        Save a validated import below to switch Dashboard, Cohorts, Retention, LTV, and Insights on this browser tab.&nbsp;
+        <span className="font-semibold text-zinc-800">Active source stays the demo fixture</span> until then. Clearing is only available once a dataset is
+        stored.
+      </p>
+    </div>
+  );
+}
+
 function SessionStoredDatasetCard({
   summary,
   onClear,
 }: {
-  summary: RetentionOSDatasetSummary | null;
+  summary: RetentionOSDatasetSummary;
   onClear: () => void;
 }) {
-  if (!summary) {
-    return (
-      <div className="rounded-lg border border-dashed border-zinc-300/90 bg-zinc-50/80 px-4 py-3 text-sm text-zinc-700">
-        <p className="font-semibold text-zinc-900">No uploaded dataset in this session yet</p>
-        <p className="mt-1 text-xs leading-relaxed text-zinc-600">
-          After you save a valid CSV import, a summary will appear here and survive a refresh for this browser tab (session-only — not
-          Supabase). Saving also points Dashboard, Cohorts, Retention, LTV, and Insights at that snapshot on this tab.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="rounded-lg border border-sky-200/90 bg-sky-50/70 px-4 py-3 text-sm text-sky-950 ring-1 ring-sky-900/10">
-      <p className="font-semibold">Uploaded dataset available in this browser session</p>
-      <p className="mt-1 text-xs leading-relaxed opacity-95">
-        <strong className="font-semibold">Session-only.</strong> Not persisted to Supabase.{" "}
-        <strong className="font-semibold">This upload powers Dashboard, Cohorts, Retention, LTV, and Insights in this browser tab.</strong>{" "}
-        Clear storage here to revert those routes to the canonical demo fixture.
+      <p className="font-semibold">Session dataset on file (mirror of control banner)</p>
+      <p className="mt-2 text-xs leading-relaxed opacity-95">
+        <strong className="font-semibold">Session-only — not persisted to Supabase.</strong> Clearing below has the{" "}
+        <strong className="font-semibold">same effect as Revert to demo dataset</strong> in the banner: Dashboard, Cohorts, Retention, LTV, and Insights
+        fall back to the canonical demo fixture for this browser tab.
       </p>
-      <dl className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        <SummaryItem label="Source label" value={summary.sourceLabel} />
-        <SummaryItem label="Customers" value={summary.customerCount.toLocaleString()} />
-        <SummaryItem label="Orders" value={summary.orderCount.toLocaleString()} />
-        <SummaryItem label="Products" value={summary.productCount.toLocaleString()} />
-        <SummaryItem label="Line items" value={summary.lineItemCount.toLocaleString()} />
-        <SummaryItem label="Warnings (import)" value={String(summary.warningCount ?? 0)} />
-        <SummaryItem label="First order (UTC)" value={formatIsoDate(summary.firstOrderAt)} />
-        <SummaryItem label="Last order (UTC)" value={formatIsoDate(summary.lastOrderAt)} />
-        <SummaryItem label="Saved at (UTC)" value={formatIsoDate(summary.importedAt)} />
-      </dl>
-      <button
-        type="button"
-        onClick={onClear}
-        className="mt-3 inline-flex items-center justify-center rounded-lg border border-sky-300 bg-white px-4 py-2 text-sm font-semibold text-sky-950 hover:bg-sky-50"
-      >
-        Clear uploaded dataset
-      </button>
+
+      <UploadedSessionDatasetDl
+        summary={summary}
+        footer={
+          <div className="pt-3">
+            <button
+              type="button"
+              onClick={onClear}
+              className="inline-flex w-full items-center justify-center rounded-lg border-2 border-amber-700/80 bg-amber-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-800 sm:w-auto"
+            >
+              Revert to demo dataset · clear upload
+            </button>
+          </div>
+        }
+      />
     </div>
   );
 }

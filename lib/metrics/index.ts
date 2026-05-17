@@ -38,6 +38,17 @@ export {
 } from "./cohort-view-model";
 
 export {
+  buildCohortMatrixFromDataset,
+  type BuildCohortMatrixOptions,
+  type CohortMatrixCell,
+  type CohortMatrixCellFormattedType,
+  type CohortMatrixGrain,
+  type CohortMatrixMetricKind,
+  type CohortMatrixModel,
+  type CohortMatrixRow,
+} from "./cohort-matrix";
+
+export {
   runDemoMetricSanityCheck,
   type DemoMetricSanityCheckResult,
 } from "./demo-sanity-check";

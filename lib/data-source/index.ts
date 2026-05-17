@@ -38,6 +38,16 @@ export {
 } from "./browser-session";
 
 export {
+  applyUploadedSessionMarginAssumptions,
+  clearUploadedMarginAssumptions,
+  getUploadedMarginAssumptionsSummary,
+  loadUploadedMarginAssumptions,
+  saveUploadedMarginAssumptions,
+  validateUploadedMarginAssumptions,
+  type UploadedMarginAssumptionsSummary,
+} from "./margin-session";
+
+export {
   buildDemoCommandCentreSelection,
   resolveCommandCentreDatasetSource,
   type CommandCentreDatasetSelection,

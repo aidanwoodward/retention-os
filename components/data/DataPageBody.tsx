@@ -7,6 +7,7 @@ import { DataPageCanonicalRoutesIntroBody, DataPageMetricEngineRibbonBody } from
 import { DataPageRouteCoverageSection } from "@/components/data/DataPageRouteCoverage";
 import type { DataPageDemoLedgerSnapshot } from "@/components/data/DataPageSourceHero";
 import { DataPageSourceHero } from "@/components/data/DataPageSourceHero";
+import { DataUploadedMarginAssumptionsSection } from "@/components/data/DataUploadedMarginAssumptionsSection";
 import { useDataPageSessionSummary } from "@/components/data/useDataPageSessionSummary";
 import type { DataPageViewModel } from "@/lib/metrics";
 
@@ -104,6 +105,12 @@ export function DataPageBody({
           <CsvImportPreview sessionSyncEpoch={sessionEpoch} onSessionDatasetChange={reconcileSessionSlices} />
         </div>
       </section>
+
+      <DataUploadedMarginAssumptionsSection
+        hasUpload={hasUpload}
+        sessionSyncEpoch={sessionEpoch}
+        onSessionMarginChange={reconcileSessionSlices}
+      />
 
       <section className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-sm sm:p-6">
         <h2 className="text-sm font-semibold text-zinc-900">Demo brand (canonical fixture identity)</h2>

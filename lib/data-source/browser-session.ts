@@ -9,6 +9,7 @@ import type {
   RetentionOSSourceMetadata,
 } from "./dataset-types";
 import { getDatasetSummary } from "./dataset-helpers";
+import { applyUploadedSessionMarginAssumptions, clearUploadedMarginAssumptions } from "./margin-session";
 
 const STORAGE_KEY = "retentionos:uploadedDataset:v1";
 
@@ -165,6 +166,7 @@ export function loadUploadedRetentionOSDataset(): RetentionOSDataset | null {
 /** Remove the session-stored uploaded dataset. No-op on the server. */
 export function clearUploadedRetentionOSDataset(): void {
   if (!isBrowser()) return;
+  clearUploadedMarginAssumptions();
   try {
     window.sessionStorage.removeItem(STORAGE_KEY);
   } catch {
@@ -175,5 +177,5 @@ export function clearUploadedRetentionOSDataset(): void {
 /** Summary for trust UI — null when nothing valid is in session. */
 export function getUploadedDatasetSessionSummary(): RetentionOSDatasetSummary | null {
   const ds = loadUploadedRetentionOSDataset();
-  return ds ? getDatasetSummary(ds) : null;
+  return ds ? getDatasetSummary(applyUploadedSessionMarginAssumptions(ds)) : null;
 }

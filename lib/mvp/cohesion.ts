@@ -107,15 +107,15 @@ export const MVP_PAGE_COPY: Record<MvpRouteId, MvpPageCopy> = {
   },
   data: {
     title: "Data & sources",
-    hook: `${MVP_COMMAND_CENTRE_NAME} — transparency ledger for canonical fixtures.`,
+    hook: `${MVP_COMMAND_CENTRE_NAME} — trust ledger, demo fixture counts, and session CSV source control.`,
     lookingAt:
-      `Fixture counts (customers, orders, line rows, cohort months) plus canonical object definitions underpinning Dashboard, Insights, cohort, retention, and LTV tabs — ${DEMO_BRAND_NAME} copy only.`,
+      `Canonical ${DEMO_BRAND_NAME} fixture counts (customers, orders, line rows, cohort months) plus object definitions — always visible for audit. Until you save a passing CSV snapshot to sessionStorage here, Dashboard, Cohorts, Retention, LTV, and Insights consume the demo fixture; after save, those KPI routes use your uploaded slice for this browser tab only.`,
     matters:
-      "Operators cannot manage Revenue durability sceptically if intake posture is ambiguous. Honest signalling about demo vs eventual live ingestion prevents false certainty.",
+      "Operators cannot judge revenue durability honestly if provenance is vague. This page states the active source, lists route coverage, and makes session-only CSV explicit — no Supabase mirror and no live Shopify on the MVP spine.",
     nextSteps: [
-      "Share this page internally before implying live ingestion exists.",
+      "Share this page internally before implying multi-tenant or server-persisted ingestion exists.",
       "Return to Insights or Dashboard armed with lineage when sceptics push on provenance.",
-      "Plan ingestion work knowing CSV, Shopify connectors, Supabase adapters, and margin editors remain future-state only.",
+      "Plan next-wave work knowing tenant persistence, Shopify connectors, and margin editors are still roadmap for this product path.",
     ],
   },
 };
@@ -168,9 +168,9 @@ export const RULES_ENGINE_INSIGHTS_NOTICE =
   "Rules-based engine. Cards synthesize evidence using transparent thresholds — not LLMs, chat copilots, or hidden models." as const;
 
 export function insightsDemoNotice(): string {
-  return `${DEMO_DATASET_LABEL}. ${DEMO_BRAND_NAME} — ${DEMO_BRAND_TAGLINE} Insight cards derive from deterministic /lib/metrics inputs on the canonical demo fixture; save a validated CSV session snapshot on /data to steer this route toward your uploaded slice instead.`;
+  return `${DEMO_DATASET_LABEL}. ${DEMO_BRAND_NAME} — ${DEMO_BRAND_TAGLINE} Insight cards derive from deterministic /lib/metrics inputs (demo fixture by default); save a validated CSV session snapshot on /data to run the same rules on your upload for this browser tab.`;
 }
 
 export function dataModeBannerSentence(): string {
-  return `${DEMO_DATASET_LABEL} lineage: ${DEMO_BRAND_NAME} — ${DEMO_BRAND_TAGLINE} Transparent counts regenerate from canonical fixtures routed through runDemoMetricSanityCheck(); live ingestion adapters are roadmap items — not wired here.`;
+  return `${DEMO_DATASET_LABEL} lineage: ${DEMO_BRAND_NAME} — ${DEMO_BRAND_TAGLINE} Transparent demo counts are grounded in runDemoMetricSanityCheck(); this page also controls demo vs session-saved CSV for KPI routes (browser tab only — not Supabase). Live Shopify and warehouse adapters remain off this spine.`;
 }

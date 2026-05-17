@@ -92,8 +92,9 @@ export function CommandCentrePageFrame({
               <p className="mt-2 border-t border-white/10 pt-2 text-xs leading-relaxed text-zinc-400">
                 Deterministic metric engine <span className={codeChip}>getDemoDataset()</span> →{" "}
                 <span className={codeChip}>/lib/metrics</span>
-                . Live Shopify, warehouse materializations, Supabase KPI paths, and CSV imports are intentionally{" "}
-                <span className="font-medium text-zinc-200">inactive</span> on these MVP routes.
+                . Live Shopify, warehouse materializations, and Supabase KPI paths are{" "}
+                <span className="font-medium text-zinc-200">inactive</span> on this surface. Session CSV lives on{" "}
+                <span className={codeChip}>/data</span> (<span className={codeChip}>sessionStorage</span>, not persisted server-side).
               </p>
             </div>
           )

@@ -5,6 +5,7 @@ import {
   DEMO_DATASET_LABEL,
   dataModeBannerSentence,
   getMvpPageCopy,
+  getMvpPageCopyForActiveSource,
   insightsDemoNotice,
   metricsBannerScopeLine,
   MVP_COMMAND_CENTRE_NAME,
@@ -32,6 +33,11 @@ export interface CommandCentrePageFrameProps {
    * (e.g. /dashboard with a session-uploaded dataset).
    */
   readonly metricsBannerSlot?: ReactNode;
+  /**
+   * For dashboard / cohorts / retention / ltv: switches the white context card “What you’re looking at”
+   * so it does not claim the demo fixture when `uploaded_csv` is active.
+   */
+  readonly activeMetricDatasetSource?: "demo" | "uploaded_csv";
 }
 
 const codeChip = "rounded-md border border-white/10 bg-white/[0.07] px-1.5 py-0.5 font-mono text-[11px] text-zinc-200";
@@ -42,8 +48,12 @@ export function CommandCentrePageFrame({
   bannerKind,
   children,
   metricsBannerSlot,
+  activeMetricDatasetSource = "demo",
 }: CommandCentrePageFrameProps) {
-  const copy = getMvpPageCopy(routeId);
+  const copy =
+    routeId === "dashboard" || routeId === "cohorts" || routeId === "retention" || routeId === "ltv"
+      ? getMvpPageCopyForActiveSource(routeId, activeMetricDatasetSource)
+      : getMvpPageCopy(routeId);
 
   const isMetricSurface =
     routeId === "dashboard" || routeId === "cohorts" || routeId === "retention" || routeId === "ltv";

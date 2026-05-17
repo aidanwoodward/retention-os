@@ -3,6 +3,7 @@
 import { useLayoutEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
+import { MetricSourceBanner } from "@/components/mvp/MetricSourceBanner";
 import {
   buildDemoCommandCentreSelection,
   resolveCommandCentreDatasetSource,
@@ -11,10 +12,6 @@ import {
 import { buildInsightsPageViewModelFromDataset } from "@/lib/insights";
 import { buildDashboardExecutiveViewModelFromDataset } from "@/lib/metrics/dashboard-view-model";
 import type { RevenueDurabilityStatus } from "@/lib/metrics/dashboard-view-model";
-import { metricsBannerScopeLine } from "@/lib/mvp/cohesion";
-
-const DASH_BANNER_CODE_CHIP =
-  "rounded-md border border-white/10 bg-white/[0.07] px-1.5 py-0.5 font-mono text-[11px] text-zinc-200";
 
 const MUTED_BAND = "#e7e5e4";
 
@@ -118,39 +115,6 @@ export default function DashboardExecutive() {
   );
   const { summary, durability, observations } = vm;
 
-  const metricsBannerSlot = (
-    <div className="rounded-lg border border-zinc-700/90 bg-gradient-to-br from-zinc-950 via-zinc-950 to-zinc-900 px-4 py-3.5 shadow-sm ring-1 ring-black/30">
-      <p className="text-sm leading-relaxed text-zinc-100">
-        <span className="font-semibold text-white">
-          Active source: {selection.isUploaded ? "Uploaded CSV session dataset" : "Demo dataset"}
-        </span>
-        <span className="text-zinc-500"> — </span>
-        <span>{metricsBannerScopeLine("dashboard")}</span>
-      </p>
-      <p className="mt-2 border-t border-white/10 pt-2 text-xs leading-relaxed text-zinc-400">
-        {selection.isUploaded ? (
-          <>
-            <span className="font-semibold text-zinc-200">Session-only</span> in{" "}
-            <span className={DASH_BANNER_CODE_CHIP}>sessionStorage</span> — <strong>not persisted to Supabase</strong>.
-            Metric engine runs on this upload via{" "}
-            <span className={DASH_BANNER_CODE_CHIP}>buildDashboardExecutiveViewModelFromDataset</span> and{" "}
-            <span className={DASH_BANNER_CODE_CHIP}>/lib/metrics</span>.{" "}
-            <span className="font-medium text-zinc-200">Cohorts, Retention, LTV, and Insights routes</span> still use{" "}
-            <span className={DASH_BANNER_CODE_CHIP}>getDemoDataset()</span> in this sprint.
-          </>
-        ) : (
-          <>
-            Deterministic metric engine <span className={DASH_BANNER_CODE_CHIP}>getDemoDataset()</span> →{" "}
-            <span className={DASH_BANNER_CODE_CHIP}>/lib/metrics</span>
-            . Live Shopify, warehouse materializations, Supabase KPI paths, and CSV imports are intentionally{" "}
-            <span className="font-medium text-zinc-200">inactive</span> on these MVP routes unless you save an uploaded CSV to this browser
-            session and revisit Dashboard.
-          </>
-        )}
-      </p>
-    </div>
-  );
-
   const riskSignals = useMemo(() => {
     const ranked = [...insightVm.insights].sort((a, b) => {
       const o = severityOrder(a.severity) - severityOrder(b.severity);
@@ -176,7 +140,13 @@ export default function DashboardExecutive() {
   }, [insightVm.insights]);
 
   return (
-    <CommandCentrePageFrame routeId="dashboard" maxWidth="6xl" bannerKind="metrics" metricsBannerSlot={metricsBannerSlot}>
+    <CommandCentrePageFrame
+      routeId="dashboard"
+      maxWidth="6xl"
+      bannerKind="metrics"
+      metricsBannerSlot={<MetricSourceBanner routeId="dashboard" selection={selection} />}
+      activeMetricDatasetSource={selection.isUploaded ? "uploaded_csv" : "demo"}
+    >
       <section className="overflow-hidden rounded-xl border border-zinc-200/90 bg-white shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06)]">
         <div className="border-b border-zinc-100 bg-gradient-to-br from-white to-zinc-50/70 px-5 py-5 sm:px-6 sm:py-6">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch lg:justify-between lg:gap-8">

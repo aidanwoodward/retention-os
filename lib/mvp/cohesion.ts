@@ -124,6 +124,24 @@ export function getMvpPageCopy(routeId: MvpRouteId): MvpPageCopy {
   return MVP_PAGE_COPY[routeId];
 }
 
+/** Command-centre metric routes: adjust “What you’re looking at” when the active dataset is a session upload. */
+export function getMvpPageCopyForActiveSource(
+  routeId: "dashboard" | "cohorts" | "retention" | "ltv",
+  source: "demo" | "uploaded_csv",
+): MvpPageCopy {
+  const base = MVP_PAGE_COPY[routeId];
+  if (source === "demo") {
+    return base;
+  }
+  const lookingAt: Record<typeof routeId, string> = {
+    dashboard: `A single-plane summary of cohort scale, repeat depth, first-to-second within 90 days, Month +N active rates, and cumulative net revenue / contribution LTV — computed on your session-saved uploaded CSV (this browser tab only; not the ${DEMO_BRAND_NAME} demo fixture).`,
+    cohorts: `First-order monthly cohorts with net merchandise revenue, modeled contribution, and Month +N active rates from your session-saved uploaded CSV (UTC cohort months; sessionStorage in this tab only).`,
+    retention: `Portfolio repeat rate, first-to-second within 90 days, average spacing to second order, and cohort Month +0/+N active rates from your session-saved uploaded CSV (sessionStorage in this tab only).`,
+    ltv: `Average cumulative net revenue per customer by cohort-age offset, with parallel contribution ladders where margin assumptions apply — from your session-saved uploaded CSV (sessionStorage in this tab only).`,
+  };
+  return { ...base, lookingAt: lookingAt[routeId] };
+}
+
 /** Scope sentence inserted after brand tagline in amber banners on metric-heavy pages. */
 export type MetricsBannerScopeFn = (
   routeId: "dashboard" | "cohorts" | "retention" | "ltv",

@@ -1,8 +1,14 @@
 "use client";
 
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
-import { buildCohortsPageViewModel } from "@/lib/metrics/cohort-view-model";
+import { MetricSourceBanner } from "@/components/mvp/MetricSourceBanner";
+import {
+  buildDemoCommandCentreSelection,
+  resolveCommandCentreDatasetSource,
+  type CommandCentreDatasetSelection,
+} from "@/lib/data-source/client-selected-source";
+import { buildCohortsPageViewModelFromDataset } from "@/lib/metrics/cohort-view-model";
 import type { CohortMonthTableRowView } from "@/lib/metrics/cohort-view-model";
 
 function formatPct(rate: number | null | undefined, digits = 1): string {
@@ -75,33 +81,45 @@ function CohortEconomicsTable({ rows }: { rows: CohortMonthTableRowView[] }) {
 }
 
 export default function CohortsPage() {
-  const vm = useMemo(() => buildCohortsPageViewModel(), []);
+  const [selection, setSelection] = useState<CommandCentreDatasetSelection>(() => buildDemoCommandCentreSelection());
+
+  useLayoutEffect(() => {
+    setSelection(resolveCommandCentreDatasetSource());
+  }, []);
+
+  const vm = useMemo(() => buildCohortsPageViewModelFromDataset(selection.dataset), [selection.dataset]);
   const { summary, cohortRows } = vm;
 
   return (
-    <CommandCentrePageFrame routeId="cohorts" maxWidth="7xl" bannerKind="metrics">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          <Kpi title="Cohort months" value={String(summary.cohortCount)} />
-          <Kpi title="Customers in demo" value={summary.totalCustomers.toLocaleString()} />
-          <Kpi
-            title="Largest cohort"
-            value={`${summary.largestCohort.cohortPeriod}`}
-            sub={`${summary.largestCohort.cohortSize.toLocaleString()} customers`}
-          />
-          <Kpi title="All-time repeat rate" value={formatPct(summary.repeatPurchaseRate)} />
-          <Kpi title="First→second (90d)" value={formatPct(summary.firstToSecondWithin90DaysRate)} />
-          <Kpi title="Aggregate net revenue" value={formatMoney(summary.aggregateNetRevenue)} />
-        </div>
+    <CommandCentrePageFrame
+      routeId="cohorts"
+      maxWidth="7xl"
+      bannerKind="metrics"
+      metricsBannerSlot={<MetricSourceBanner routeId="cohorts" selection={selection} />}
+      activeMetricDatasetSource={selection.isUploaded ? "uploaded_csv" : "demo"}
+    >
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <Kpi title="Cohort months" value={String(summary.cohortCount)} />
+        <Kpi title="Customers" value={summary.totalCustomers.toLocaleString()} />
+        <Kpi
+          title="Largest cohort"
+          value={`${summary.largestCohort.cohortPeriod}`}
+          sub={`${summary.largestCohort.cohortSize.toLocaleString()} customers`}
+        />
+        <Kpi title="All-time repeat rate" value={formatPct(summary.repeatPurchaseRate)} />
+        <Kpi title="First→second (90d)" value={formatPct(summary.firstToSecondWithin90DaysRate)} />
+        <Kpi title="Aggregate net revenue" value={formatMoney(summary.aggregateNetRevenue)} />
+      </div>
 
-        <div>
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-[0.1em] text-zinc-500">Cohort table</h2>
-          <p className="mb-4 text-sm leading-relaxed text-zinc-700">
-            Net revenue and contribution roll up orders from cohort members. Latest average revenue LTV is cumulative{" "}
-            <strong>average net revenue per cohort customer</strong> through each cohort&apos;s latest observed month on the staircase.
-            Month +n active columns are cohort customers with ≥1 order in acquisition month&nbsp;+&nbsp;n (calendar UTC).
-          </p>
-          <CohortEconomicsTable rows={cohortRows} />
-        </div>
+      <div>
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-[0.1em] text-zinc-500">Cohort table</h2>
+        <p className="mb-4 text-sm leading-relaxed text-zinc-700">
+          Net revenue and contribution roll up orders from cohort members. Latest average revenue LTV is cumulative{" "}
+          <strong>average net revenue per cohort customer</strong> through each cohort&apos;s latest observed month on the staircase.
+          Month +n active columns are cohort customers with ≥1 order in acquisition month&nbsp;+&nbsp;n (calendar UTC).
+        </p>
+        <CohortEconomicsTable rows={cohortRows} />
+      </div>
     </CommandCentrePageFrame>
   );
 }

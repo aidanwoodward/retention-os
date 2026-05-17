@@ -2,7 +2,13 @@
 
 import * as React from "react";
 import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
-import { buildRetentionPageViewModel } from "@/lib/metrics/retention-view-model";
+import { MetricSourceBanner } from "@/components/mvp/MetricSourceBanner";
+import {
+  buildDemoCommandCentreSelection,
+  resolveCommandCentreDatasetSource,
+  type CommandCentreDatasetSelection,
+} from "@/lib/data-source/client-selected-source";
+import { buildRetentionPageViewModelFromDataset } from "@/lib/metrics/retention-view-model";
 import type { RetentionCohortTableRowView } from "@/lib/metrics/retention-view-model";
 
 function formatPct(rate: number | null | undefined, digits = 1): string {
@@ -67,41 +73,54 @@ function RetentionCohortTable({ rows }: { rows: RetentionCohortTableRowView[] })
 }
 
 export default function RetentionClient() {
-  const vm = React.useMemo(() => buildRetentionPageViewModel(), []);
+  const [selection, setSelection] = React.useState<CommandCentreDatasetSelection>(() => buildDemoCommandCentreSelection());
+
+  React.useLayoutEffect(() => {
+    setSelection(resolveCommandCentreDatasetSource());
+  }, []);
+
+  const vm = React.useMemo(() => buildRetentionPageViewModelFromDataset(selection.dataset), [selection.dataset]);
   const { summary, cohortRows } = vm;
 
   return (
-    <CommandCentrePageFrame routeId="retention" maxWidth="7xl" bannerKind="metrics">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Kpi title="Customers in demo" value={summary.totalCustomers.toLocaleString()} />
-          <Kpi title="All-time repeat purchase rate" sub="Share with 2+ orders" value={formatPct(summary.allTimeRepeatPurchaseRate)} />
-          <Kpi
-            title="First-to-second within 90 days"
-            sub="Second order ≤90 days after first"
-            value={formatPct(summary.firstToSecondWithin90DaysRate)}
-          />
-          <Kpi title="Avg days first → second" value={formatDays(summary.averageDaysToSecondOrder)} />
-          <Kpi title="Median days first → second" value={formatDays(summary.medianDaysToSecondOrder)} />
-          <Kpi title="Avg Month +1 active rate" sub="Across cohorts with data" value={formatPct(summary.averageMonthPlus1ActiveRate)} />
-          <Kpi title="Avg Month +2 active rate" value={formatPct(summary.averageMonthPlus2ActiveRate)} />
-          <Kpi title="Avg Month +3 active rate" value={formatPct(summary.averageMonthPlus3ActiveRate)} />
-        </div>
+    <CommandCentrePageFrame
+      routeId="retention"
+      maxWidth="7xl"
+      bannerKind="metrics"
+      metricsBannerSlot={<MetricSourceBanner routeId="retention" selection={selection} />}
+      activeMetricDatasetSource={selection.isUploaded ? "uploaded_csv" : "demo"}
+    >
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Kpi title="Customers" value={summary.totalCustomers.toLocaleString()} />
+        <Kpi title="All-time repeat purchase rate" sub="Share with 2+ orders" value={formatPct(summary.allTimeRepeatPurchaseRate)} />
+        <Kpi
+          title="First-to-second within 90 days"
+          sub="Second order ≤90 days after first"
+          value={formatPct(summary.firstToSecondWithin90DaysRate)}
+        />
+        <Kpi title="Avg days first → second" value={formatDays(summary.averageDaysToSecondOrder)} />
+        <Kpi title="Median days first → second" value={formatDays(summary.medianDaysToSecondOrder)} />
+        <Kpi title="Avg Month +1 active rate" sub="Across cohorts with data" value={formatPct(summary.averageMonthPlus1ActiveRate)} />
+        <Kpi title="Avg Month +2 active rate" value={formatPct(summary.averageMonthPlus2ActiveRate)} />
+        <Kpi title="Avg Month +3 active rate" value={formatPct(summary.averageMonthPlus3ActiveRate)} />
+      </div>
 
-        <p className="rounded-lg border border-zinc-200/90 bg-white px-4 py-3.5 text-sm leading-relaxed text-zinc-700 shadow-sm ring-1 ring-black/[0.02]">
-          <strong className="font-semibold text-zinc-900">How to read these metrics.</strong> Month +N active rate is the share of the cohort who
-          placed at least one order in calendar month acquisition&nbsp;month&nbsp;+&nbsp;N (UTC boundaries). First-to-second within 90 days
-          is a separate journey metric: among all customers, the share whose second order occurred within 90 days of their first —
-          regardless of calendar month alignment.
+      <p className="rounded-lg border border-zinc-200/90 bg-white px-4 py-3.5 text-sm leading-relaxed text-zinc-700 shadow-sm ring-1 ring-black/[0.02]">
+        <strong className="font-semibold text-zinc-900">How to read these metrics.</strong> Month +N active rate is the share of the cohort
+        who placed at least one order in calendar month acquisition&nbsp;month&nbsp;+&nbsp;N (UTC boundaries). First-to-second within 90 days
+        is a separate journey metric: among all customers, the share whose second order occurred within 90 days of their first —
+        regardless of calendar month alignment.
+      </p>
+
+      <div>
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-[0.1em] text-zinc-500">Retention by cohort</h2>
+        <p className="mb-4 text-sm leading-relaxed text-zinc-700">
+          Each row is customers acquired in that first-order month. Active rates count shoppers with ≥1 qualifying order in the target
+          calendar month (see metric engine definitions). Month +6 appears when the active dataset timeline includes that horizon for a
+          cohort.
         </p>
-
-        <div>
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-[0.1em] text-zinc-500">Retention by cohort</h2>
-          <p className="mb-4 text-sm leading-relaxed text-zinc-700">
-            Each row is customers acquired in that first-order month. Active rates count shoppers with ≥1 qualifying order in the target
-            calendar month (see metric engine definitions). Month +6 appears only when the demo timeline includes that horizon for a cohort.
-          </p>
-          <RetentionCohortTable rows={cohortRows} />
-        </div>
+        <RetentionCohortTable rows={cohortRows} />
+      </div>
     </CommandCentrePageFrame>
   );
 }

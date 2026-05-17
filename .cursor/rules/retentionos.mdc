@@ -1,0 +1,66 @@
+---
+description: RetentionOS product and engineering rules
+alwaysApply: true
+---
+
+# RetentionOS Cursor Rules
+
+You are working on RetentionOS, a customer economics operating system for ecommerce brands.
+
+## Product wedge
+
+RetentionOS helps brands understand whether growth is durable, profitable, and repeatable.
+
+Prioritise:
+- cohorts
+- retention
+- LTV
+- contribution LTV
+- CAC
+- payback
+- first-to-second purchase behaviour
+- product-level customer quality
+- channel-level acquisition quality
+- revenue durability score
+- diagnostic insight cards
+- CSV/demo mode
+
+Avoid:
+- CRM features
+- marketing automation
+- generic dashboard bloat
+- attribution overbuild
+- premature integrations
+- unnecessary dependencies
+
+## Technical rules
+
+- Metric logic belongs in /lib/metrics.
+- Types belong in /lib/types.
+- Demo data belongs in /lib/demo.
+- Insight rules belong in /lib/insights.
+- React components should render view models, not calculate core metrics.
+- Keep changes small and reviewable.
+- Do not modify database migrations unless explicitly requested.
+- Do not add dependencies unless explicitly requested.
+- Do not fake live production states.
+- Do not silently use mock data in production paths.
+
+## Validation
+
+Run these before completion:
+
+```bash
+npm run lint
+npm run typecheck
+npm run build
+```
+
+## Behaviour
+
+Before editing:
+1. Inspect relevant files.
+2. State a short plan.
+3. Implement smallest viable change.
+4. Validate.
+5. Summarise files changed, product impact, and risks.

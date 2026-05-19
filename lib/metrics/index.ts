@@ -23,8 +23,11 @@ export {
 export {
   calculateRepeatPurchaseRate,
   calculateFirstToSecondOrderConversion,
+  computeRepeatPurchaseApiMetrics,
   type RepeatPurchaseRateResult,
   type FirstToSecondConversionResult,
+  type RepeatPurchaseBreakdownRow,
+  type RepeatPurchaseApiDerived,
 } from "./repeat-purchase";
 
 export { calculateLTVByCohort, type CalculateLTVOptions } from "./ltv";

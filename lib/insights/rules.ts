@@ -3,7 +3,6 @@ import {
   FIRST_TO_SECOND_90_HEALTHY,
   FIRST_TO_SECOND_90_WATCH,
   LTV_COHORT_SPREAD_MATERIAL_USD,
-  MONTH_PLUS_1_ACTIVE_HEALTHY,
   MONTH_PLUS_1_ACTIVE_WATCH,
   RECENT_QUALITY_MIN_BASELINE_COHORTS,
   RECENT_TERMINAL_GAP_WARN,
@@ -17,34 +16,11 @@ import type {
   RecentOffsetLtvComparison,
   RevenueDurabilityStatus,
 } from "./context";
+import { evaluateRevenueDurabilityStatus as evaluateRevenueDurabilityStatusCore } from "../metrics/revenue-durability-status";
 
-/** Same vote logic as `computeDurability` in dashboard-view-model (subset of inputs only). */
+/** Delegates to `/lib/metrics/revenue-durability-status` — single source of truth for posture votes. */
 export function evaluateRevenueDurabilityStatus(inputs: DiagnosticDurabilityInputs): RevenueDurabilityStatus {
-  const { repeatPurchaseRate, firstToSecond90Rate, avgMonthPlus1ActiveRate, spreadUsdLike } = inputs;
-
-  let watchVotes = 0;
-  let healthyVotes = 0;
-
-  if (repeatPurchaseRate < REPEAT_PURCHASE_WATCH) watchVotes += 2;
-  else if (repeatPurchaseRate >= REPEAT_PURCHASE_HEALTHY) healthyVotes += 1;
-
-  if (firstToSecond90Rate < FIRST_TO_SECOND_90_WATCH) watchVotes += 2;
-  else if (firstToSecond90Rate >= FIRST_TO_SECOND_90_HEALTHY) healthyVotes += 1;
-
-  if (avgMonthPlus1ActiveRate != null) {
-    if (avgMonthPlus1ActiveRate < MONTH_PLUS_1_ACTIVE_WATCH) watchVotes += 1;
-    else if (avgMonthPlus1ActiveRate >= MONTH_PLUS_1_ACTIVE_HEALTHY) healthyVotes += 1;
-  }
-
-  const spreadHealthyBand = LTV_COHORT_SPREAD_MATERIAL_USD * 0.45;
-  if (spreadUsdLike != null) {
-    if (spreadUsdLike >= LTV_COHORT_SPREAD_MATERIAL_USD) watchVotes += 1;
-    else if (spreadUsdLike < spreadHealthyBand) healthyVotes += 1;
-  }
-
-  if (watchVotes >= 3) return "Watch";
-  if (watchVotes <= 1 && healthyVotes >= 2) return "Healthy";
-  return "Mixed";
+  return evaluateRevenueDurabilityStatusCore(inputs);
 }
 
 const METHODOLOGY_NOTES_DEFAULT = [

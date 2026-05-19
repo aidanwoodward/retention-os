@@ -90,6 +90,18 @@ export {
 } from "./dashboard-view-model";
 
 export {
+  evaluateRevenueDurabilityStatus,
+  FIRST_TO_SECOND_90_HEALTHY,
+  FIRST_TO_SECOND_90_WATCH,
+  LTV_COHORT_SPREAD_MATERIAL_USD,
+  MONTH_PLUS_1_ACTIVE_HEALTHY,
+  MONTH_PLUS_1_ACTIVE_WATCH,
+  REPEAT_PURCHASE_HEALTHY,
+  REPEAT_PURCHASE_WATCH,
+  type RevenueDurabilityStatusInputs,
+} from "./revenue-durability-status";
+
+export {
   buildLTVPageViewModel,
   buildLTVPageViewModelFromDataset,
   type LTVPageSummaryView,

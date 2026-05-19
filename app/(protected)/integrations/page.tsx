@@ -1,11 +1,18 @@
-import IntegrationsClient from "./IntegrationsClient"
+import IntegrationsClient from "./IntegrationsClient";
 
-type IntegrationsPageProps = {
-  searchParams?: {
-    [key: string]: string | string[] | undefined
-  }
-}
+type IntegrationsSearchParams = Record<
+  string,
+  string | string[] | undefined
+>;
 
-export default function IntegrationsPage({ searchParams }: IntegrationsPageProps) {
-  return <IntegrationsClient initialSearchParams={searchParams} />
+export default async function IntegrationsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<IntegrationsSearchParams>;
+}) {
+  const resolved =
+    searchParams !== undefined ? await searchParams : undefined;
+  return (
+    <IntegrationsClient initialSearchParams={resolved} />
+  );
 }

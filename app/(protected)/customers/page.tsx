@@ -1,11 +1,13 @@
-import CustomersClient from "./CustomersClient"
+import CustomersClient from "./CustomersClient";
 
-type CustomersPageProps = {
-  searchParams?: {
-    [key: string]: string | string[] | undefined
-  }
-}
+type CustomersSearchParams = Record<string, string | string[] | undefined>;
 
-export default function CustomersPage({ searchParams }: CustomersPageProps) {
-  return <CustomersClient initialSearchParams={searchParams} />
+export default async function CustomersPage({
+  searchParams,
+}: {
+  searchParams?: Promise<CustomersSearchParams>;
+}) {
+  const resolved =
+    searchParams !== undefined ? await searchParams : undefined;
+  return <CustomersClient initialSearchParams={resolved} />;
 }

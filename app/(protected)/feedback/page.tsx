@@ -1,6 +1,13 @@
-import { FeedbackTool } from "@/components/ui/feedback-tool";
+"use client";
 
-export default function FeedbackPage() {
+import { Suspense } from "react";
+import { FeedbackTool } from "@/components/ui/feedback-tool";
+import { useSearchParams } from "next/navigation";
+
+function FeedbackContent() {
+  const searchParams = useSearchParams();
+  const area = searchParams.get("area");
+
   return (
     <div className="min-h-[60vh] flex items-center justify-center p-8">
       <div className="w-full max-w-2xl">
@@ -9,6 +16,13 @@ export default function FeedbackPage() {
           <p className="text-gray-600">
             Your feedback helps us build a better Retention OS experience
           </p>
+          {area && (
+            <div className="mt-4">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                Context: {area.charAt(0).toUpperCase() + area.slice(1).replace(/-/g, " ")}
+              </span>
+            </div>
+          )}
         </div>
         
         <div className="flex justify-center">
@@ -25,5 +39,19 @@ export default function FeedbackPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function FeedbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[60vh] flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-pulse text-gray-500">Loading...</div>
+        </div>
+      </div>
+    }>
+      <FeedbackContent />
+    </Suspense>
   );
 }

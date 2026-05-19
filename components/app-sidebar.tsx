@@ -1,23 +1,9 @@
 "use client"
 
 import * as React from "react"
-import {
-  Users,
-  Package,
-  TrendingUp,
-  Settings2,
-  Home,
-  Target,
-  Zap,
-  Shield,
-  Crown,
-  BarChart3,
-  Sparkles,
-  Rocket,
-} from "lucide-react"
+import { Home, Sparkles, User } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
 import {
@@ -27,177 +13,41 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { MVP_COMMAND_CENTRE_NAME, RETENTIONOS_MARK } from "@/lib/mvp/cohesion"
 
-// Retention Analytics navigation data
 const data = {
   user: {
     name: "Aidan Woodward",
     email: "aidan@retention-os.com",
-    avatar: "/avatars/aidan.jpg",
+    avatar: "/avatars/aidan.svg",
   },
   teams: [
     {
-      name: "Retention OS",
-      logo: Crown,
-      plan: "Enterprise",
+      name: RETENTIONOS_MARK,
+      logo: Sparkles,
+      tagline: MVP_COMMAND_CENTRE_NAME,
     },
   ],
   navMain: [
     {
-      title: "Executive",
-      url: "/executive",
+      title: "Core",
+      url: "#",
       icon: Home,
       isActive: true,
       items: [
-        {
-          title: "Home Overview",
-          url: "/executive",
-        },
-        {
-          title: "Data Health",
-          url: "/executive/reconciliation",
-        },
+        { title: "Dashboard", url: "/dashboard" },
+        { title: "Cohorts", url: "/cohorts" },
+        { title: "Retention", url: "/retention" },
+        { title: "LTV", url: "/ltv" },
+        { title: "Insights", url: "/insights" },
+        { title: "Data", url: "/data" },
       ],
     },
     {
-      title: "Revenue Formation",
+      title: "Account",
       url: "#",
-      icon: BarChart3,
-      items: [
-        {
-          title: "Revenue Cohorts",
-          url: "/retention-ltv/revenue-cohorts",
-        },
-      ],
-    },
-    {
-      title: "Customer Retention",
-      url: "#",
-      icon: TrendingUp,
-      items: [
-        {
-          title: "Retention Curves",
-          url: "/retention-ltv/curves",
-        },
-        {
-          title: "Repeat Purchase Rates",
-          url: "/retention-ltv/repeat-rates",
-        },
-      ],
-    },
-    {
-      title: "Value Growth",
-      url: "#",
-      icon: Sparkles,
-      items: [
-        {
-          title: "LTV Curves",
-          url: "/retention-ltv/ltv-cohorts",
-        },
-      ],
-    },
-    {
-      title: "Customer Intelligence",
-      url: "#",
-      icon: Users,
-      items: [
-        {
-          title: "Customer Composition",
-          url: "/customer-intelligence/composition",
-          comingSoon: true,
-        },
-        {
-          title: "Segments",
-          url: "/customer-intelligence/segments",
-          comingSoon: true,
-        },
-        {
-          title: "Customer Profiles",
-          url: "/customer-intelligence/profiles",
-          comingSoon: true,
-        },
-      ],
-    },
-    {
-      title: "Product Insights",
-      url: "#",
-      icon: Package,
-      items: [
-        {
-          title: "Product Performance",
-          url: "/product-economics/performance",
-          comingSoon: true,
-        },
-        {
-          title: "Product Concentration",
-          url: "/product-economics/concentration",
-          comingSoon: true,
-        },
-        {
-          title: "Discount Impact",
-          url: "/product-economics/discounts",
-          comingSoon: true,
-        },
-      ],
-    },
-    {
-      title: "Activation",
-      url: "#",
-      icon: Rocket,
-      items: [
-        {
-          title: "Lifecycle Opportunities",
-          url: "#",
-          disabled: true,
-          comingSoon: true,
-        },
-        {
-          title: "Campaign Sync",
-          url: "#",
-          disabled: true,
-          comingSoon: true,
-        },
-      ],
-    },
-    {
-      title: "Platform",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "Integrations",
-          url: "/settings/integrations",
-        },
-        {
-          title: "Exports",
-          url: "/executive/exports",
-        },
-        {
-          title: "User Settings",
-          url: "/settings",
-        },
-        {
-          title: "Support & Feedback",
-          url: "/settings/feedback",
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: "UK Market",
-      url: "/segments/uk",
-      icon: Target,
-    },
-    {
-      name: "European Expansion",
-      url: "/segments/europe",
-      icon: Zap,
-    },
-    {
-      name: "Premium Customers",
-      url: "/segments/premium",
-      icon: Shield,
+      icon: User,
+      items: [{ title: "Settings", url: "/settings" }],
     },
   ],
 }
@@ -206,11 +56,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <TeamSwitcher teams={data.teams} singleTeamStatic />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

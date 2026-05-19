@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { MVP_COMMAND_CENTRE_NAME, RETENTIONOS_MARK } from "@/lib/mvp/cohesion";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,8 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Retention OS - Customer Analytics Platform",
-  description: "Advanced customer retention and cohort analysis platform",
+  title: `${RETENTIONOS_MARK} — ${MVP_COMMAND_CENTRE_NAME}`,
+  description:
+    "Cohort net revenue LTV, contribution LTV, first-to-second within 90 days, Month +N active rates, and revenue durability posture on a deterministic demo dataset.",
 };
 
 export default function RootLayout({

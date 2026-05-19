@@ -1,8 +1,32 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { getMvpContainmentRedirect } from "@/lib/mvp/demo-surface-guard";
 
 export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+
+  // never run auth/demo middleware on Next internals or assets
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api") || // optional: only if your middleware shouldn't touch APIs
+    pathname === "/favicon.ico" ||
+    pathname.startsWith("/avatars/") ||
+    /\.(?:png|jpg|jpeg|svg|gif|webp|ico|css|js|map|woff2?|txt|xml|json|webmanifest)$/.test(
+      pathname,
+    )
+  ) {
+    return NextResponse.next();
+  }
+
+  const containment = getMvpContainmentRedirect(pathname);
+  if (containment) {
+    const url = req.nextUrl.clone();
+    url.pathname = containment;
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
   const res = NextResponse.next();
 
   // Skip authentication in development mode
@@ -45,10 +69,12 @@ export async function middleware(req: NextRequest) {
   return res;
 }
 
-export const config = { 
+export const config = {
   matcher: [
-    "/dashboard/:path*",
-    "/sync/:path*", 
-    "/connect/:path*"
-  ] 
+    /*
+     * Broad enough for MVP route containment; skip static/image optimizations here
+     * and bail out early for /api inside the handler.
+     */
+    "/((?!_next/static|_next/image|favicon.ico).*)",
+  ],
 };

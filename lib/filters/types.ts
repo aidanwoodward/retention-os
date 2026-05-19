@@ -34,6 +34,7 @@ export interface FilterConfig {
   formatter?: (v: FilterValue) => string; // for chip preview text
   param?: string; // custom query key, default = id
   defaultValue?: FilterValue;
+  tooltip?: string; // optional tooltip text for date-range filters
 }
 
 export interface FilterBarProps<TData = unknown> {

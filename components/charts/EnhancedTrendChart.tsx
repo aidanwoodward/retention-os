@@ -4,7 +4,7 @@ import React, { useState, useRef } from "react";
 
 interface EnhancedTrendChartProps {
   currentData: number[];
-  previousData: number[];
+  previousData: (number | null)[]; // Allow null for missing data
   currentColor?: string;
   previousColor?: string;
   height?: number;
@@ -34,9 +34,11 @@ export function EnhancedTrendChart({
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
+  // Filter out null values for max calculation
+  const previousDataNumbers = previousData.filter((v): v is number => v !== null);
   const maxValue = Math.max(
     ...currentData,
-    ...previousData,
+    ...previousDataNumbers,
     1
   );
 
@@ -48,19 +50,53 @@ export function EnhancedTrendChart({
     value,
   }));
 
-  const previousPoints = previousData.map((value, index) => ({
-    x: (index / (previousData.length - 1 || 1)) * 100,
-    y: height - normalize(value),
-    value,
-  }));
-
-  // Create area paths
+  // Build previous points array maintaining index alignment (null for missing data)
+  const previousPointsWithNulls = previousData.map((value, index) => {
+    if (value === null) {
+      return null;
+    }
+    return {
+      x: (index / (previousData.length - 1 || 1)) * 100,
+      y: height - normalize(value),
+      value,
+      originalIndex: index, // Track original index for lookup
+    };
+  });
+  
+  // Filtered version for rendering (non-null segments only — path builder uses previousPointsWithNulls)
   const currentAreaPath = points.length > 0
     ? `M 0 ${height} L ${points.map(p => `${p.x} ${p.y}`).join(" L ")} L 100 ${height} Z`
     : "";
 
-  const previousAreaPath = previousPoints.length > 0
-    ? `M 0 ${height} L ${previousPoints.map(p => `${p.x} ${p.y}`).join(" L ")} L 100 ${height} Z`
+  // Build previous area path, handling null values (gaps)
+  const previousAreaPath = previousPointsWithNulls.length > 0
+    ? (() => {
+        // Group consecutive non-null points into segments
+        const segments: Array<Array<{ x: number; y: number }>> = [];
+        let currentSegment: Array<{ x: number; y: number }> = [];
+        
+        previousPointsWithNulls.forEach((point) => {
+          if (point === null) {
+            if (currentSegment.length > 0) {
+              segments.push(currentSegment);
+              currentSegment = [];
+            }
+          } else {
+            currentSegment.push({ x: point.x, y: point.y });
+          }
+        });
+        if (currentSegment.length > 0) {
+          segments.push(currentSegment);
+        }
+        
+        // Build path for each segment
+        return segments.map(segment => {
+          if (segment.length === 0) return "";
+          const first = segment[0];
+          const last = segment[segment.length - 1];
+          return `M ${first.x} ${height} L ${segment.map(p => `${p.x} ${p.y}`).join(" L ")} L ${last.x} ${height} Z`;
+        }).join(" ");
+      })()
     : "";
 
   // Create line paths
@@ -68,9 +104,34 @@ export function EnhancedTrendChart({
     .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
     .join(" ");
 
-  const previousPath = previousPoints
-    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
-    .join(" ");
+  // Build previous line path, handling null values (gaps)
+  const previousPath = (() => {
+    const pathSegments: string[] = [];
+    let currentSegment: Array<{ x: number; y: number }> = [];
+    
+    previousPointsWithNulls.forEach((point, _idx) => {
+      if (point === null) {
+        if (currentSegment.length > 0) {
+          // Close current segment
+          pathSegments.push(
+            currentSegment.map((p, idx) => `${idx === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ")
+          );
+          currentSegment = [];
+        }
+      } else {
+        currentSegment.push({ x: point.x, y: point.y });
+      }
+    });
+    
+    // Add final segment if exists
+    if (currentSegment.length > 0) {
+      pathSegments.push(
+        currentSegment.map((p, idx) => `${idx === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ")
+      );
+    }
+    
+    return pathSegments.join(" ");
+  })();
 
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
     if (!containerRef.current || !svgRef.current) return;
@@ -106,7 +167,12 @@ export function EnhancedTrendChart({
   };
 
   const hoverPoint = hoverIndex !== null ? points[hoverIndex] : null;
-  const hoverPreviousPoint = hoverIndex !== null && previousPoints[hoverIndex] ? previousPoints[hoverIndex] : null;
+  // Get previous value at the same index (lifecycle-aligned comparison)
+  const hoverPreviousValue = hoverIndex !== null && hoverIndex < previousData.length ? previousData[hoverIndex] : null;
+  // Find the corresponding point in previousPoints array (for rendering)
+  const hoverPreviousPoint = hoverIndex !== null && hoverPreviousValue !== null
+    ? previousPointsWithNulls[hoverIndex] || null
+    : null;
 
   // Calculate period label based on hover index
   // If periodLabels array is provided, use it directly (most accurate)
@@ -189,6 +255,42 @@ export function EnhancedTrendChart({
   };
 
   const hoverPeriodLabel = hoverIndex !== null ? getPeriodLabel(hoverIndex) : '';
+  // Calculate previous period label (same index, shifted by year)
+  const getPreviousPeriodLabel = (index: number): string => {
+    if (currentData.length === 0 || index < 0 || index >= currentData.length) return '';
+    
+    // Use actual period labels if provided
+    if (periodLabels && periodLabels.length > 0 && index < periodLabels.length) {
+      const currentLabel = periodLabels[index];
+      
+      // Parse and shift by appropriate periods
+      if (cohortType === 'annual') {
+        const year = parseInt(currentLabel);
+        return (year - 1).toString();
+      } else if (cohortType === 'quarterly') {
+        // Format: "Q1 24" -> "Q1 23"
+        const match = currentLabel.match(/Q(\d+)\s+(\d+)/);
+        if (match) {
+          const quarter = match[1];
+          const year = parseInt('20' + match[2]);
+          return `Q${quarter} ${String(year - 1).substring(2)}`;
+        }
+      } else if (cohortType === 'monthly') {
+        const match = currentLabel.match(/(\w+)\s+(\d+)/);
+        if (match) {
+          const month = match[1];
+          const year = parseInt('20' + match[2]);
+          return `${month} ${String(year - 1).substring(2)}`;
+        }
+      }
+      return currentLabel; // Fallback
+    }
+    
+    // Fallback: use getPeriodLabel and shift manually
+    return getPeriodLabel(index);
+  };
+  
+  const hoverPreviousPeriodLabel = hoverIndex !== null ? getPreviousPeriodLabel(hoverIndex) : '';
 
   return (
     <div className="relative w-full" ref={containerRef}>
@@ -323,11 +425,13 @@ export function EnhancedTrendChart({
                 <span className="text-sm font-semibold text-gray-900">{formatValue(hoverPoint.value)}</span>
               </div>
             )}
-            {hoverPreviousPoint && (
+            {hoverPreviousPoint && hoverPreviousValue !== null && (
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: previousColor }}></div>
-                  <span className="text-xs text-gray-500">Last year</span>
+                  <span className="text-xs text-gray-500">
+                    {hoverPreviousPeriodLabel ? `${hoverPreviousPeriodLabel}` : 'Same period last year'}
+                  </span>
                 </div>
                 <span className="text-sm font-semibold text-gray-900">{formatValue(hoverPreviousPoint.value)}</span>
               </div>

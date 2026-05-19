@@ -16,8 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { FilterConfig, FilterValue, NumberCondition, NumberFilterValue, DateRangeFilterValue } from "@/lib/filters/types";
-import { Calendar } from "@/components/ui/calendar";
-import type { DateRange } from "react-day-picker";
+import { DateRangePicker } from "./DateRangePicker";
 
 interface FilterChipProps {
   config: FilterConfig;
@@ -25,85 +24,6 @@ interface FilterChipProps {
   onChange: (value: FilterValue) => void;
   onClear: () => void;
 }
-
-// Inline Date Range Picker component using Calendar with range mode
-interface InlineDateRangePickerProps {
-  value?: { from: Date; to: Date };
-  onValueChange?: (range: { from: Date; to: Date } | undefined) => void;
-  minDate?: Date;
-  maxDate?: Date;
-  placeholder?: string;
-  onRangeChange?: (range: DateRange | undefined) => void;
-}
-
-const InlineDateRangePicker = React.forwardRef<
-  { getRange: () => DateRange | undefined },
-  InlineDateRangePickerProps
->(({ 
-  value, 
-  onValueChange: _onValueChange, 
-  minDate = new Date(2010, 0, 1),
-  maxDate = new Date(2030, 11, 31),
-  placeholder = "Select date range",
-  onRangeChange
-}, ref) => {
-  const [range, setRange] = useState<DateRange | undefined>(
-    value ? { from: value.from, to: value.to } : undefined
-  );
-
-  useEffect(() => {
-    if (value) {
-      setRange({ from: value.from, to: value.to });
-    } else {
-      setRange(undefined);
-    }
-  }, [value]);
-
-  // Expose getRange method via ref
-  React.useImperativeHandle(ref, () => ({
-    getRange: () => range
-  }));
-
-  const formatDateDisplay = () => {
-    if (range?.from && range?.to) {
-      return `${range.from.toLocaleDateString()} – ${range.to.toLocaleDateString()}`;
-    }
-    if (range?.from) {
-      return `${range.from.toLocaleDateString()} – Select end date`;
-    }
-    return placeholder;
-  };
-
-  return (
-    <div className="flex flex-col gap-4">
-      {/* Date Display Input */}
-      <input
-        readOnly
-        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white"
-        value={formatDateDisplay()}
-        placeholder={placeholder}
-      />
-
-      {/* Calendar with Range Mode */}
-      <Calendar
-        mode="range"
-        selected={range}
-        onSelect={(next) => {
-          setRange(next);
-          onRangeChange?.(next);
-          // Don't call onValueChange here - only on Apply button
-        }}
-        numberOfMonths={2}
-        disabled={(date) => {
-          return date < minDate || date > maxDate;
-        }}
-        className="rounded-lg"
-      />
-    </div>
-  );
-});
-
-InlineDateRangePicker.displayName = "InlineDateRangePicker";
 
 export function FilterChip({ config, value, onChange, onClear }: FilterChipProps) {
   const [open, setOpen] = useState(false);
@@ -124,26 +44,9 @@ export function FilterChip({ config, value, onChange, onClear }: FilterChipProps
     }
   }, [open, value]);
 
-  // For date-range, we need to get the current range from the picker
-  const dateRangeRef = useRef<{ getRange: () => DateRange | undefined } | null>(null);
-
   const handleApply = () => {
-    if (config.type === 'date-range' && dateRangeRef.current) {
-      const range = dateRangeRef.current.getRange();
-      if (range?.from && range?.to) {
-        setPendingValue({
-          from: range.from.toISOString().split('T')[0],
-          to: range.to.toISOString().split('T')[0],
-        });
-        onChange({
-          from: range.from.toISOString().split('T')[0],
-          to: range.to.toISOString().split('T')[0],
-        });
-      } else {
-        setPendingValue({ from: '', to: '' });
-        onChange(undefined);
-      }
-    } else {
+    // Date-range filters handle onChange directly (auto-apply), so skip Apply button
+    if (config.type !== 'date-range') {
       onChange(pendingValue);
     }
     setOpen(false);
@@ -395,18 +298,23 @@ export function FilterChip({ config, value, onChange, onClear }: FilterChipProps
       case 'date-range':
         const dateRangeValue = (pendingValue && typeof pendingValue === 'object' && 'from' in pendingValue
           ? pendingValue as DateRangeFilterValue
-          : { from: '', to: '' });
+          : undefined);
 
         return (
-          <InlineDateRangePicker
-            ref={dateRangeRef}
-            value={dateRangeValue.from && dateRangeValue.to ? {
-              from: new Date(dateRangeValue.from),
-              to: new Date(dateRangeValue.to),
-            } : undefined}
+          <DateRangePicker
+            value={dateRangeValue}
+            onChange={(newValue) => {
+              // Update pending value (undefined means clear filter)
+              setPendingValue(newValue);
+              // Apply immediately (auto-apply for quick selects, or when both dates selected for custom)
+              onChange(newValue);
+            }}
+            onClose={() => setOpen(false)}
             minDate={new Date(2010, 0, 1)}
-            maxDate={new Date(2030, 11, 31)}
+            // maxDate defaults to today in DateRangePicker (prevents future dates)
             placeholder="Select date range"
+            tooltip={config.tooltip}
+            showQuickSelects={true}
           />
         );
 
@@ -470,7 +378,7 @@ export function FilterChip({ config, value, onChange, onClear }: FilterChipProps
         id={`filter-chip-${config.id}`}
         className={cn(
           config.type === 'date-range' 
-            ? "w-auto p-4 bg-white shadow-lg border border-gray-200 rounded-xl z-[50] pointer-events-auto" 
+            ? "w-[360px] p-0 bg-white shadow-lg border border-gray-200 rounded-xl z-[50] pointer-events-auto" 
             : "w-80 p-4"
         )}
         align="start"
@@ -485,18 +393,16 @@ export function FilterChip({ config, value, onChange, onClear }: FilterChipProps
       >
         {config.type === 'date-range' ? (
           <div className="flex flex-col bg-white rounded-xl max-h-[80vh] overflow-y-auto">
-            <div className="px-4 pt-4 pb-2">
-              <h3 className="text-sm font-semibold mb-4">Filter by {config.title}</h3>
+            <div className="px-3 pt-2.5 pb-1.5">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Filter by {config.title}</h3>
             </div>
-            <div className="px-4 pb-2 border-b border-gray-200">
+            <div className="px-3 pb-2">
               {renderFilterContent()}
             </div>
-            <div className="flex items-center justify-end gap-2 px-4 pt-4 pb-4 border-t border-gray-200 mt-auto">
+            {/* Reset button for date-range (auto-apply, so no Apply button needed) */}
+            <div className="flex items-center justify-end gap-2 px-3 pt-1.5 pb-2.5 border-t border-gray-200">
               <Button variant="outline" size="sm" onClick={handleReset}>
                 Reset
-              </Button>
-              <Button size="sm" onClick={handleApply}>
-                Apply
               </Button>
             </div>
           </div>

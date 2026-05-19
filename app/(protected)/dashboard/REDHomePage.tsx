@@ -296,7 +296,7 @@ export default function REDHomePage() {
     hasData: true
   };
 
-  const mockInsights: AIInsight[] = [
+  const _mockInsights: AIInsight[] = [
     {
       id: 'insight_1',
       severity: 'high',
@@ -377,7 +377,7 @@ export default function REDHomePage() {
   // Use mock data if no real data
   const displayKPIs = kpis.length > 0 ? kpis : mockKPIs;
   const displayHealthScore = healthScore || mockHealthScore;
-  const displayInsights = insights.length > 0 ? insights : mockInsights;
+  const displayInsights = insights.length > 0 ? insights : _mockInsights;
 
   if (loading) {
     return (

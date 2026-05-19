@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 
 export default function Home() {
-  // Redirect to dashboard in development, or show login page in production
-  if (process.env.NODE_ENV === 'development') {
-    redirect('/cohorts/revenue');
+  // Local dev lands on the command centre; production shows the starter until login flows run.
+  if (process.env.NODE_ENV === "development") {
+    redirect("/dashboard");
   }
   
   return (

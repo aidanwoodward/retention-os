@@ -1,0 +1,13 @@
+order_id,customer_id,ordered_at,gross_revenue,discounts,refunds,contribution_margin,channel,product_id,product_name,sku,quantity,unit_price,line_total
+ORD-1001,cust_alice,2024-01-08T10:00:00Z,118.00,8.00,0,,meta_paid,sku_serum,Lumin Daily Serum,LMN-SER-30,2,45.00,90.00
+ORD-1001,cust_alice,2024-01-08T10:00:00Z,118.00,8.00,0,,meta_paid,sku_barrier,Quiet Night Barrier Cream,QN-BC-50,1,28.00,28.00
+ORD-1002,cust_bob,2024-01-12T15:30:00Z,64.00,0,0,,google_paid,sku_mini,Discovery Mini Kit,DISC-MINI-01,2,32.00,64.00
+ORD-1003,cust_alice,2024-02-20T09:15:00Z,89.50,12.00,5.00,,email_owned,sku_cleanser,River Foam Cleanser,RVR-FOAM-01,1,24.00,24.00
+ORD-1003,cust_alice,2024-02-20T09:15:00Z,89.50,12.00,5.00,,email_owned,sku_spf,Cliff Mineral SPF 40,CLF-SPF40-50,1,42.00,42.00
+ORD-1003,cust_alice,2024-02-20T09:15:00Z,89.50,12.00,5.00,,email_owned,sku_serum,Lumin Daily Serum,LMN-SER-30,1,23.50,23.50
+ORD-1004,cust_chen,2024-01-25T18:45:00Z,42.00,0,0,,tiktok_paid,sku_mini,Discovery Mini Kit,DISC-MINI-01,1,42.00,42.00
+ORD-1005,cust_bob,2024-03-01T12:00:00Z,51.00,6.00,0,,google_paid,sku_spf,Cliff Mineral SPF 40,CLF-SPF40-50,1,51.00,51.00
+ORD-1006,cust_chen,2024-03-10T11:20:00Z,76.00,0,15.00,,influencer,sku_barrier,Quiet Night Barrier Cream,QN-BC-50,2,38.00,76.00
+ORD-1007,cust_dana,2024-02-01T08:00:00Z,33.00,3.00,0,,meta_paid,sku_cleanser,River Foam Cleanser,RVR-FOAM-01,1,33.00,33.00
+ORD-1008,cust_dana,2024-02-28T14:10:00Z,54.00,0,0,,meta_paid,sku_mini,Discovery Mini Kit,DISC-MINI-01,1,28.00,28.00
+ORD-1008,cust_dana,2024-02-28T14:10:00Z,54.00,0,0,,meta_paid,sku_serum,Lumin Daily Serum,LMN-SER-30,1,26.00,26.00

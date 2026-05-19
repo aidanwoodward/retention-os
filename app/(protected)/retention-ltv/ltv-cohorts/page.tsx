@@ -6,6 +6,14 @@ import { FilterBar } from "@/components/filters/FilterBar";
 import { retentionCurvesFilters, retentionCurvesSearch } from "@/lib/filters/config";
 import { AIAnalysis } from "@/components/ai/AIAnalysis";
 import { useSearchParams, useRouter } from "next/navigation";
+import { Diagnosis } from "@/components/diagnosis/Diagnosis";
+import { diagnoseLTVCohortsEnhanced } from "@/lib/diagnosis/ltv-curves";
+import { SeverityIndicator } from "@/components/diagnosis/SeverityIndicator";
+import { CausalitySection } from "@/components/diagnosis/CausalitySection";
+import { DecisionAxes } from "@/components/diagnosis/DecisionAxes";
+import { getDecisionAxesForDiagnosis } from "@/lib/diagnosis/decision-axes";
+import { ImpactRanges } from "@/components/diagnosis/ImpactRanges";
+import { computeLTVCohortsImpactRanges } from "@/lib/diagnosis/impact-ranges/ltv-curves";
 import {
   TrendingUp,
   AlertTriangle,
@@ -64,15 +72,21 @@ interface CohortLTVData {
   cohortMonth: string;
   cohortSize: number;
   clr: number | null; // CLR = LTV at last fully observed bucket
+  clrBucket: number | null; // Bucket index where CLR is measured
+  clrBucketLabel: string | null; // Bucket label where CLR is measured
+  maxObservedBucket: number; // Highest bucket index with real data (not inferred)
   buckets: Array<{
     bucket: number;
     bucketLabel: string;
-    ltv: number | null; // null for missing data (line break)
+    ltv: number | null; // null for missing data or non-monotonic
+    nullReason?: 'missing' | 'non_monotonic'; // Reason for null (if applicable)
   }>;
 }
 
 // TODO: Re-add chartConfig when chart styling is customized
 const isDev = process.env.NODE_ENV !== 'production';
+// Gate monotonic warnings behind DEBUG flag or only log once per cohort
+const DEBUG_LTV_MONOTONIC = process.env.NEXT_PUBLIC_DEBUG_LTV_MONOTONIC === 'true';
 
 function CLRLTVCohortsContent() {
   const [cohorts, setCohorts] = useState<CohortData[]>([]);
@@ -88,6 +102,8 @@ function CLRLTVCohortsContent() {
   const searchParams = useSearchParams();
   const _router = useRouter();
   const lastQueryStringRef = React.useRef<string>('');
+  // Track which cohorts have already been warned about monotonicity issues (reduce console noise)
+  const warnedCohortsRef = React.useRef<Set<string>>(new Set());
 
   // Get cohort type from URL (default to annual)
   const cohortType = React.useMemo(() => {
@@ -180,7 +196,7 @@ function CLRLTVCohortsContent() {
     } catch (err) {
       // Use dummy data in dev mode
       if (isDev) {
-        const dummyCohorts = generateDummyLTVData();
+        const dummyCohorts = _generateDummyLTVData();
         setCohorts(dummyCohorts);
         setError(null);
       } else {
@@ -199,7 +215,7 @@ function CLRLTVCohortsContent() {
   // Always produces monotonic non-decreasing cumulative LTV per cohort
   // Note: total_revenue in periods should be INCREMENTAL (per period), not cumulative
   // The normalization step will sum these incrementally to build cumulative LTV
-  const generateDummyLTVData = (): CohortData[] => {
+  const _generateDummyLTVData = (): CohortData[] => {
     const cohorts: CohortData[] = [];
     const baseDate = new Date('2020-01-01');
     
@@ -335,27 +351,33 @@ function CLRLTVCohortsContent() {
       // Build buckets array with monotonicity enforcement
       // Cumulative LTV should not decrease. If a bucket appears lower, it's typically partial/incomplete data; we break the line by setting null.
       let previousLTV: number | null = null;
+      let maxObservedBucket = -1; // Track highest bucket with real data (for maturity gating)
       for (let bucket = 0; bucket <= maxPossibleBucket; bucket++) {
         const ltv = bucketMap.get(bucket);
         if (ltv !== undefined) {
           // Enforce monotonicity: if current LTV is lower than previous by more than tolerance, treat as incomplete/partial data
           const TOLERANCE = 0.001;
           if (previousLTV !== null && ltv < previousLTV - TOLERANCE) {
-            // DEV-only: log warning before nulling out
-            if (isDev) {
+            // DEV-only: log warning once per cohort (reduce console noise)
+            const warningKey = `${cohortLabel}-monotonic`;
+            if (isDev && (DEBUG_LTV_MONOTONIC || !warnedCohortsRef.current.has(warningKey))) {
               console.warn(`⚠️ Non-monotonic LTV detected in cohort ${cohortLabel} at bucket ${bucket}:`, {
                 previous: previousLTV,
                 current: ltv,
                 difference: previousLTV - ltv,
                 action: 'Setting to null (line break)',
               });
+              warnedCohortsRef.current.add(warningKey);
             }
-            // Break the line - set to null for incomplete/partial bucket
+            // Break the line - set to null for non-monotonic data
             buckets.push({
               bucket,
               bucketLabel: getTimeBucketLabel(bucket),
               ltv: null,
+              nullReason: 'non_monotonic',
             });
+            // maxObservedBucket already set to previous valid bucket, stop here
+            break;
           } else {
             // Valid monotonic point
             buckets.push({
@@ -365,6 +387,7 @@ function CLRLTVCohortsContent() {
             });
             previousLTV = ltv;
             lastObservedLTV = ltv;
+            maxObservedBucket = bucket; // Update max observed bucket
           }
         } else {
           // Missing data - add null for line break
@@ -372,18 +395,37 @@ function CLRLTVCohortsContent() {
             bucket,
             bucketLabel: getTimeBucketLabel(bucket),
             ltv: null,
+            nullReason: 'missing',
           });
+          // maxObservedBucket remains at last valid bucket (or -1 if no valid buckets yet)
+        }
+      }
+      
+      // Ensure maxObservedBucket is set correctly (should be >= 0 if we have any data)
+      if (maxObservedBucket === -1 && lastObservedLTV !== null) {
+        // If we have LTV data but maxObservedBucket wasn't set, find the last bucket with data
+        for (let i = buckets.length - 1; i >= 0; i--) {
+          if (buckets[i].ltv !== null) {
+            maxObservedBucket = buckets[i].bucket;
+            break;
+          }
         }
       }
       
       // CLR = LTV at last fully observed bucket (matured cohorts only)
+      // CLR is measured at maxObservedBucket (last bucket with real data that meets maturity/coverage rules)
       const clr = lastObservedLTV;
+      const clrBucket = maxObservedBucket >= 0 ? maxObservedBucket : null;
+      const clrBucketLabel = clrBucket !== null ? getTimeBucketLabel(clrBucket) : null;
       
       return {
         cohortLabel,
         cohortMonth: earliestCohortMonth,
         cohortSize: totalCohortSize,
         clr,
+        clrBucket,
+        clrBucketLabel,
+        maxObservedBucket,
         buckets,
       };
     }).sort((a, b) => {
@@ -393,6 +435,8 @@ function CLRLTVCohortsContent() {
   }, [cohorts, getCohortLabel, convertPeriodToBucket, getTimeBucketLabel, maxPossibleBucket]);
 
   // Compute aggregated LTV curve data (weighted by cohort size)
+  // Maturity gating: only include cohorts with maxObservedBucket >= N for bucket N
+  // Coverage threshold: stop series when <60% of cohorts have data for a bucket
   // Enforce monotonicity: if aggregated LTV decreases, set to null (line break)
   const aggregatedLTVData = React.useMemo((): LTVPeriodData[] => {
     if (normalizedCohortLTVData.length === 0) return [];
@@ -402,35 +446,52 @@ function CLRLTVCohortsContent() {
     
     if (totalCohortSize === 0) return [];
     
+    // Calculate coverage threshold: 60% of cohorts must have data
+    const totalCohorts = normalizedCohortLTVData.length;
+    const coverageThreshold = Math.ceil(totalCohorts * 0.6);
+    
     let previousLTV: number | null = null;
     const TOLERANCE = 0.001;
     
     for (let bucket = 0; bucket <= maxPossibleBucket; bucket++) {
       let weightedSum = 0;
       let totalWeight = 0;
+      let eligibleCohortCount = 0;
       
+      // Maturity gating: only include cohorts with maxObservedBucket >= bucket
       normalizedCohortLTVData.forEach(cohort => {
-        const bucketData = cohort.buckets.find(b => b.bucket === bucket);
-        if (bucketData && bucketData.ltv !== null) {
-          const weight = cohort.cohortSize;
-          weightedSum += bucketData.ltv * weight;
-          totalWeight += weight;
+        // Only include cohorts that have reached this bucket (maturity check)
+        if (cohort.maxObservedBucket >= bucket) {
+          eligibleCohortCount++;
+          const bucketData = cohort.buckets.find(b => b.bucket === bucket);
+          if (bucketData && bucketData.ltv !== null) {
+            const weight = cohort.cohortSize;
+            weightedSum += bucketData.ltv * weight;
+            totalWeight += weight;
+          }
         }
       });
+      
+      // Coverage threshold stop rule: stop if <60% of cohorts have data for this bucket
+      if (eligibleCohortCount < coverageThreshold) {
+        break; // Stop the series - not enough cohorts have data
+      }
       
       if (totalWeight > 0) {
         const aggregatedLTV = weightedSum / totalWeight;
         
         // Enforce monotonicity for aggregated data
         if (previousLTV !== null && aggregatedLTV < previousLTV - TOLERANCE) {
-          // DEV-only: log warning
-          if (isDev) {
+          // DEV-only: log warning once (reduce console noise)
+          const warningKey = 'aggregated-monotonic';
+          if (isDev && (DEBUG_LTV_MONOTONIC || !warnedCohortsRef.current.has(warningKey))) {
             console.warn(`⚠️ Non-monotonic aggregated LTV at bucket ${bucket}:`, {
               previous: previousLTV,
               current: aggregatedLTV,
               difference: previousLTV - aggregatedLTV,
               action: 'Setting to null (line break)',
             });
+            warnedCohortsRef.current.add(warningKey);
           }
           // Break the line
           result.push({
@@ -439,6 +500,7 @@ function CLRLTVCohortsContent() {
             ltv: null,
             cohortSize: totalCohortSize,
           });
+          break; // Stop series after monotonicity violation
         } else {
           result.push({
             bucket,
@@ -449,13 +511,15 @@ function CLRLTVCohortsContent() {
           previousLTV = aggregatedLTV;
         }
       } else {
-        // No data for this bucket
+        // No data for this bucket (but enough cohorts are eligible)
+        // This shouldn't happen if maturity gating works correctly, but handle gracefully
         result.push({
           bucket,
           bucketLabel: getTimeBucketLabel(bucket),
           ltv: null,
           cohortSize: totalCohortSize,
         });
+        break; // Stop series if no data despite eligible cohorts
       }
     }
     
@@ -526,11 +590,16 @@ function CLRLTVCohortsContent() {
     }
     
     // Avg CLR (only from matured cohorts with CLR)
+    // CLR bucket label: use the last bucket of aggregated series as representative bucket
+    // (since CLR is measured at the last bucket that meets maturity/coverage rules)
     const maturedCohorts = normalizedCohortLTVData.filter(c => c.clr !== null);
     const maturedTotalSize = maturedCohorts.reduce((sum, c) => sum + c.cohortSize, 0);
     const avgCLR = maturedTotalSize > 0
       ? maturedCohorts.reduce((sum, c) => sum + (c.clr! * c.cohortSize), 0) / maturedTotalSize
       : null;
+    
+    // CLR bucket label: use last bucket of aggregated series (where maturity/coverage rules stop the series)
+    const clrBucketLabel = ltvHorizons.lastLabel;
     
     // Avg LTV at last and midpoint buckets (from aggregated data - single source of truth)
     const ltvLast = ltvHorizons.lastBucket !== null 
@@ -542,6 +611,7 @@ function CLRLTVCohortsContent() {
     
     return {
       avgCLR,
+      clrBucketLabel, // Bucket label where CLR is measured
       avgLTVLast: ltvLast?.ltv ?? null,
       avgLTVMid: ltvMid?.ltv ?? null,
       activeCohorts: normalizedCohortLTVData.length,
@@ -579,7 +649,7 @@ function CLRLTVCohortsContent() {
       // Check if this looks like dummy data (heuristic: very regular patterns)
       return c.cohort_month.startsWith('2020-') && c.periods.length === 37;
     });
-  }, [isDev, cohorts]);
+  }, [cohorts]); // isDev omitted: constant from outer scope
 
   // Calculate insights - fully data-driven, no hardcoded copy
   // Gated: do not show insights when using DEV dummy data or insufficient coverage
@@ -669,7 +739,7 @@ function CLRLTVCohortsContent() {
     
     // If no meaningful insights, return empty (fallback message shown in UI)
     return insightsList.slice(0, 2);
-  }, [normalizedCohortLTVData, kpiMetrics, ltvHorizons, getTimeBucketLabel, useDevDummy]);
+  }, [normalizedCohortLTVData, kpiMetrics, ltvHorizons, useDevDummy]); // getTimeBucketLabel omitted: not used in this useMemo
 
   // Prepare chart data for aggregated view
   // Chart data derives from aggregatedLTVData (which already enforces monotonicity)
@@ -801,14 +871,19 @@ function CLRLTVCohortsContent() {
           const ltv = cohort.cohort_size > 0 ? cumulativeRevenue / cohort.cohort_size : 0;
           
           if (previousLTV !== null && ltv < previousLTV - TOLERANCE) {
-            console.warn(`⚠️ UPSTREAM DATA ISSUE: Non-monotonic cumulative revenue detected in cohort ${cohort.cohort_month} at period ${period.period_number}:`, {
-              previousLTV,
-              currentLTV: ltv,
-              difference: previousLTV - ltv,
-              previousRevenue: (previousLTV || 0) * cohort.cohort_size,
-              currentRevenue: cumulativeRevenue,
-              message: 'This will be corrected in normalization (set to null)',
-            });
+            // Log warning once per cohort (reduce console noise)
+            const warningKey = `${cohort.cohort_month}-upstream`;
+            if (DEBUG_LTV_MONOTONIC || !warnedCohortsRef.current.has(warningKey)) {
+              console.warn(`⚠️ UPSTREAM DATA ISSUE: Non-monotonic cumulative revenue detected in cohort ${cohort.cohort_month} at period ${period.period_number}:`, {
+                previousLTV,
+                currentLTV: ltv,
+                difference: previousLTV - ltv,
+                previousRevenue: (previousLTV || 0) * cohort.cohort_size,
+                currentRevenue: cumulativeRevenue,
+                message: 'This will be corrected in normalization (set to null)',
+              });
+              warnedCohortsRef.current.add(warningKey);
+            }
           }
           previousLTV = ltv;
         });
@@ -869,12 +944,24 @@ function CLRLTVCohortsContent() {
         }
       }
     }
-  }, [isDev, viewMode, normalizedCohortLTVData, aggregatedLTVData, aggregatedChartData, kpiMetrics, ltvHorizons]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDev, viewMode, normalizedCohortLTVData, aggregatedLTVData, aggregatedChartData, kpiMetrics, ltvHorizons]); // cohorts omitted: dev-only logging effect, adding would cause unnecessary re-runs
 
   const hasRealData = cohorts.length > 0 && !error;
 
   return (
     <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8">
+      {/* Page Header with Narrative Framing */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">LTV Cohorts</h1>
+        <p className="text-lg font-semibold text-gray-700 mb-2">Quality Separation</p>
+        <p className="text-sm text-gray-600 max-w-3xl">
+          Which customers create durable value — and which ones just look good at the top? 
+          Not all growth is quality growth. Are we acquiring high-volume but low-LTV customers? 
+          Are we ignoring small but insanely durable cohorts?
+        </p>
+      </div>
+
       {/* Filter Bar */}
       <div className="mb-6">
         <FilterBar
@@ -884,14 +971,16 @@ function CLRLTVCohortsContent() {
         />
       </div>
 
-      {/* AI Analysis */}
-      <div className="mb-8">
-        <AIAnalysis
-          pageType="ltv-cohorts"
-          dataAvailable={hasRealData}
-          loading={loading}
-        />
-      </div>
+      {/* AI Analysis - Gated behind feature flag */}
+      {process.env.NEXT_PUBLIC_ENABLE_AI_ANALYSIS === "true" && (
+        <div className="mb-8">
+          <AIAnalysis
+            pageType="ltv-cohorts"
+            dataAvailable={hasRealData}
+            loading={loading}
+          />
+        </div>
+      )}
 
       {/* Error State */}
       {error && !isDev && (
@@ -912,17 +1001,27 @@ function CLRLTVCohortsContent() {
         <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-shadow duration-150 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex flex-col h-full">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
-              <h3 className="text-base font-semibold text-gray-900">Avg CLR</h3>
+              <h3 className="text-base font-semibold text-gray-900">
+                Avg CLR{kpiMetrics.clrBucketLabel ? ` (at ${kpiMetrics.clrBucketLabel})` : ''}
+              </h3>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent className="bg-gray-900 text-white border-0 max-w-[280px]">
-                  <p className="text-xs mb-1">
-                    Weighted average CLR across all cohorts in the current filters. Selection does not change this benchmark.
+                <TooltipContent className="bg-gray-900 text-white border-0 max-w-[320px]">
+                  <p className="text-xs mb-1 font-semibold">
+                    CLR = LTV at the last bucket that meets maturity/coverage rules (matured/eligible cohorts only).
                   </p>
-                  <p className="text-xs text-gray-300">
-                    This KPI reflects all cohorts included in the current filters. Selecting cohorts in the chart does not affect this value.
+                  <p className="text-xs mb-1">
+                    Not necessarily final LTV if later buckets are incomplete.
+                  </p>
+                  {kpiMetrics.clrBucketLabel && (
+                    <p className="text-xs text-gray-300 mt-1">
+                      Measured at: {kpiMetrics.clrBucketLabel}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-300 mt-1">
+                    Weighted average CLR across all cohorts in the current filters. Selection does not change this benchmark.
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -1022,6 +1121,7 @@ function CLRLTVCohortsContent() {
         </div>
       </div>
 
+
       {/* Hero Chart */}
       <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)] mb-8">
         <div className="flex items-start justify-between gap-3 mb-6 flex-wrap">
@@ -1056,15 +1156,26 @@ function CLRLTVCohortsContent() {
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="font-medium text-gray-700">Reference:</span>
-                  <span>CLR = long-run cohort value (matured cohorts only)</span>
+                  <span>CLR = LTV at last bucket meeting maturity/coverage rules</span>
                   {kpiMetrics.avgCLR !== null && (
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Info className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help" />
                       </TooltipTrigger>
-                      <TooltipContent className="bg-gray-900 text-white border-0 max-w-[300px]">
-                        <p className="text-xs">
-                          CLR represents long-run value for fully matured cohorts. Comparing LTV curves to this benchmark shows how quickly cohorts approach their long-term value.
+                      <TooltipContent className="bg-gray-900 text-white border-0 max-w-[320px]">
+                        <p className="text-xs mb-1 font-semibold">
+                          CLR = LTV at the last bucket that meets maturity/coverage rules (matured/eligible cohorts only).
+                        </p>
+                        <p className="text-xs mb-1">
+                          Not necessarily final LTV if later buckets are incomplete.
+                        </p>
+                        {kpiMetrics.clrBucketLabel && (
+                          <p className="text-xs text-gray-300 mt-1">
+                            Measured at: {kpiMetrics.clrBucketLabel}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-300 mt-1">
+                          Comparing LTV curves to this benchmark shows how quickly cohorts approach their long-term value.
                         </p>
                       </TooltipContent>
                     </Tooltip>
@@ -1074,8 +1185,33 @@ function CLRLTVCohortsContent() {
                   <span className="font-medium text-gray-700">Interpretation:</span>
                   <span>curve shape shows how quickly value accumulates and where it stabilises</span>
                 </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="font-medium text-gray-700">Line breaks:</span>
+                  <span>indicate LTV decreased at that bucket</span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-gray-900 text-white border-0 max-w-[300px]">
+                      <p className="text-xs">
+                        Line breaks indicate LTV decreased at that bucket. This usually means incomplete/partial data or adjustments; we omit the point to avoid misleading downward cumulative LTV.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </span>
               </div>
             </div>
+            
+            {/* Explanatory note: Why aggregated curve stops early (only in aggregated view, only when data exists) */}
+            {viewMode === 'aggregated' && aggregatedLTVData.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                <p className="text-xs text-gray-500">
+                  <span className="font-medium text-gray-700">Why does the aggregated curve stop early?</span>{' '}
+                  Aggregated LTV is shown only for buckets where enough cohorts have reached that age.
+                  We stop the curve once fewer than 60% of cohorts have sufficient data, to avoid misleading averages driven by a small or biased subset.
+                </p>
+              </div>
+            )}
           </div>
           
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -1476,8 +1612,27 @@ function CLRLTVCohortsContent() {
               </div>
             </div>
             {selectedCLR !== null && (
-              <p className="text-xs text-gray-500 mb-3">
-                Selected CLR (avg): {formatCurrencyFull(selectedCLR)}
+              <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5">
+                <span>Selected CLR (avg): {formatCurrencyFull(selectedCLR)}</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-gray-900 text-white border-0 max-w-[300px]">
+                    <p className="text-xs mb-1 font-semibold">
+                      Selected CLR (avg)
+                    </p>
+                    <p className="text-xs mb-1">
+                      Weighted average of CLR across the selected cohorts.
+                    </p>
+                    <p className="text-xs mb-1">
+                      Each cohort contributes proportionally to its size.
+                    </p>
+                    <p className="text-xs text-gray-300">
+                      CLR is measured at each cohort&apos;s last bucket that meets maturity and coverage rules.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
               </p>
             )}
             <div className="flex flex-wrap gap-2">
@@ -1593,8 +1748,23 @@ function CLRLTVCohortsContent() {
                         Size
                       </th>
                       <th className="sticky left-[200px] bg-gray-50 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider z-30 border-r-2 border-gray-300 w-[120px]">
-                  CLR
-                </th>
+                        <div className="flex items-center gap-1">
+                          CLR
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-gray-900 text-white border-0 max-w-[320px]">
+                              <p className="text-xs mb-1 font-semibold">
+                                CLR = LTV at the last bucket that meets maturity/coverage rules (matured/eligible cohorts only).
+                              </p>
+                              <p className="text-xs mb-1">
+                                Not necessarily final LTV if later buckets are incomplete.
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </th>
                       {Array.from({ length: Math.min(maxPossibleBucket + 1, 20) }, (_, i) => {
                         const shouldShow = tableExpanded || i < 6; // Show first 6 buckets by default
                         if (!shouldShow) return null;
@@ -1662,6 +1832,45 @@ function CLRLTVCohortsContent() {
         </div>
       </div>
       )}
+
+      {/* Diagnosis Section */}
+      {(() => {
+        const enhancedDiagnosis = diagnoseLTVCohortsEnhanced({
+          cohorts,
+          cohortLTVData: normalizedCohortLTVData,
+          aggregatedLTVData,
+        });
+        return enhancedDiagnosis.sentence ? (
+          <>
+            <Diagnosis sentence={enhancedDiagnosis.sentence} />
+            
+            {/* Severity Indicator - Only render when severity exists */}
+            {enhancedDiagnosis.severity && (
+              <SeverityIndicator severity={enhancedDiagnosis.severity} />
+            )}
+            
+            {/* Causality Section - Only render when causality factors exist */}
+            {enhancedDiagnosis.causality.length > 0 && (
+              <CausalitySection 
+                factors={enhancedDiagnosis.causality}
+                framingCopy="Based on the patterns observed, these are the likely structural drivers:"
+              />
+            )}
+            
+            {/* Decision Axes Section - Only render when Diagnosis exists */}
+            <DecisionAxes 
+              axes={getDecisionAxesForDiagnosis(enhancedDiagnosis.sentence, 'ltv-curves')}
+            />
+            
+            {/* Impact Ranges Section - Only render when Diagnosis exists */}
+            <ImpactRanges 
+              ranges={computeLTVCohortsImpactRanges({
+                cohortLTVData: normalizedCohortLTVData,
+              })}
+            />
+          </>
+        ) : null;
+      })()}
     </div>
   );
 }

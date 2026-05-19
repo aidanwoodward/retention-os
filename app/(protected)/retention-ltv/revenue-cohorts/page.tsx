@@ -7,7 +7,7 @@ import { RevenueCohortsChart } from "@/components/charts/RevenueCohortsChart";
 import { CohortMatrix } from "@/components/charts/CohortMatrix";
 import { AIAnalysis } from "@/components/ai/AIAnalysis";
 import { LoadingButton } from "@/components/ui/loading-buttons";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   AlertTriangle,
   Info,
@@ -20,6 +20,14 @@ import {
 import { FilterValue } from "@/lib/filters/types";
 // TODO: Re-add SimpleTrendChart when needed
 import { EnhancedTrendChart } from "@/components/charts/EnhancedTrendChart";
+import { Diagnosis } from "@/components/diagnosis/Diagnosis";
+import { diagnoseRevenueCohortsEnhanced } from "@/lib/diagnosis/revenue-cohorts";
+import { DecisionAxes } from "@/components/diagnosis/DecisionAxes";
+import { getDecisionAxesForDiagnosis } from "@/lib/diagnosis/decision-axes";
+import { ImpactRanges } from "@/components/diagnosis/ImpactRanges";
+import { computeRevenueCohortsImpactRanges } from "@/lib/diagnosis/impact-ranges/revenue-cohorts";
+import { SeverityIndicator } from "@/components/diagnosis/SeverityIndicator";
+import { CausalitySection } from "@/components/diagnosis/CausalitySection";
 
 // TODO: Re-add custom icons (StoreIcon, WalletIcon, UsersIcon, FireIcon) when needed
 
@@ -52,16 +60,18 @@ function RevenueCohortsContent() {
   const [error, setError] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<Record<string, FilterValue>>({});
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   // Initialize with default value to avoid hydration mismatch
   // Actual value will be set in useEffect on client side
-  const [viewMode, setViewMode] = useState<'monthly' | 'quarterly' | 'half-year' | 'annual'>('annual');
+  const [viewMode, setViewMode] = useState<'monthly' | 'quarterly' | 'annual'>('annual');
   // const [cagr, setCagr] = useState<number>(0);
   // const [selectedCohort, setSelectedCohort] = useState<string | null>(null);
 
   // Use a ref to track the last query string to prevent infinite loops
   const lastQueryStringRef = React.useRef<string>('');
   // Track if we've initialized the URL with cohortType
-  const urlInitializedRef = React.useRef(false);
+  const _urlInitializedRef = React.useRef(false);
 
   const fetchCohorts = useCallback(async () => {
     try {
@@ -133,7 +143,18 @@ function RevenueCohortsContent() {
     return date >= range.from && date <= range.to;
   }, []);
 
-  // Helper: Calculate previous period of equal length to date range
+  /**
+   * CANONICAL DEFINITION: Previous Period Range Calculation
+   * 
+   * Calculates the previous period range of equal length to the given date range.
+   * Used when dateRange is present to compare selected range vs previous period.
+   * 
+   * Logic:
+   * - Previous range ends the day before the current range starts
+   * - Previous range length = current range length
+   * - Example: If current range is 2025-01-01 to 2025-03-31 (90 days),
+   *   previous range is 2024-10-03 to 2024-12-31 (90 days)
+   */
   const getPreviousPeriodRange = React.useCallback((range: { from: Date; to: Date }): { from: Date; to: Date } => {
     // Validate dates before using getTime()
     if (isNaN(range.from.getTime()) || isNaN(range.to.getTime())) {
@@ -208,21 +229,25 @@ function RevenueCohortsContent() {
   // Handle view mode changes - derive from URL params (client-side only to avoid hydration mismatch)
   useEffect(() => {
     const cohortType = searchParams.get('cohortType');
-    if (cohortType && ['monthly', 'quarterly', 'half-year', 'annual'].includes(cohortType)) {
-      setViewMode(cohortType as 'monthly' | 'quarterly' | 'half-year' | 'annual');
+    if (cohortType && ['monthly', 'quarterly', 'annual'].includes(cohortType)) {
+      setViewMode(cohortType as 'monthly' | 'quarterly' | 'annual');
     } else {
       // If no cohortType in URL, default to 'annual'
       // Only initialize URL once on mount to avoid repeated history mutations
-      if (!urlInitializedRef.current) {
+      if (!_urlInitializedRef.current) {
         const newParams = new URLSearchParams(searchParams.toString());
         newParams.set('cohortType', 'annual');
-        // Update URL without triggering navigation
-        window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
-        urlInitializedRef.current = true;
+        const newQueryString = newParams.toString();
+        const currentQueryString = searchParams.toString();
+        // Only update URL if the query string actually changed
+        if (newQueryString !== currentQueryString) {
+          router.replace(`${pathname}?${newQueryString}`, { scroll: false });
+        }
+        _urlInitializedRef.current = true;
       }
       setViewMode('annual');
     }
-  }, [searchParams]);
+  }, [searchParams, pathname, router]);
 
   const formatCurrency = (amount: number) => {
     if (amount >= 1000000) {
@@ -247,32 +272,26 @@ function RevenueCohortsContent() {
     return num.toLocaleString();
   };
 
-  // Helper function to calculate previous period key
-  const getPreviousPeriodKey = React.useCallback((periodKey: string, mode: typeof viewMode): string => {
+  /**
+   * Get the same period from the previous year (lifecycle-aligned comparison)
+   * - Monthly: compare month t to month t-12 (same month, previous year)
+   * - Quarterly: compare quarter t to quarter t-4 (same quarter, previous year)
+   * - Annual: compare year t to year t-1 (previous year)
+   */
+  const getSamePeriodLastYear = React.useCallback((periodKey: string, mode: typeof viewMode): string => {
     if (mode === 'annual') {
       const year = parseInt(periodKey);
       return (year - 1).toString();
-    } else if (mode === 'half-year') {
-      const [year, half] = periodKey.split(' ');
-      const yearNum = parseInt(year);
-      if (half === 'H1') {
-        return `${yearNum - 1} H2`;
-      } else {
-        return `${yearNum} H1`;
-      }
     } else if (mode === 'quarterly') {
       const [year, quarter] = periodKey.split('-Q');
       const yearNum = parseInt(year);
       const quarterNum = parseInt(quarter);
-      if (quarterNum === 1) {
-        return `${yearNum - 1}-Q4`;
-      } else {
-        return `${yearNum}-Q${quarterNum - 1}`;
-      }
+      // Same quarter, previous year
+      return `${yearNum - 1}-Q${quarterNum}`;
     } else {
-      // Monthly - subtract one month
+      // Monthly - subtract 12 months (same month, previous year)
       const date = new Date(periodKey);
-      date.setMonth(date.getMonth() - 1);
+      date.setFullYear(date.getFullYear() - 1);
       return date.toISOString().substring(0, 7);
     }
   }, []);
@@ -289,25 +308,12 @@ function RevenueCohortsContent() {
       periods: Array<{ period_number: number; order_month: string; total_revenue: number; active_customers: number }>;
     }>();
     
-    // Track which months belong to each aggregated cohort (for half-year completeness check)
-    const cohortMonthsMap = new Map<string, Set<string>>();
-    
     filteredCohorts.forEach((cohort) => {
       let aggregatedLabel: string;
       const cohortDate = new Date(cohort.cohort_month);
       
       if (viewMode === 'annual') {
         aggregatedLabel = cohortDate.getFullYear().toString();
-      } else if (viewMode === 'half-year') {
-        const year = cohortDate.getFullYear();
-        const half = cohortDate.getMonth() < 6 ? 'H1' : 'H2';
-        aggregatedLabel = `${year} ${half}`;
-        
-        // Track months for completeness check
-        if (!cohortMonthsMap.has(aggregatedLabel)) {
-          cohortMonthsMap.set(aggregatedLabel, new Set());
-        }
-        cohortMonthsMap.get(aggregatedLabel)!.add(cohort.cohort_month);
       } else if (viewMode === 'quarterly') {
         const year = cohortDate.getFullYear();
         const quarter = Math.floor(cohortDate.getMonth() / 3) + 1;
@@ -337,10 +343,6 @@ function RevenueCohortsContent() {
         
         if (viewMode === 'annual') {
           periodKey = orderDate.getFullYear().toString();
-        } else if (viewMode === 'half-year') {
-          const year = orderDate.getFullYear();
-          const half = orderDate.getMonth() < 6 ? 'H1' : 'H2';
-          periodKey = `${year} ${half}`;
         } else if (viewMode === 'quarterly') {
           const year = orderDate.getFullYear();
           const quarter = Math.floor(orderDate.getMonth() / 3) + 1;
@@ -364,46 +366,7 @@ function RevenueCohortsContent() {
       });
     });
     
-    let aggregatedCohorts = Array.from(aggregatedMap.values());
-    
-    // For half-year view, group 2019 H1 and H2 as "Pre-2020"
-    if (viewMode === 'half-year') {
-      const pre2020Cohorts = aggregatedCohorts.filter(c => {
-        const [year] = c.label.split(' ');
-        return parseInt(year) < 2020;
-      });
-      
-      if (pre2020Cohorts.length > 0) {
-        // Combine all pre-2020 cohorts into one "Pre-2020" cohort
-        const pre2020Combined = pre2020Cohorts.reduce((acc, cohort) => {
-          acc.revenue += cohort.revenue;
-          acc.customers += cohort.customers;
-          // Merge periods
-          cohort.periods.forEach(period => {
-            const existing = acc.periods.find(p => p.order_month === period.order_month);
-            if (existing) {
-              existing.total_revenue += period.total_revenue;
-              existing.active_customers += period.active_customers;
-            } else {
-              acc.periods.push({ ...period });
-            }
-          });
-          return acc;
-        }, {
-          label: 'Pre-2020',
-          revenue: 0,
-          customers: 0,
-          periods: [] as Array<{ period_number: number; order_month: string; total_revenue: number; active_customers: number }>
-        });
-        
-        // Remove pre-2020 cohorts and add combined one
-        aggregatedCohorts = aggregatedCohorts.filter(c => {
-          const [year] = c.label.split(' ');
-          return parseInt(year) >= 2020;
-        });
-        aggregatedCohorts.unshift(pre2020Combined);
-      }
-    }
+    const aggregatedCohorts = Array.from(aggregatedMap.values());
     
     return aggregatedCohorts.sort((a, b) => {
       // Sort by label (chronologically)
@@ -412,16 +375,6 @@ function RevenueCohortsContent() {
         if (a.label.startsWith('Pre-') || a.label.startsWith('≤')) return -1;
         if (b.label.startsWith('Pre-') || b.label.startsWith('≤')) return 1;
         return parseInt(a.label) - parseInt(b.label);
-      } else if (viewMode === 'half-year') {
-        // Handle "Pre-2020" label - it should sort first
-        if (a.label === 'Pre-2020') return -1;
-        if (b.label === 'Pre-2020') return 1;
-        const [yearA, halfA] = a.label.split(' ');
-        const [yearB, halfB] = b.label.split(' ');
-        const yearANum = parseInt(yearA);
-        const yearBNum = parseInt(yearB);
-        if (yearANum !== yearBNum) return yearANum - yearBNum;
-        return halfA === 'H1' && halfB === 'H2' ? -1 : halfA === 'H2' && halfB === 'H1' ? 1 : 0;
       } else if (viewMode === 'quarterly') {
         const [yearA, quarterA] = a.label.split('-Q');
         const [yearB, quarterB] = b.label.split('-Q');
@@ -435,13 +388,30 @@ function RevenueCohortsContent() {
     });
   }, [filteredCohorts, viewMode]);
 
-  // Generate trend data from actual cohort data
-  // Based on user requirement: "one point per cohort" BUT also "KPI values correspond to LAST data point"
-  // Interpretation: Show one point per time period (matching the time range), where each point shows
-  // total revenue/customers in that period from all cohorts. This way:
-  // - Number of points = number of unique time periods (matches the date range)
-  // - Last point = most recent time period (matches KPI requirement)
-  // - Each point shows: current = revenue in this period, previous = revenue in equivalent period from previous year
+  /**
+   * CANONICAL DEFINITION: Trend Data Generation
+   * 
+   * Generates time series data for trend charts showing Current vs Previous period comparisons.
+   * 
+   * Data Structure:
+   * - One data point per time period (year/quarter/month based on viewMode)
+   * - Each point aggregates revenue/customers across ALL cohorts for that time period
+   * - Number of points = number of unique time periods in filteredCohorts
+   * 
+   * Current vs Previous Logic:
+   * - Current: Revenue/customers in this time period (aggregated across all cohorts)
+   * - Previous: Revenue/customers in equivalent period from previous year
+   *   - Previous calendar period (prior month/quarter/year) when aligned comparisons need it.
+   * 
+   * Period Key Format:
+   * - Annual: "2025" (year only)
+   * - Quarterly: "2025-Q1"
+   * - Monthly: "2025-01" (YYYY-MM)
+   * 
+   * Filtering:
+   * - Excludes "Pre-2020" periods from chart display
+   * - Uses filteredCohorts (already filtered by dateRange if present)
+   */
   const generateTrendDataFromCohorts = React.useMemo(() => {
     return (type: 'revenue' | 'customers', currentPeriodKey: string) => {
       if (filteredCohorts.length === 0 || !currentPeriodKey) {
@@ -460,10 +430,6 @@ function RevenueCohortsContent() {
           // Determine period key based on viewMode (when the revenue occurred)
           if (viewMode === 'annual') {
             periodKey = orderDate.getFullYear().toString();
-          } else if (viewMode === 'half-year') {
-            const year = orderDate.getFullYear();
-            const half = orderDate.getMonth() < 6 ? 'H1' : 'H2';
-            periodKey = `${year} ${half}`;
           } else if (viewMode === 'quarterly') {
             const year = orderDate.getFullYear();
             const quarter = Math.floor(orderDate.getMonth() / 3) + 1;
@@ -487,16 +453,9 @@ function RevenueCohortsContent() {
         
         if (viewMode === 'annual') {
           return parseInt(keyA) - parseInt(keyB);
-        } else if (viewMode === 'half-year') {
+        } else if (viewMode === 'quarterly') {
           if (keyA.startsWith('Pre-') || keyA.startsWith('≤')) return -1;
           if (keyB.startsWith('Pre-') || keyB.startsWith('≤')) return 1;
-          const [yearA, halfA] = keyA.split(' ');
-          const [yearB, halfB] = keyB.split(' ');
-          const yearANum = parseInt(yearA);
-          const yearBNum = parseInt(yearB);
-          if (yearANum !== yearBNum) return yearANum - yearBNum;
-          return halfA === 'H1' && halfB === 'H2' ? -1 : halfA === 'H2' && halfB === 'H1' ? 1 : 0;
-        } else if (viewMode === 'quarterly') {
           const [yearA, quarterA] = keyA.split('-Q');
           const [yearB, quarterB] = keyB.split('-Q');
           const yearANum = parseInt(yearA);
@@ -515,18 +474,21 @@ function RevenueCohortsContent() {
 
       // Build arrays: for each time period, calculate current and previous values
       const currentData: number[] = [];
-      const previousData: number[] = [];
+      const previousData: (number | null)[] = [];
       const labels: string[] = [];
 
       periodsForChart.forEach(([periodKey, revenueInPeriod]) => {
         // Current: revenue in this time period
         currentData.push(revenueInPeriod);
         
-        // Previous: revenue in the equivalent period from previous year
-        // For period "2025", previous should be revenue in "2024" (same period, previous year)
-        const prevPeriodKey = getPreviousPeriodKey(periodKey, viewMode);
-        const prevPeriodRevenue = periodMap.get(prevPeriodKey) || 0;
-        previousData.push(prevPeriodRevenue);
+        // Previous: revenue in the equivalent period from previous year (lifecycle-aligned)
+        // Monthly: compare month t to month t-12 (same month, previous year)
+        // Quarterly: compare quarter t to quarter t-4 (same quarter, previous year)
+        // Annual: compare year t to year t-1 (previous year)
+        const prevPeriodKey = getSamePeriodLastYear(periodKey, viewMode);
+        const prevPeriodRevenue = periodMap.get(prevPeriodKey);
+        // Use null instead of 0 to indicate missing data (will show as gap)
+        previousData.push(prevPeriodRevenue !== null && prevPeriodRevenue !== undefined ? prevPeriodRevenue : null);
         
         // Format label for display
         if (viewMode === 'annual') {
@@ -534,8 +496,6 @@ function RevenueCohortsContent() {
         } else if (viewMode === 'quarterly') {
           const [year, quarter] = periodKey.split('-Q');
           labels.push(`Q${quarter} ${year.substring(2)}`);
-        } else if (viewMode === 'half-year') {
-          labels.push(periodKey); // e.g., "2019 H1", "2019 H2", "2020 H1", etc.
         } else {
           const [year, month] = periodKey.split('-');
           const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -545,9 +505,26 @@ function RevenueCohortsContent() {
 
       return { currentData, previousData, labels };
     };
-  }, [filteredCohorts, viewMode, getPreviousPeriodKey]);
+  }, [filteredCohorts, viewMode, getSamePeriodLastYear]);
 
-  // Get the current period key (e.g., "2025" for annual, "2025 H2" for half-year)
+  /**
+   * CANONICAL DEFINITION: Current Period Key (Last Complete Period)
+   * 
+   * Determines the most recent fully completed calendar period for use as "Current Period"
+   * when dateRange is absent.
+   * 
+   * "Complete Period" Semantics:
+   * - Monthly: Last fully completed month (excludes current month-to-date)
+   * - Quarterly: Last fully completed quarter (excludes current quarter-to-date)
+   * - Annual: Last fully completed year (excludes current year-to-date)
+   * 
+   * Logic:
+   * 1. Derive current period key from today's date
+   * 2. Filter out periods >= current period (incomplete periods)
+   * 3. Exclude Pre-2020 and ≤ buckets
+   * 4. Return the latest complete period available
+   * 5. Fallback to latest available period if no complete period exists
+   */
   const currentPeriodKey = React.useMemo(() => {
     if (filteredCohorts.length === 0) return '';
     
@@ -560,10 +537,6 @@ function RevenueCohortsContent() {
         
         if (viewMode === 'annual') {
           periodKey = orderDate.getFullYear().toString();
-        } else if (viewMode === 'half-year') {
-          const year = orderDate.getFullYear();
-          const half = orderDate.getMonth() < 6 ? 'H1' : 'H2';
-          periodKey = `${year} ${half}`;
         } else if (viewMode === 'quarterly') {
           const year = orderDate.getFullYear();
           const quarter = Math.floor(orderDate.getMonth() / 3) + 1;
@@ -578,18 +551,26 @@ function RevenueCohortsContent() {
       });
     });
     
+    // Derive current period key from today's date (incomplete period to exclude)
+    const now = new Date();
+    let currentPeriodKeyToExclude: string;
+    
+    if (viewMode === 'annual') {
+      currentPeriodKeyToExclude = now.getFullYear().toString();
+    } else if (viewMode === 'quarterly') {
+      const currentYear = now.getFullYear();
+      const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
+      currentPeriodKeyToExclude = `${currentYear}-Q${currentQuarter}`;
+    } else {
+      // Monthly: YYYY-MM format
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      currentPeriodKeyToExclude = `${year}-${month}`;
+    }
+    
     const sortedPeriods = Array.from(periodRevenueMap.keys()).sort((a, b) => {
       if (viewMode === 'annual') {
         return parseInt(a) - parseInt(b);
-      } else if (viewMode === 'half-year') {
-        if (a.startsWith('Pre-') || a.startsWith('≤')) return -1;
-        if (b.startsWith('Pre-') || b.startsWith('≤')) return 1;
-        const [yearA, halfA] = a.split(' ');
-        const [yearB, halfB] = b.split(' ');
-        const yearANum = parseInt(yearA);
-        const yearBNum = parseInt(yearB);
-        if (yearANum !== yearBNum) return yearANum - yearBNum;
-        return halfA === 'H1' && halfB === 'H2' ? -1 : halfA === 'H2' && halfB === 'H1' ? 1 : 0;
       } else if (viewMode === 'quarterly') {
         const [yearA, quarterA] = a.split('-Q');
         const [yearB, quarterB] = b.split('-Q');
@@ -602,184 +583,198 @@ function RevenueCohortsContent() {
       }
     });
     
-    const periodsForComparison = sortedPeriods.filter(key => 
+    // Filter out Pre-2020 and ≤ buckets, and exclude current incomplete period
+    const periodsForComparison = sortedPeriods.filter(key => {
+      // Exclude Pre-2020 and ≤ buckets
+      if (key.startsWith('Pre-') || key.startsWith('≤')) return false;
+      
+      // Exclude current incomplete period (period >= currentPeriodKeyToExclude)
+      if (viewMode === 'annual') {
+        const keyYear = parseInt(key);
+        const currentYear = parseInt(currentPeriodKeyToExclude);
+        return keyYear < currentYear;
+      } else if (viewMode === 'quarterly') {
+        const [keyYear, keyQuarter] = key.split('-Q');
+        const [currentYear, currentQuarter] = currentPeriodKeyToExclude.split('-Q');
+        const keyYearNum = parseInt(keyYear);
+        const currentYearNum = parseInt(currentYear);
+        if (keyYearNum < currentYearNum) return true;
+        if (keyYearNum > currentYearNum) return false;
+        return parseInt(keyQuarter) < parseInt(currentQuarter);
+      } else {
+        // Monthly: string comparison works for YYYY-MM format
+        return key < currentPeriodKeyToExclude;
+      }
+    });
+    
+    // Return the latest complete period, or fallback to latest available if none exists
+    if (periodsForComparison.length > 0) {
+      return periodsForComparison[periodsForComparison.length - 1];
+    }
+    
+    // Fallback: if no complete period exists (edge case - e.g., only current period in data),
+    // return the latest available period excluding Pre-2020
+    const allPeriodsExcludingPre2020 = sortedPeriods.filter(key => 
       !key.startsWith('Pre-') && !key.startsWith('≤')
     );
     
-    return periodsForComparison[periodsForComparison.length - 1] || '';
+    return allPeriodsExcludingPre2020[allPeriodsExcludingPre2020.length - 1] || '';
   }, [filteredCohorts, viewMode]);
 
-  // Calculate top cohorts by revenue in the selected period (not lifetime revenue)
+  /**
+   * CANONICAL DEFINITION: Get Cohort Revenues for Current Period
+   * 
+   * Calculates revenue per cohort for the Current Period only, ensuring alignment with
+   * the canonical Current Period definition used by totalRevenue.
+   * 
+   * Time Window Logic (matches totalRevenue calculation):
+   * - When dateRange is present: Filters revenue where order_month falls within dateRange
+   *   (same as totalRevenue when dateRange exists)
+   * - When dateRange is absent: Filters revenue where periodKey matches currentPeriodKey
+   *   (last complete period from trend chart, excluding Pre-2020)
+   *   (same as totalRevenue when dateRange is absent - uses last trend data point)
+   * 
+   * This ensures all "Top cohort" metrics and share calculations use the same time window
+   * as totalRevenue, providing consistent metrics across the page.
+   * 
+   * Returns: Array of { label: string, revenue: number } sorted by revenue descending
+   */
+  const getCohortRevenuesForCurrentPeriod = React.useMemo(() => {
+    if (filteredCohorts.length === 0) {
+      return [];
+    }
+
+    const cohortRevenues: Array<{ label: string; revenue: number }> = [];
+
+    filteredCohorts.forEach((cohort) => {
+      // Determine cohort label based on viewMode
+      let cohortLabel: string;
+      const cohortDate = new Date(cohort.cohort_month);
+      
+      if (viewMode === 'annual') {
+        cohortLabel = cohortDate.getFullYear().toString();
+      } else if (viewMode === 'quarterly') {
+        const year = cohortDate.getFullYear();
+        const quarter = Math.floor(cohortDate.getMonth() / 3) + 1;
+        cohortLabel = `${year}-Q${quarter}`;
+      } else {
+        cohortLabel = cohort.cohort_month;
+      }
+      
+      // Sum revenue from periods that match the Current Period
+      let revenueInPeriod = 0;
+      
+      if (dateRange) {
+        // When dateRange is present: filter by dateRange (same logic as totalRevenue)
+        cohort.periods.forEach((period) => {
+          const orderDate = new Date(period.order_month);
+          if (isDateInRange(orderDate, dateRange)) {
+            revenueInPeriod += period.total_revenue;
+          }
+        });
+      } else {
+        // When dateRange is absent: filter by currentPeriodKey (last complete period)
+        // currentPeriodKey is calculated separately and represents the last period
+        // from the trend chart (excluding Pre-2020)
+        if (!currentPeriodKey) {
+          return; // Skip if no current period key available
+        }
+        
+        cohort.periods.forEach((period) => {
+          const orderDate = new Date(period.order_month);
+          let periodKey: string;
+          
+          if (viewMode === 'annual') {
+            periodKey = orderDate.getFullYear().toString();
+          } else if (viewMode === 'quarterly') {
+            const year = orderDate.getFullYear();
+            const quarter = Math.floor(orderDate.getMonth() / 3) + 1;
+            periodKey = `${year}-Q${quarter}`;
+          } else {
+            periodKey = period.order_month;
+          }
+          
+          if (periodKey === currentPeriodKey) {
+            revenueInPeriod += period.total_revenue;
+          }
+        });
+      }
+      
+      if (revenueInPeriod > 0) {
+        // Check if cohort already exists (for aggregated cohorts like Pre-2020)
+        const existing = cohortRevenues.find(c => c.label === cohortLabel);
+        if (existing) {
+          existing.revenue += revenueInPeriod;
+        } else {
+          cohortRevenues.push({
+            label: cohortLabel,
+            revenue: revenueInPeriod
+          });
+        }
+      }
+    });
+    
+    // Sort by revenue descending
+    return cohortRevenues.sort((a, b) => b.revenue - a.revenue);
+  }, [filteredCohorts, viewMode, dateRange, currentPeriodKey, isDateInRange]);
+
+  /**
+   * CANONICAL DEFINITION: Top Cohorts Leaderboard
+   * 
+   * Returns top 5 cohorts by revenue in Current Period only.
+   * 
+   * Time Window: Uses getCohortRevenuesForCurrentPeriod() which aligns with totalRevenue:
+   * - When dateRange is present: Revenue within dateRange
+   * - When dateRange is absent: Revenue in last complete period (currentPeriodKey)
+   * 
+   * Share calculations use the same totalRevenue as Current Period definition.
+   */
   const getTopCohorts = React.useMemo(() => {
-    if (cohorts.length === 0 || !currentPeriodKey) {
+    const cohortRevenues = getCohortRevenuesForCurrentPeriod;
+    
+    if (cohortRevenues.length === 0) {
       // Return dummy top cohorts
       const dummyCohorts = [
-        { month: '2024-10', revenue: 245000 },
-        { month: '2024-09', revenue: 230000 },
-        { month: '2024-08', revenue: 215000 },
-        { month: '2024-07', revenue: 200000 },
-        { month: '2024-06', revenue: 185000 },
+        { label: '2024-10', revenue: 245000 },
+        { label: '2024-09', revenue: 230000 },
+        { label: '2024-08', revenue: 215000 },
+        { label: '2024-07', revenue: 200000 },
+        { label: '2024-06', revenue: 185000 },
       ];
       const dummyTotal = dummyCohorts.reduce((sum, c) => sum + c.revenue, 0) + 500000; // Add others
       return dummyCohorts.map(c => ({
-        ...c,
+        month: c.label,
+        revenue: c.revenue,
         share: (c.revenue / dummyTotal) * 100
       }));
     }
     
-    // Calculate revenue per cohort for the current period only
-    const cohortRevenuesInPeriod: Array<{ month: string; revenue: number }> = [];
+    const totalRevenueInPeriod = cohortRevenues.reduce((sum, c) => sum + c.revenue, 0);
     
-    filteredCohorts.forEach((cohort) => {
-      // Determine cohort label based on viewMode
-      let cohortLabel: string;
-      const cohortDate = new Date(cohort.cohort_month);
-      
-      if (viewMode === 'annual') {
-        cohortLabel = cohortDate.getFullYear().toString();
-      } else if (viewMode === 'half-year') {
-        const year = cohortDate.getFullYear();
-        const half = cohortDate.getMonth() < 6 ? 'H1' : 'H2';
-        // Group 2019 as Pre-2020
-        if (year < 2020) {
-          cohortLabel = 'Pre-2020';
-        } else {
-          cohortLabel = `${year} ${half}`;
-        }
-      } else if (viewMode === 'quarterly') {
-        const year = cohortDate.getFullYear();
-        const quarter = Math.floor(cohortDate.getMonth() / 3) + 1;
-        cohortLabel = `${year}-Q${quarter}`;
-      } else {
-        cohortLabel = cohort.cohort_month;
-      }
-      
-      // Sum revenue from periods that match the current period key
-      let revenueInPeriod = 0;
-      cohort.periods.forEach((period) => {
-        const orderDate = new Date(period.order_month);
-        let periodKey: string;
-        
-        if (viewMode === 'annual') {
-          periodKey = orderDate.getFullYear().toString();
-        } else if (viewMode === 'half-year') {
-          const year = orderDate.getFullYear();
-          const half = orderDate.getMonth() < 6 ? 'H1' : 'H2';
-          periodKey = `${year} ${half}`;
-        } else if (viewMode === 'quarterly') {
-          const year = orderDate.getFullYear();
-          const quarter = Math.floor(orderDate.getMonth() / 3) + 1;
-          periodKey = `${year}-Q${quarter}`;
-        } else {
-          periodKey = period.order_month;
-        }
-        
-        if (periodKey === currentPeriodKey) {
-          revenueInPeriod += period.total_revenue;
-        }
-      });
-      
-      if (revenueInPeriod > 0) {
-        // Check if cohort already exists (for aggregated cohorts like Pre-2020)
-        const existing = cohortRevenuesInPeriod.find(c => c.month === cohortLabel);
-        if (existing) {
-          existing.revenue += revenueInPeriod;
-        } else {
-          cohortRevenuesInPeriod.push({
-            month: cohortLabel,
-            revenue: revenueInPeriod
-          });
-        }
-      }
-    });
-    
-    const totalRevenueInPeriod = cohortRevenuesInPeriod.reduce((sum, c) => sum + c.revenue, 0);
-    
-    // Sort and get top 5
-    const top5Cohorts = [...cohortRevenuesInPeriod]
-      .sort((a, b) => b.revenue - a.revenue)
+    // Get top 5 (cohortRevenues is already sorted by revenue descending)
+    const top5Cohorts = cohortRevenues
       .slice(0, 5)
       .map(c => ({
-        ...c,
+        month: c.label,
+        revenue: c.revenue,
         share: totalRevenueInPeriod > 0 ? (c.revenue / totalRevenueInPeriod) * 100 : 0
       }));
     
-      return top5Cohorts;
-  }, [filteredCohorts, viewMode, currentPeriodKey]);
+    return top5Cohorts;
+  }, [getCohortRevenuesForCurrentPeriod]);
 
-  // Count cohorts that have revenue in the current period (for "Top X of Y" display)
+  /**
+   * CANONICAL DEFINITION: Active Cohorts Count
+   * 
+   * Counts cohorts with revenue in Current Period (for "Top X of Y" display).
+   * 
+   * Time Window: Uses getCohortRevenuesForCurrentPeriod() which aligns with totalRevenue.
+   * Returns the count of cohorts with >0 revenue in Current Period.
+   */
   const cohortsInCurrentPeriodCount = React.useMemo(() => {
-    if (cohorts.length === 0 || !currentPeriodKey) {
-      return 0;
-    }
-    
-    // Calculate revenue per cohort for the current period only (same logic as getTopCohorts)
-    const cohortRevenuesInPeriod: Array<{ month: string; revenue: number }> = [];
-    
-    filteredCohorts.forEach((cohort) => {
-      // Determine cohort label based on viewMode
-      let cohortLabel: string;
-      const cohortDate = new Date(cohort.cohort_month);
-      
-      if (viewMode === 'annual') {
-        cohortLabel = cohortDate.getFullYear().toString();
-      } else if (viewMode === 'half-year') {
-        const year = cohortDate.getFullYear();
-        const half = cohortDate.getMonth() < 6 ? 'H1' : 'H2';
-        if (year < 2020) {
-          cohortLabel = 'Pre-2020';
-        } else {
-          cohortLabel = `${year} ${half}`;
-        }
-      } else if (viewMode === 'quarterly') {
-        const year = cohortDate.getFullYear();
-        const quarter = Math.floor(cohortDate.getMonth() / 3) + 1;
-        cohortLabel = `${year}-Q${quarter}`;
-      } else {
-        cohortLabel = cohort.cohort_month;
-      }
-      
-      // Sum revenue from periods that match the current period key
-      let revenueInPeriod = 0;
-      cohort.periods.forEach((period) => {
-        const orderDate = new Date(period.order_month);
-        let periodKey: string;
-        
-        if (viewMode === 'annual') {
-          periodKey = orderDate.getFullYear().toString();
-        } else if (viewMode === 'half-year') {
-          const year = orderDate.getFullYear();
-          const half = orderDate.getMonth() < 6 ? 'H1' : 'H2';
-          periodKey = `${year} ${half}`;
-        } else if (viewMode === 'quarterly') {
-          const year = orderDate.getFullYear();
-          const quarter = Math.floor(orderDate.getMonth() / 3) + 1;
-          periodKey = `${year}-Q${quarter}`;
-        } else {
-          periodKey = period.order_month;
-        }
-        
-        if (periodKey === currentPeriodKey) {
-          revenueInPeriod += period.total_revenue;
-        }
-      });
-      
-      if (revenueInPeriod > 0) {
-        // Check if cohort already exists (for aggregated cohorts like Pre-2020)
-        const existing = cohortRevenuesInPeriod.find(c => c.month === cohortLabel);
-        if (existing) {
-          existing.revenue += revenueInPeriod;
-        } else {
-          cohortRevenuesInPeriod.push({
-            month: cohortLabel,
-            revenue: revenueInPeriod
-          });
-        }
-      }
-    });
-    
-    return cohortRevenuesInPeriod.length;
-  }, [filteredCohorts, viewMode, currentPeriodKey]);
+    const cohortRevenues = getCohortRevenuesForCurrentPeriod;
+    return cohortRevenues.filter(c => c.revenue > 0).length;
+  }, [getCohortRevenuesForCurrentPeriod]);
 
   // Generate trend data first - this will be our single source of truth
   // Uses filteredCohorts to ensure only periods in date range are included
@@ -797,9 +792,39 @@ function RevenueCohortsContent() {
     return generateTrendDataFromCohorts('customers', currentPeriodKey);
   }, [filteredCohorts, currentPeriodKey, generateTrendDataFromCohorts]);
 
-  // Calculate KPI values based on date range comparison (Rule #2)
-  // If dateRange is set: compare selected range vs previous period of equal length
-  // If no dateRange: use last data point from trend series (same period, previous year)
+  /**
+   * CANONICAL DEFINITION: Current Period vs Previous Period Comparison
+   * 
+   * Rule Set:
+   * 
+   * 1. When dateRange is present:
+   *    - Current Period: All revenue/customers where order_month falls within dateRange
+   *    - Previous Period: All revenue/customers where order_month falls within getPreviousPeriodRange(dateRange)
+   *    - Previous Range Calculation: Equal-length period immediately before the selected range
+   *    - Incomplete Periods: Include all data available in the range (no filtering for completeness)
+   *    - Uses ALL cohorts (not filtered) to calculate previous period to ensure complete comparison
+   * 
+   * 2. When dateRange is absent:
+   *    - Current Period: Last data point in trendData.currentData array
+   *    - Previous Period: Last data point in trendData.previousData array
+   *    - Trend Data: Aggregated by time period (year/quarter/month) across all cohorts
+   *    - Previous Period Logic: Same period, previous year (or equivalent based on viewMode)
+   * 
+   * 3. For cohortType=annual:
+   *    - Periods are whole years
+   *    - Previous period is always previous year
+   *    - Incomplete years: Current year excluded from comparisons if incomplete
+   * 
+   * 4. For cohortType=monthly/quarterly:
+   *    - Periods match the cohort type
+   *    - Previous period uses the obvious prior calendar month/quarter/year for the aggregation mode.
+   *    - Incomplete periods: Current period included if it has data
+   * 
+   * 5. Incomplete Cohorts Handling:
+   *    - Always include cohorts with at least one period of data
+   *    - Do not exclude incomplete cohorts from calculations
+   *    - For CAGR: Exclude incomplete periods (current year/quarter) from CAGR calculation
+   */
   const { totalRevenue, previousRevenue, totalCustomers, previousCustomers } = React.useMemo(() => {
     if (filteredCohorts.length === 0) {
       return {
@@ -878,9 +903,22 @@ function RevenueCohortsContent() {
     };
   }, [filteredCohorts, dateRange, revenueTrendData, customersTrendData, cohorts, isDateInRange, getPreviousPeriodRange]);
   
-  // Calculate Cohort Coverage from aggregated cohorts
+  /**
+   * CANONICAL DEFINITION: Cohort Coverage Metrics
+   * 
+   * Calculates Top cohort metrics and revenue shares using Current Period revenue only.
+   * 
+   * Time Window: Uses getCohortRevenuesForCurrentPeriod() which aligns with totalRevenue:
+   * - When dateRange is present: Revenue within dateRange
+   * - When dateRange is absent: Revenue in last complete period (currentPeriodKey)
+   * 
+   * All share calculations use the same totalRevenue as Current Period definition,
+   * ensuring consistency across all metrics on the page.
+   */
   const cohortCoverage = React.useMemo(() => {
-    if (getAggregatedCohorts.length === 0) {
+    const cohortRevenues = getCohortRevenuesForCurrentPeriod;
+    
+    if (cohortRevenues.length === 0) {
       const dummyTotal = 30500000;
       return {
         activeCount: 18,
@@ -900,17 +938,12 @@ function RevenueCohortsContent() {
       };
     }
     
-    // Get revenue per aggregated cohort
-    const cohortRevenues = getAggregatedCohorts.map(c => ({
-      month: c.label,
-      revenue: c.revenue
-    }));
-    
-    // Count active cohorts (with >0 revenue) - this is now the count at the selected aggregation level
+    // Count active cohorts (with >0 revenue in Current Period)
     const activeCount = cohortRevenues.filter(c => c.revenue > 0).length;
     
-    // Sort by revenue descending
-    cohortRevenues.sort((a, b) => b.revenue - a.revenue);
+    // Total revenue is sum of all cohorts' revenue in Current Period
+    // This matches the totalRevenue calculation when dateRange is absent
+    // (when dateRange is present, totalRevenue uses dateRange directly)
     const totalRevenue = cohortRevenues.reduce((sum, c) => sum + c.revenue, 0);
     
     if (totalRevenue === 0) {
@@ -933,6 +966,7 @@ function RevenueCohortsContent() {
     }
     
     // Calculate segments and store cohort lists
+    // cohortRevenues is already sorted by revenue descending
     const topCohort = cohortRevenues[0];
     const topCohortRevenue = topCohort?.revenue || 0;
     const top3Cohorts = cohortRevenues.slice(0, 3); // cohorts ranked 1, 2, 3 (includes top cohort)
@@ -946,26 +980,25 @@ function RevenueCohortsContent() {
       activeCount,
       topCohortShare: (topCohortRevenue / totalRevenue) * 100,
       topCohortRevenue,
-      topCohort: topCohort ? [{ label: topCohort.month, revenue: topCohort.revenue }] : [],
+      topCohort: topCohort ? [{ label: topCohort.label, revenue: topCohort.revenue }] : [],
       top3Share: (top3Revenue / totalRevenue) * 100,
       top3Revenue,
-      top3Cohorts: top3Cohorts.map(c => ({ label: c.month, revenue: c.revenue })),
+      top3Cohorts: top3Cohorts.map(c => ({ label: c.label, revenue: c.revenue })),
       top10Share: (top10Revenue / totalRevenue) * 100,
       top10Revenue,
-      top10Cohorts: top10Cohorts.map(c => ({ label: c.month, revenue: c.revenue })),
+      top10Cohorts: top10Cohorts.map(c => ({ label: c.label, revenue: c.revenue })),
       othersShare: (othersRevenue / totalRevenue) * 100,
       othersRevenue,
-      othersCohorts: othersCohorts.map(c => ({ label: c.month, revenue: c.revenue })),
+      othersCohorts: othersCohorts.map(c => ({ label: c.label, revenue: c.revenue })),
       totalRevenue
     };
-  }, [getAggregatedCohorts]);
+  }, [getCohortRevenuesForCurrentPeriod]);
 
   // Get period name for subtitles (year/quarter/month)
   const getPeriodName = React.useMemo(() => {
-    const periodMap: Record<'monthly' | 'quarterly' | 'half-year' | 'annual', string> = {
+    const periodMap: Record<'monthly' | 'quarterly' | 'annual', string> = {
       'monthly': 'month',
       'quarterly': 'quarter',
-      'half-year': 'half-year',
       'annual': 'year'
     };
     return periodMap[viewMode] || 'period';
@@ -1083,9 +1116,6 @@ function RevenueCohortsContent() {
         return `Q${quarter} ${year.substring(2)}`;
       };
       return { start: formatQuarterLabel(firstCohort.label), end: formatQuarterLabel(lastCohort.label) };
-    } else if (viewMode === 'half-year') {
-      // Format: "2024 H1" -> "2024 H1" (keep as is)
-      return { start: firstCohort.label, end: lastCohort.label };
     } else {
       // Monthly - format: "2024-01" -> "Jan 24"
       const formatMonthLabel = (label: string) => {
@@ -1142,7 +1172,18 @@ function RevenueCohortsContent() {
   }
 
   return (
-    <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
+    <div className="w-full min-w-0 max-w-full px-4 sm:px-6 lg:px-8 py-8">
+      {/* Page Header with Narrative Framing */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Revenue Cohorts</h1>
+        <p className="text-lg font-semibold text-gray-700 mb-2">The Lie Detector</p>
+        <p className="text-sm text-gray-600 max-w-3xl">
+          Is revenue compounding or are we constantly filling a leaky bucket? 
+          Even though we&apos;re growing and it&apos;s real growth, the growth itself may be fragile. 
+          Are newer cohorts decaying faster than older ones? Are we destroying LTV because customers who buy now are not as loyal or have lower AOV?
+        </p>
+      </div>
+
       {/* Filter Bar */}
       <div className="mb-8">
         <FilterBar
@@ -1158,14 +1199,16 @@ function RevenueCohortsContent() {
         />
       </div>
 
-      {/* AI Analysis Section */}
-      <div className="mb-8">
-        <AIAnalysis 
-          filters={filterState}
-          cohorts={filteredCohorts}
-          onRegenerate={fetchCohorts}
-        />
-      </div>
+      {/* AI Analysis Section - Gated behind feature flag */}
+      {process.env.NEXT_PUBLIC_ENABLE_AI_ANALYSIS === "true" && (
+        <div className="mb-8">
+          <AIAnalysis 
+            filters={filterState}
+            cohorts={filteredCohorts}
+            onRegenerate={fetchCohorts}
+          />
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -1187,7 +1230,7 @@ function RevenueCohortsContent() {
               <span className={`px-2 py-0.5 text-xs font-medium rounded ${
                 totalRevenue >= previousRevenue 
                   ? 'bg-green-100 text-green-700' 
-                  : 'bg-red-50 text-red-500'
+                  : 'bg-gray-100 text-gray-700'
               }`}>
                 {(() => {
                   const delta = totalRevenue - previousRevenue;
@@ -1207,14 +1250,14 @@ function RevenueCohortsContent() {
               <div>
                 <div className="flex items-center gap-1.5 text-xs text-gray-500">
                   <div className="w-2.5 h-2.5 rounded-sm bg-blue-600 flex-shrink-0"></div>
-                  <span>This year</span>
+                  <span>Current {getPeriodName}</span>
                 </div>
                 <div className="text-base font-bold text-gray-900">{formatCurrency(totalRevenue)}</div>
               </div>
               <div>
                 <div className="flex items-center gap-1.5 text-xs text-gray-500">
                   <div className="w-2.5 h-2.5 rounded-sm bg-gray-400 flex-shrink-0"></div>
-                  <span>Last year</span>
+                  <span>Same {getPeriodName} last year</span>
                 </div>
                 <div className="text-base font-bold text-gray-900">{formatCurrency(previousRevenue)}</div>
           </div>
@@ -1256,7 +1299,7 @@ function RevenueCohortsContent() {
               <span className={`px-2 py-0.5 text-xs font-medium rounded ${
                 totalCustomers >= previousCustomers 
                   ? 'bg-green-100 text-green-700' 
-                  : 'bg-red-50 text-red-500'
+                  : 'bg-gray-100 text-gray-700'
               }`}>
                 {(() => {
                   const delta = totalCustomers - previousCustomers;
@@ -1276,14 +1319,14 @@ function RevenueCohortsContent() {
               <div>
                 <div className="flex items-center gap-1.5 text-xs text-gray-500">
                   <div className="w-2.5 h-2.5 rounded-sm bg-blue-600 flex-shrink-0"></div>
-                  <span>This year</span>
+                  <span>Current {getPeriodName}</span>
                 </div>
                 <div className="text-base font-bold text-gray-900">{formatNumber(totalCustomers)}</div>
               </div>
               <div>
                 <div className="flex items-center gap-1.5 text-xs text-gray-500">
                   <div className="w-2.5 h-2.5 rounded-sm bg-gray-400 flex-shrink-0"></div>
-                  <span>Last year</span>
+                  <span>Same {getPeriodName} last year</span>
                 </div>
                 <div className="text-base font-bold text-gray-900">{formatNumber(previousCustomers)}</div>
           </div>
@@ -1562,7 +1605,7 @@ function RevenueCohortsContent() {
       <div className="border-t border-gray-200 mt-6 mb-8"></div>
 
       {/* Cohort Matrix */}
-      <div className="mb-8">
+      <div className="mb-8 min-w-0">
         <CohortMatrix 
           cohorts={filteredCohorts}
           viewMode={viewMode}
@@ -1571,6 +1614,57 @@ function RevenueCohortsContent() {
           }}
         />
       </div>
+
+      {/* Diagnosis Section */}
+      {(() => {
+        const enhancedDiagnosis = diagnoseRevenueCohortsEnhanced({
+          cohorts: filteredCohorts,
+          totalRevenue,
+          previousRevenue,
+          totalCustomers,
+          previousCustomers,
+          cohortCoverage,
+        });
+        
+        // Always show Diagnosis (with empty state if suppressed)
+        // Only show Decision Axes and Impact Ranges when diagnosis exists
+        return (
+          <>
+            <Diagnosis sentence={enhancedDiagnosis.sentence} showEmptyState={true} />
+            
+            {/* Severity Indicator - Only render when severity exists */}
+            {enhancedDiagnosis.severity && (
+              <SeverityIndicator severity={enhancedDiagnosis.severity} />
+            )}
+            
+            {/* Causality Section - Only render when causality factors exist */}
+            {enhancedDiagnosis.causality.length > 0 && (
+              <CausalitySection 
+                factors={enhancedDiagnosis.causality}
+                framingCopy="Based on the patterns observed, these are the likely structural drivers:"
+              />
+            )}
+            
+            {/* Decision Axes Section - Only render when Diagnosis exists */}
+            {enhancedDiagnosis.sentence && (
+              <DecisionAxes 
+                axes={getDecisionAxesForDiagnosis(enhancedDiagnosis.sentence, 'revenue-cohorts')}
+              />
+            )}
+            
+            {/* Impact Ranges Section - Only render when Diagnosis exists */}
+            {enhancedDiagnosis.sentence && (
+              <ImpactRanges 
+                ranges={computeRevenueCohortsImpactRanges({
+                  cohorts: filteredCohorts,
+                  totalRevenue,
+                  totalCustomers,
+                })}
+              />
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 }

@@ -1,11 +1,5 @@
-import RetentionClient from "./RetentionClient"
+import RetentionClient from "./RetentionClient";
 
-type RetentionPageProps = {
-  searchParams?: {
-    [key: string]: string | string[] | undefined
-  }
-}
-
-export default function RetentionPage({ searchParams }: RetentionPageProps) {
-  return <RetentionClient initialSearchParams={searchParams} />
+export default function RetentionPage() {
+  return <RetentionClient />;
 }

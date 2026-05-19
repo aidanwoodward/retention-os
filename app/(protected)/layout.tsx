@@ -16,8 +16,14 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { FloatingFeedbackButton } from "@/components/ui/floating-feedback-button"
+import { MVP_COMMAND_CENTRE_NAME, RETENTIONOS_MARK } from "@/lib/mvp/cohesion"
 import { usePathname } from "next/navigation"
 import { DemoModeProvider } from "@/lib/demo-mode/context"
+
+const PRODUCT_CRUMB = { label: RETENTIONOS_MARK, path: "/dashboard" } as const
+const COMMAND_CENTRE_CRUMB = { label: MVP_COMMAND_CENTRE_NAME, path: "/dashboard" } as const
+
+const MVP_ROUTE_SEGMENTS = new Set(["dashboard", "cohorts", "retention", "ltv", "insights", "data"])
 
 export default function ProtectedLayout({
   children,
@@ -26,91 +32,59 @@ export default function ProtectedLayout({
 }) {
   const pathname = usePathname();
 
-  // Generate breadcrumbs from pathname
   const getBreadcrumbs = () => {
-    const segments = pathname.split('/').filter(Boolean);
-    
-    // Special case: dashboard routes to executive
-    if (pathname === '/dashboard') {
-      return [
-        { label: 'Retention OS', path: '/executive' },
-        { label: 'Overview', path: '/executive' }
-      ];
-    }
+    const segments = pathname.split("/").filter(Boolean)
 
-    const breadcrumbs = [{ label: 'Retention OS', path: '/executive' }];
-    
-    if (segments.length === 0) {
-      return breadcrumbs;
-    }
-
-    // Map paths to display names
     const moduleLabels: Record<string, string> = {
-      'executive': 'Executive',
-      'cohorts': 'Cohorts',
-      'retention': 'Retention',
-      'retention-ltv': 'Retention & LTV',
-      'customers': 'Customers',
-      'customer-intelligence': 'Customer Intelligence',
-      'products': 'Products',
-      'product-economics': 'Product Economics',
-      'financials': 'Financials',
-      'segments': 'Segments',
-      'integrations': 'Integrations',
-      'settings': 'Settings',
-      'feedback': 'Feedback',
-      'connect': 'Connect'
-    };
+      dashboard: "Dashboard",
+      cohorts: "Cohorts",
+      retention: "Retention",
+      ltv: "LTV",
+      insights: "Insights",
+      data: "Data",
+      products: "Products",
+      acquisition: "Acquisition",
+      scenarios: "Scenarios",
+      settings: "Settings",
+    }
 
     const pageLabels: Record<string, string> = {
-      'reconciliation': 'Data Health',
-      'exports': 'Exports',
-      'revenue-cohorts': 'Revenue Cohorts',
-      'curves': 'Retention Curves',
-      'ltv-cohorts': 'LTV Curves',
-      'repeat-rates': 'Repeat Purchase Rates',
-      'composition': 'Customer Composition',
-      'segments': 'Segments',
-      'profiles': 'Customer Profiles',
-      'performance': 'Product Performance',
-      'concentration': 'Product Concentration',
-      'discounts': 'Discount Impact',
-      'replenishment': 'Replenishment Frequency',
-      'revenue': 'Revenue Intelligence',
-      'ltv-summary': 'LTV Summary',
-      'forecasts': 'Forecasts & Scenarios',
-      'integrations': 'Integrations',
-      'feedback': 'Support & Feedback',
-      'category': 'Category Breakdown',
-      'list': 'Customer List',
-      'profile': 'Customer Profile',
-      'cross-sell': 'Cross-sell',
-      'sync': 'Sync Status',
-      'shopify': 'Shopify',
-      'klaviyo': 'Klaviyo'
-    };
+      integrations: "Integrations",
+      feedback: "Support & Feedback",
+    }
 
-    let currentPath = '';
-    segments.forEach((segment, index) => {
-      currentPath += `/${segment}`;
-      
-      // Module level
-      if (moduleLabels[segment] && index === 0) {
-        breadcrumbs.push({ label: moduleLabels[segment], path: currentPath });
-      } 
-      // Page level
-      else if (pageLabels[segment]) {
-        breadcrumbs.push({ label: pageLabels[segment], path: currentPath });
-      }
-      // Fallback for unknown segments
-      else if (index > 0 || !moduleLabels[segment]) {
-        const label = segment.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
-        breadcrumbs.push({ label, path: currentPath });
-      }
-    });
+    const inCommandCentreSpine = segments.length > 0 && MVP_ROUTE_SEGMENTS.has(segments[0] ?? "")
 
-    return breadcrumbs;
-  };
+    const tail: { label: string; path: string }[] = []
+    let currentPath = ""
+
+    segments.forEach((segment) => {
+      currentPath += `/${segment}`
+
+      if (moduleLabels[segment]) {
+        tail.push({ label: moduleLabels[segment], path: currentPath })
+      } else if (pageLabels[segment]) {
+        tail.push({ label: pageLabels[segment], path: currentPath })
+      } else {
+        const label = segment.split("-").map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(" ")
+        tail.push({ label, path: currentPath })
+      }
+    })
+
+    if (pathname === "/dashboard") {
+      return [
+        PRODUCT_CRUMB,
+        COMMAND_CENTRE_CRUMB,
+        { label: "Dashboard", path: "/dashboard" },
+      ]
+    }
+
+    if (inCommandCentreSpine) {
+      return [PRODUCT_CRUMB, COMMAND_CENTRE_CRUMB, ...tail]
+    }
+
+    return [PRODUCT_CRUMB, ...tail]
+  }
 
   const breadcrumbs = getBreadcrumbs();
 
@@ -127,9 +101,9 @@ export default function ProtectedLayout({
               className="mr-2 data-[orientation=vertical]:h-4"
             />
             <Breadcrumb>
-              <BreadcrumbList>
+              <BreadcrumbList className="flex-wrap">
                 {breadcrumbs.map((crumb, index) => (
-                  <div key={crumb.path} className="flex items-center gap-2">
+                  <div key={`${crumb.path}-${crumb.label}`} className="flex items-center gap-2">
                     <BreadcrumbItem>
                       {index === breadcrumbs.length - 1 ? (
                         <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
@@ -148,7 +122,7 @@ export default function ProtectedLayout({
             </Breadcrumb>
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0 overflow-x-hidden">
+        <div className="flex flex-1 flex-col gap-4 overflow-x-hidden min-w-0 bg-zinc-50/80 p-4 pt-0">
           {children}
         </div>
         </SidebarInset>

@@ -1,23 +1,17 @@
 /**
- * MVP heuristic thresholds for diagnostic rules — aligned with
- * `/lib/metrics/dashboard-view-model` durability votes (explicit duplication to keep
- * the insights layer independent of dashboard adapters).
+ * MVP heuristic thresholds for diagnostic rules.
+ * Durability vote thresholds live in `/lib/metrics/revenue-durability-status` (re-exported below).
  */
 
-/** Fraction: portfolio share with ≥2 orders. */
-export const REPEAT_PURCHASE_WATCH = 0.28;
-export const REPEAT_PURCHASE_HEALTHY = 0.37;
-
-/** Fraction: first-to-second within 90 calendar days vs all customers. */
-export const FIRST_TO_SECOND_90_WATCH = 0.24;
-export const FIRST_TO_SECOND_90_HEALTHY = 0.31;
-
-/** Fraction: mean cohort Month +1 active rate across cohorts that have offset +1 data. */
-export const MONTH_PLUS_1_ACTIVE_WATCH = 0.065;
-export const MONTH_PLUS_1_ACTIVE_HEALTHY = 0.092;
-
-/** USD: strongest minus weakest cohort terminal net revenue LTV (material dispersion). */
-export const LTV_COHORT_SPREAD_MATERIAL_USD = 52;
+export {
+  FIRST_TO_SECOND_90_HEALTHY,
+  FIRST_TO_SECOND_90_WATCH,
+  LTV_COHORT_SPREAD_MATERIAL_USD,
+  MONTH_PLUS_1_ACTIVE_HEALTHY,
+  MONTH_PLUS_1_ACTIVE_WATCH,
+  REPEAT_PURCHASE_HEALTHY,
+  REPEAT_PURCHASE_WATCH,
+} from "../metrics/revenue-durability-status";
 
 /** Relative uplift to treat Month +N as visibly above Month +1 (timing narrative). */
 export const RETENTION_MONTH_RELATIVE_NOTE = 0.02;

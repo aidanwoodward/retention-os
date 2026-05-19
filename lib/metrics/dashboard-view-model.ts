@@ -7,9 +7,17 @@ import {
 } from "./repeat-purchase";
 import { calculateRetentionByCohort } from "./retention";
 import { calculateLTVByCohort } from "./ltv";
+import {
+  evaluateRevenueDurabilityStatus,
+  FIRST_TO_SECOND_90_HEALTHY,
+  FIRST_TO_SECOND_90_WATCH,
+  REPEAT_PURCHASE_HEALTHY,
+  REPEAT_PURCHASE_WATCH,
+  type RevenueDurabilityStatus,
+} from "./revenue-durability-status";
 import { netOrderRevenue, orderContribution, safeDivide } from "./utils";
 
-export type RevenueDurabilityStatus = "Healthy" | "Mixed" | "Watch";
+export type { RevenueDurabilityStatus };
 
 export interface DashboardSummaryView {
   totalCustomers: number;
@@ -42,15 +50,6 @@ export interface DashboardExecutiveViewModel {
   /** Deterministic bullets for the MVP executive screen. */
   observations: readonly string[];
 }
-
-/** MVP heuristic thresholds — documented for transparency only; not a formal durability index yet. */
-const TH_REPEAT_WATCH = 0.28;
-const TH_REPEAT_HEALTHY = 0.37;
-const TH_F2_90_WATCH = 0.24;
-const TH_F2_90_HEALTHY = 0.31;
-const TH_M1_ACTIVE_WATCH = 0.065;
-const TH_M1_ACTIVE_HEALTHY = 0.092;
-const TH_LTV_SPREAD_HEALTHY_USD = 52;
 
 function groupLtvCurveByCohort(points: readonly LTVPoint[]): Map<string, LTVPoint[]> {
   const map = new Map<string, LTVPoint[]>();
@@ -140,31 +139,17 @@ function computeDurability(
     "LTV cohort spread compares terminal staircase net revenue LTV only (discounts/refunds removed from merchandise revenue).",
   ] as const;
 
-  let watchVotes = 0;
-  let healthyVotes = 0;
-
-  if (repeat < TH_REPEAT_WATCH) watchVotes += 2;
-  else if (repeat >= TH_REPEAT_HEALTHY) healthyVotes += 1;
-
-  if (f290 < TH_F2_90_WATCH) watchVotes += 2;
-  else if (f290 >= TH_F2_90_HEALTHY) healthyVotes += 1;
-
-  if (m1 != null) {
-    if (m1 < TH_M1_ACTIVE_WATCH) watchVotes += 1;
-    else if (m1 >= TH_M1_ACTIVE_HEALTHY) healthyVotes += 1;
-  }
-
-  let ltvSpread: number | null = null;
+  let spreadUsdLike: number | null = null;
   if (weakest != null && best != null && weakest.cohortPeriod !== best.cohortPeriod) {
-    ltvSpread = best.terminalNetRevenueLtv - weakest.terminalNetRevenueLtv;
-    if (ltvSpread >= TH_LTV_SPREAD_HEALTHY_USD) watchVotes += 1;
-    else if (ltvSpread < TH_LTV_SPREAD_HEALTHY_USD * 0.45) healthyVotes += 1;
+    spreadUsdLike = best.terminalNetRevenueLtv - weakest.terminalNetRevenueLtv;
   }
 
-  let status: RevenueDurabilityStatus;
-  if (watchVotes >= 3) status = "Watch";
-  else if (watchVotes <= 1 && healthyVotes >= 2) status = "Healthy";
-  else status = "Mixed";
+  const status = evaluateRevenueDurabilityStatus({
+    repeatPurchaseRate: repeat,
+    firstToSecond90Rate: f290,
+    avgMonthPlus1ActiveRate: m1,
+    spreadUsdLike,
+  });
 
   return { status, methodologyNotes };
 }
@@ -172,11 +157,11 @@ function computeDurability(
 function buildObservations(s: DashboardSummaryView): readonly string[] {
   const obs: string[] = [];
 
-  if (s.allTimeRepeatPurchaseRate >= TH_REPEAT_HEALTHY) {
+  if (s.allTimeRepeatPurchaseRate >= REPEAT_PURCHASE_HEALTHY) {
     obs.push(
       `Portfolio repeat is solid for this demo: about ${(s.allTimeRepeatPurchaseRate * 100).toFixed(1)}% of customers have reached a second qualifying order.`,
     );
-  } else if (s.allTimeRepeatPurchaseRate < TH_REPEAT_WATCH) {
+  } else if (s.allTimeRepeatPurchaseRate < REPEAT_PURCHASE_WATCH) {
     obs.push(
       `Repeat depth looks thin: fewer than roughly three in ten customers show two or more orders in the demo slice — revisit repurchase journeys before leaning on cohort LTV ceilings.`,
     );
@@ -186,11 +171,11 @@ function buildObservations(s: DashboardSummaryView): readonly string[] {
     );
   }
 
-  if (s.firstToSecondWithin90DaysRate >= TH_F2_90_HEALTHY) {
+  if (s.firstToSecondWithin90DaysRate >= FIRST_TO_SECOND_90_HEALTHY) {
     obs.push(
       `Early reordering discipline is comparatively strong — about ${(s.firstToSecondWithin90DaysRate * 100).toFixed(1)}% convert to a second order within ninety days of the first.`,
     );
-  } else if (s.firstToSecondWithin90DaysRate < TH_F2_90_WATCH) {
+  } else if (s.firstToSecondWithin90DaysRate < FIRST_TO_SECOND_90_WATCH) {
     obs.push(
       `First-to-second inside ninety days (~${(s.firstToSecondWithin90DaysRate * 100).toFixed(1)}%) is sluggish; expect calendar Month +N active rates to behave differently — they track any order activity in cohort month offsets.`,
     );

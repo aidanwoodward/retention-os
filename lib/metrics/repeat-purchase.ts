@@ -75,6 +75,7 @@ function sortedOrdersForCustomer(customerId: string, orders: readonly Order[]): 
 /**
  * Classic first→second reorder funnel. Windowed KPI uses discrete calendar-day difference
  * `(second − first)` in milliseconds / MS_PER_DAY, compared to `withinDays` inclusive-style boundary.
+ * Uses the same per-customer order sequence as portfolio repeat counts (via shared `orders` rows).
  */
 export function calculateFirstToSecondOrderConversion(
   customers: readonly Customer[],
@@ -130,5 +131,121 @@ export function calculateFirstToSecondOrderConversion(
     withinDays,
     customersWithSecondOrderWithinWindow,
     conversionRateWithinWindow: safeDivide(customersWithSecondOrderWithinWindow, totalCustomers),
+  };
+}
+
+/**
+ * Rows for the repeat-purchase purchase ladder API (`/api/metrics/repeat-purchases`).
+ * Cumulative: level N = share of the full customer population with ≥ N qualifying orders.
+ */
+export interface RepeatPurchaseBreakdownRow {
+  purchaseCount: number;
+  purchaseCountLabel: string;
+  customersReaching: number;
+  percentOfOriginal: number;
+  dropOffVsPrevious: number | null;
+}
+
+/** Top-line KPIs derived alongside {@link RepeatPurchaseBreakdownRow} — matches legacy API field names. */
+export interface RepeatPurchaseApiDerived {
+  purchaseBreakdown: RepeatPurchaseBreakdownRow[];
+  totalCustomers: number;
+  /** Percentage 0–100, aligned with {@link calculateRepeatPurchaseRate}. */
+  secondPurchaseRate: number;
+  medianPurchases: number;
+  /** Percentage 0–100 of customers with ≥3 qualifying orders. */
+  customersWith3PlusPurchases: number;
+  medianPurchasesFor5Plus: number | null;
+}
+
+/** Legacy API parity: after sorting counts ascending, element at `floor(n/2)`; for even `n`, differs from statistical median. */
+function medianPurchaseCountLegacy(sortedAscending: readonly number[]): number {
+  if (sortedAscending.length === 0) return 0;
+  return sortedAscending[Math.floor(sortedAscending.length / 2)]!;
+}
+
+/**
+ * Shared ladder + KPI math for the HTTP repeat-purchases API and the metric engine.
+ * Uses the same order counting as {@link calculateRepeatPurchaseRate} and {@link calculateFirstToSecondOrderConversion}.
+ *
+ * `secondPurchaseRate` is taken from `calculateRepeatPurchaseRate` × 100 so portfolio repeat stays a single source of truth.
+ */
+export function computeRepeatPurchaseApiMetrics(
+  customers: readonly Customer[],
+  orders: readonly Order[],
+): RepeatPurchaseApiDerived {
+  const totalCustomers = customers.length;
+  if (totalCustomers === 0) {
+    return {
+      purchaseBreakdown: [],
+      totalCustomers: 0,
+      secondPurchaseRate: 0,
+      medianPurchases: 0,
+      customersWith3PlusPurchases: 0,
+      medianPurchasesFor5Plus: null,
+    };
+  }
+
+  const counts = ordersPerCustomer(customers, orders);
+  const purchaseDistribution: number[] = [];
+  const customersReaching = new Map<number, number>();
+  for (let n = 1; n <= 5; n++) {
+    customersReaching.set(n, 0);
+  }
+
+  for (const c of customers) {
+    const purchaseCount = counts.get(c.id) ?? 0;
+    if (purchaseCount > 0) {
+      purchaseDistribution.push(purchaseCount);
+      for (let n = 1; n <= 5; n++) {
+        if (purchaseCount >= n) {
+          customersReaching.set(n, (customersReaching.get(n) ?? 0) + 1);
+        }
+      }
+    }
+  }
+
+  const breakdown: RepeatPurchaseBreakdownRow[] = [];
+  let previousPercent = 100;
+  for (let n = 1; n <= 5; n++) {
+    const count = customersReaching.get(n) ?? 0;
+    const percent = totalCustomers > 0 ? (count / totalCustomers) * 100 : 0;
+    const dropOff = n > 1 ? previousPercent - percent : null;
+    breakdown.push({
+      purchaseCount: n,
+      purchaseCountLabel: n === 5 ? "5+" : String(n),
+      customersReaching: count,
+      percentOfOriginal: percent,
+      dropOffVsPrevious: dropOff,
+    });
+    previousPercent = percent;
+  }
+
+  const repeatBlock = calculateRepeatPurchaseRate(customers, orders);
+  const secondPurchaseRate = repeatBlock.repeatPurchaseRate * 100;
+
+  let threePlus = 0;
+  for (const c of customers) {
+    if ((counts.get(c.id) ?? 0) >= 3) {
+      threePlus += 1;
+    }
+  }
+  const customersWith3PlusPurchases = (threePlus / totalCustomers) * 100;
+
+  const sortedForMedians = [...purchaseDistribution].sort((a, b) => a - b);
+  const medianPurchases = medianPurchaseCountLegacy(sortedForMedians);
+  const fivePlusPurchases = sortedForMedians.filter((p) => p >= 5);
+  const medianPurchasesFor5Plus =
+    fivePlusPurchases.length > 0
+      ? fivePlusPurchases[Math.floor(fivePlusPurchases.length / 2)]!
+      : null;
+
+  return {
+    purchaseBreakdown: breakdown,
+    totalCustomers,
+    secondPurchaseRate,
+    customersWith3PlusPurchases,
+    medianPurchases,
+    medianPurchasesFor5Plus,
   };
 }

@@ -99,6 +99,7 @@ Copy into the GitHub PR description:
 - **Scope type:** [docs-only | metric-engine | UI | dependency | migration]
 
 ## Test plan
+- [ ] `npm test` passes locally (required when `/lib/metrics` or test files change)
 - [ ] `npm run lint` passes locally
 - [ ] `npm run typecheck` passes locally
 - [ ] `npm run build` passes locally
@@ -131,7 +132,7 @@ Do not merge until required checks pass:
 
 | Check | Requirement |
 |-------|-------------|
-| GitHub Actions CI | Green (lint / typecheck / build as configured) |
+| GitHub Actions CI | Green — **lint, typecheck, test, build** (see `.github/workflows/ci.yml`) |
 | Vercel preview | Deploy succeeds; spot-check affected routes if UI sprint |
 | PR review | At least one human review when team policy requires it |
 
@@ -146,7 +147,7 @@ Before clicking merge:
 - [ ] Base branch is **`restart-retentionos-mvp`** (not `main`)
 - [ ] Commit count is reasonable (not 50+)
 - [ ] File diff matches sprint scope
-- [ ] CI green
+- [ ] CI green (includes `npm test` when metric files changed)
 - [ ] Vercel preview acceptable (if applicable)
 - [ ] PR title and body accurately describe the change
 - [ ] No unintended migration or dependency changes
@@ -157,7 +158,8 @@ After merge:
 git checkout restart-retentionos-mvp
 git pull origin restart-retentionos-mvp
 
-# Re-validate (skip for docs-only)
+# Re-validate (skip for docs-only; add npm test when metrics changed)
+npm test
 npm run lint
 npm run typecheck
 npm run build
@@ -203,6 +205,7 @@ Treat as incident:
 1. Open the failed check log on GitHub.
 2. Reproduce locally:
    ```powershell
+   npm test
    npm run lint
    npm run typecheck
    npm run build

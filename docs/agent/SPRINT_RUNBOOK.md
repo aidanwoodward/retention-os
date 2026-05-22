@@ -54,7 +54,7 @@ restart-retentionos-mvp
 4. **Run Cursor Agent with a sprint packet** (use [SPRINT_TEMPLATE.md](./SPRINT_TEMPLATE.md))
 5. **Review Cursor output** — read the final summary; do not trust it blindly
 6. **Run `git status` and `git diff --stat`** — confirm scope matches the sprint
-7. **Validate** — `npm run lint`, `npm run typecheck`, `npm run build` (skip for docs-only sprints)
+7. **Validate** — see [Phase 4](#phase-4--validate) (docs-only sprints skip lint/typecheck/build/test)
 8. **Commit**
 9. **Push**
 10. **Open PR into `restart-retentionos-mvp`**
@@ -160,6 +160,19 @@ npm run build
 
 All three must pass before commit.
 
+### Metric-engine sprints
+
+When changing `/lib/metrics` or adding tests, run **`npm test`** as well:
+
+```powershell
+npm test
+npm run lint
+npm run typecheck
+npm run build
+```
+
+Add new test files to `tsconfig.test.json` `include` until a broader pattern exists.
+
 ### Docs-only sprints
 
 Skip lint/typecheck/build **unless non-doc files were modified**.
@@ -206,6 +219,7 @@ git checkout restart-retentionos-mvp
 git pull origin restart-retentionos-mvp
 
 # Re-validate unless docs-only
+npm test          # when metric logic or tests changed
 npm run lint
 npm run typecheck
 npm run build
@@ -292,7 +306,7 @@ Do **not** merge. Close or retarget the PR to `restart-retentionos-mvp`.
 | Type | Typical paths | Do not touch | Validation |
 |------|---------------|--------------|------------|
 | **Docs-only** | `docs/agent/`, `AGENTS.md` | App code, packages, migrations | `git status`, `git diff --stat` |
-| **Metric-engine** | `lib/metrics/`, `lib/types/`, tests | UI, migrations, dependencies | lint + typecheck + build |
+| **Metric-engine** | `lib/metrics/`, `lib/types/`, tests | UI, migrations, dependencies | **test** + lint + typecheck + build |
 | **UI** | `components/`, `app/` | Metric logic in components, migrations | lint + typecheck + build |
 | **Dependency / security** | `package.json`, `package-lock.json` only | App code, migrations | lint + typecheck + build + `npm audit` |
 | **Migration** | `supabase/migrations/` (explicit approval only) | Unrelated app code | lint + typecheck + build + migration review |
@@ -305,6 +319,22 @@ Do **not** merge. Close or retarget the PR to `restart-retentionos-mvp`.
 **Migration sprint rules:**
 - Only when the sprint packet explicitly requests schema changes
 - Never let an agent touch migrations as a side effect of another sprint type
+
+---
+
+## Current next sprint candidates
+
+Prioritised backlog after Sprint D (pick one per sprint; do not batch unrelated work):
+
+| Priority | Sprint candidate | Why |
+|----------|------------------|-----|
+| 1 | **Dashboard/insights parity test** | Assert `dashboard-view-model.ts` and `insights/rules.ts` pass the same inputs to `evaluateRevenueDurabilityStatus` |
+| 2 | **Mock/demo fallback cleanup** | Quarantine silent dummy KPIs on `/api/dashboard/metrics` and mock production routes |
+| 3 | **Acquisition / product quality MVP** | Wire `lib/metrics/acquisition.ts` and replace mock product/channel surfaces |
+| 4 | **Tremor / React 19 peer review** | `@tremor/react` peer mismatch — monitor or plan chart-library migration |
+| 5 | **Residual PostCSS tracking** | Next nested `postcss@8.4.31` moderate audit finding — track Next patch releases |
+
+See [METRIC_ENGINE_INVENTORY.md](./METRIC_ENGINE_INVENTORY.md) for open metric-engine risks vs resolved restart work.
 
 ---
 
@@ -339,7 +369,8 @@ git checkout -b agent/my-sprint-name
 git status
 git diff --stat
 
-# 6–7: Validate
+# 6–7: Validate (add npm test for metric-engine sprints)
+npm test          # lib/metrics changes only
 npm run lint
 npm run typecheck
 npm run build

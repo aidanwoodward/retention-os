@@ -2,7 +2,7 @@
 
 ## Sprint name
 
-Sprint X — [Name]
+Sprint X ï¿½ [Name]
 
 ## Objective
 
@@ -28,6 +28,25 @@ Do not touch:
 - unrelated UI
 - dependencies
 
+## Validation commands
+
+For **metric-engine** or `/lib/metrics` changes, include tests:
+
+```bash
+npm test
+npm run lint
+npm run typecheck
+npm run build
+```
+
+For other code sprints:
+
+```bash
+npm run lint
+npm run typecheck
+npm run build
+```
+
 ## Acceptance criteria
 
 - [ ] Behaviour 1
@@ -35,17 +54,10 @@ Do not touch:
 - [ ] Existing routes still work
 - [ ] No duplicated metric logic
 - [ ] No fake production functionality
+- [ ] `npm test` passes (when `/lib/metrics` or test files change)
 - [ ] npm run lint passes
 - [ ] npm run typecheck passes
 - [ ] npm run build passes
-
-## Validation commands
-
-```bash
-npm run lint
-npm run typecheck
-npm run build
-```
 
 ## Stop conditions
 

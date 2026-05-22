@@ -19,6 +19,47 @@ RetentionOS currently runs **two parallel metric ecosystems**:
 
 ---
 
+## Agent restart status (through Sprint D)
+
+**Last updated:** Sprint E — 2026-05-19
+
+### Resolved by restart sprints
+
+| Risk | Resolution | Sprint |
+|------|------------|--------|
+| Repeat purchase API duplicated engine logic | `app/api/metrics/repeat-purchases/route.ts` now calls shared helpers in `lib/metrics/repeat-purchase.ts` | **B** |
+| Revenue Durability status/vote logic duplicated | Single evaluator in `lib/metrics/revenue-durability-status.ts`; consumed by `dashboard-view-model.ts` and `insights/rules.ts` | **C** |
+| Revenue Durability posture untested | Boundary tests in `lib/metrics/revenue-durability-status.test.ts`; `npm test` via `node:test` | **D** |
+| No agent sprint workflow | Runbooks: `SPRINT_RUNBOOK.md`, `PR_WORKFLOW.md` | **OPS-1** |
+| No CI validation loop | GitHub Actions: lint → typecheck → **test** → build | pre-restart + **D** |
+| Framework dependency vulnerabilities (Next/React) | Patched: next/eslint-config-next **15.5.18**, react/react-dom **19.1.7** | **Security D1** |
+
+### Partially resolved
+
+| Risk | Status | Remaining caveat |
+|------|--------|------------------|
+| Security / dependency audit | High-severity Next/React issues addressed | **Moderate PostCSS** remains under Next nested dep (`postcss@8.4.31`); fix requires future Next release — do **not** use `npm audit fix --force` |
+| `@tremor/react` + React 19 | App builds and runs | Peer dependency warning (`^18.0.0` expected) — known, non-blocking |
+
+### Still open (do not re-do closed work)
+
+- **Dual metric ecosystems** — SQL `mv_*` path vs TS engine path (Sprint A inventory; not unified)
+- **Silent dummy fallbacks** — `/api/dashboard/metrics`, mock API routes (see Demo/mock table)
+- **LTV cohort helpers duplication** — `dashboard-view-model.ts` vs `generate-diagnostic-insights.ts`
+- **Legacy RED dashboard** — `REDHomePage` + orphan API
+- **Mock product/channel surfaces** — product performance API, customer-intelligence composition
+- **SQL vs engine retention/LTV naming collisions** — documentation hazard
+
+### Current next sprint candidates
+
+1. Dashboard/insights parity test (same evaluator inputs from both call sites)
+2. Mock/demo fallback risk cleanup
+3. Acquisition / product quality MVP path
+4. Tremor / React 19 peer mismatch review
+5. Residual PostCSS tracking under Next
+
+---
+
 ## Core metric location map
 
 | Metric | Current location(s) | Source type | Risk level | Notes |
@@ -28,7 +69,7 @@ RetentionOS currently runs **two parallel metric ecosystems**:
 | **Cohort retention (Month+N active %)** | `lib/metrics/retention.ts`; `retention-view-model.ts` | Engine | **Medium** | Used in command-centre retention page. |
 | | `mv_cohorts.retention_rate_percent`; cohort API | SQL / API | **High** | SQL: active_customers / cohort_size for **calendar month offset**. |
 | **Repeat purchase rate (portfolio)** | `lib/metrics/repeat-purchase.ts` → `calculateRepeatPurchaseRate` | Engine | **Medium** | Feeds dashboard + insights bundle. |
-| | `app/api/metrics/repeat-purchases/route.ts` (counts from `orders` per customer) | API-only | **High** | **Does not import** `lib/metrics`; logic must stay in sync manually. |
+| | `app/api/metrics/repeat-purchases/route.ts` | API → engine | **Low** | ✅ **Sprint B** — imports shared `lib/metrics` helpers; keep filter semantics aligned on change. |
 | **First-to-second purchase (e.g. within 90d)** | `lib/metrics/repeat-purchase.ts` → `calculateFirstToSecondOrderConversion` | Engine | **Medium** | Window-based journey metric. |
 | | Cohort SQL / mv paths — not same definition | — | **High** | Month+N “active” ≠ first→second within X days. |
 | **Revenue LTV (cohort staircase)** | `lib/metrics/ltv.ts` → `calculateLTVByCohort`; `ltv-view-model.ts` | Engine | **Medium** | Net merchandise revenue ladder; documented in `ltv.ts`. |
@@ -43,8 +84,9 @@ RetentionOS currently runs **two parallel metric ecosystems**:
 | | `app/api/metrics/category-cohorts/route.ts`; category cohorts UI | API | **High** | Separate from `lib/metrics` product engine. |
 | **Channel-level acquisition quality** | `lib/metrics/acquisition.ts` (spend channels listed on preview); `lib/import/marketing-spend-schema.ts`, `lib/demo/demo-marketing-spend.ts` | Engine / import | **Medium** | Channel × month spend exists; **full channel LTV/CAC views** not in command-centre nav. |
 | | `app/(protected)/customer-intelligence/composition/page.tsx` — inline mock channel LTV | React + hardcoded | **Critical** | Explicit mock data in component. |
-| **Revenue Durability Snapshot (posture)** | `lib/metrics/dashboard-view-model.ts` → `computeDurability` | Engine (threshold vote) | **Medium** | Heuristic **Healthy / Mixed / Watch** — not a formal index. |
-| | `lib/insights/rules.ts` → `evaluateRevenueDurabilityStatus` | Rules duplicate | **High** | **Intentionally mirrored** with `computeDurability`; two copies must stay aligned. |
+| **Revenue Durability Snapshot (posture)** | `lib/metrics/revenue-durability-status.ts` → `evaluateRevenueDurabilityStatus` | Engine (threshold vote) | **Low** | ✅ **Sprint C** — single source of truth for **Healthy / Mixed / Watch**. |
+| | `lib/metrics/dashboard-view-model.ts`, `lib/insights/rules.ts` | Consumers | **Low** | Delegate to shared evaluator; no duplicate threshold arrays. |
+| | `lib/metrics/revenue-durability-status.test.ts` | Tests | **Low** | ✅ **Sprint D** — boundary coverage via `npm test`. |
 | **Diagnostic insights** | `lib/insights/generate-diagnostic-insights.ts`, `rules.ts`, `thresholds.ts`, `insights-view-model.ts` | Rules on engine outputs | **Medium** | Uses same scalars as dashboard; duplicates some helpers (e.g. terminal cohort picks) as `generate-diagnostic-insights.ts`. |
 
 ---
@@ -69,16 +111,16 @@ Strict interpretation: **core** formulas should live in `lib/metrics`; React sti
 
 ## Duplicate or conflicting calculations
 
-| Topic | Locations | Conflict |
-|-------|-----------|----------|
-| **Portfolio repeat rate** | `lib/metrics/repeat-purchase.ts` vs `app/api/metrics/repeat-purchases/route.ts` | Two independent implementations; filter semantics (date range, customer type) only in API. |
-| **Retention %** | `mv_kpis` repeat-based formula vs `mv_cohorts` active/cohort_size vs dashboard `calculateRetentionMetrics` in `app/api/dashboard/metrics/route.ts` | Different denominators and cohort grain. |
-| **“LTV” KPI** | `mv_kpis.customer_lifetime_value` (= total revenue / customers) vs engine **terminal cohort LTV** / staircase | Same name, **different concepts** — documentation hazard. |
-| **AOV** | `mv_kpis.average_order_value` (`AVG`) vs dashboard route (`totalRevenue / orders.length`) | Can diverge on edge cases. |
-| **At-risk / dormant** | SQL uses `customers.last_order_at`; dashboard route uses order `source_created_at` patterns (per prior audit) | Inconsistent risk of population mismatch. |
-| **Revenue durability vote** | `computeDurability` in `dashboard-view-model.ts` vs `evaluateRevenueDurabilityStatus` in `insights/rules.ts` | **Duplicate threshold logic** — comments claim parity; risk of **drift** on change. |
-| **LTV terminal pick / cohort spread helpers** | `dashboard-view-model.ts` vs `generate-diagnostic-insights.ts` | Nearly identical **pure helpers** (`groupLtvCurveByCohort`, `pickBest`, etc.). |
-| **Cohort retention-LTV pages** | Engine `calculateLTVByCohort` vs SQL `mv_cohorts` + React aggregation | Three-way split; hard to assert one number. |
+| Topic | Locations | Conflict | Status |
+|-------|-----------|----------|--------|
+| **Portfolio repeat rate** | `lib/metrics/repeat-purchase.ts` vs `app/api/metrics/repeat-purchases/route.ts` | Filter semantics (date range, customer type) only in API | ✅ **Resolved (Sprint B)** — shared implementation; verify filters on API change |
+| **Retention %** | `mv_kpis` repeat-based formula vs `mv_cohorts` active/cohort_size vs dashboard `calculateRetentionMetrics` in `app/api/dashboard/metrics/route.ts` | Different denominators and cohort grain. | **Open** |
+| **“LTV” KPI** | `mv_kpis.customer_lifetime_value` (= total revenue / customers) vs engine **terminal cohort LTV** / staircase | Same name, **different concepts** — documentation hazard. | **Open** |
+| **AOV** | `mv_kpis.average_order_value` (`AVG`) vs dashboard route (`totalRevenue / orders.length`) | Can diverge on edge cases. | **Open** |
+| **At-risk / dormant** | SQL uses `customers.last_order_at`; dashboard route uses order `source_created_at` patterns (per prior audit) | Inconsistent risk of population mismatch. | **Open** |
+| **Revenue durability vote** | `lib/metrics/revenue-durability-status.ts` | Was duplicated across dashboard + insights | ✅ **Resolved (Sprint C + D)** — one evaluator + tests |
+| **LTV terminal pick / cohort spread helpers** | `dashboard-view-model.ts` vs `generate-diagnostic-insights.ts` | Nearly identical **pure helpers** (`groupLtvCurveByCohort`, `pickBest`, etc.). | **Open** |
+| **Cohort retention-LTV pages** | Engine `calculateLTVByCohort` vs SQL `mv_cohorts` + React aggregation | Three-way split; hard to assert one number. | **Open** |
 
 ---
 
@@ -111,8 +153,8 @@ Strict interpretation: **core** formulas should live in `lib/metrics`; React sti
 ## Recommended consolidation sequence
 
 1. **Freeze nomenclature** — Publish a one-pager: “LTV (KPI)”, “LTV (cohort staircase)”, “retention (portfolio)”, “retention (cohort Month+N)” to stop label collision (no code change required for that doc).
-2. **Single implementation for repeat + first-to-second** — Implement `lib/metrics` helpers as **shared library** called from `app/api/metrics/repeat-purchases/route.ts` (and optionally SQL for aggregates later). **Highest ROI / lowest scope.**
-3. **Unify durability voting** — Export one function (e.g. from `lib/insights/rules.ts` or a tiny `lib/metrics/durability.ts`) consumed by dashboard view model and insights; **delete duplicate** threshold arrays from `dashboard-view-model.ts`.
+2. ~~**Single implementation for repeat + first-to-second**~~ — ✅ Done (**Sprint B**).
+3. ~~**Unify durability voting**~~ — ✅ Done (**Sprint C**); tests added (**Sprint D**).
 4. **Dedupe LTV cohort helpers** — Move `groupLtvCurveByCohort` / terminal picks to `lib/metrics/utils.ts` or `ltv-helpers.ts`; import from insights generator and dashboard.
 5. **Route-quarantine** — Remove or guard **`/api/dashboard/metrics`** + `REDHomePage` behind explicit “legacy lab” or delete after porting any still-needed KPI to `mv_kpis` or engine.
 6. **Cohort API vs engine** — Longer horizon: either materialized views call documented parity tests against `lib/metrics` on a fixture, or **one** pipeline (TS job or SQL) feeds both.
@@ -123,7 +165,7 @@ Strict interpretation: **core** formulas should live in `lib/metrics`; React sti
 
 - Treat **`lib/metrics` + `build*FromDataset`** as the **reference implementation** for demo/CSV command-centre surfaces.
 - Treat **`mv_*` + `/api/metrics/cohorts`** as the **Shopify-connected** path until unified.
-- Add **integration tests** (future sprint) that assert `calculateRepeatPurchaseRate` matches API repeat definition when filters are default.
+- Run **`npm test`** when changing metric logic — Revenue Durability evaluator has boundary tests; add tests for new shared helpers.
 - Flag **`/api/dashboard/metrics`** dummy fallback in runbooks for anyone testing Shopify-connected accounts.
 
 ---
@@ -148,9 +190,9 @@ Strict interpretation: **core** formulas should live in `lib/metrics`; React sti
 
 1. **Product truth:** Should the **executive dashboard** for connected data eventually be **100% SQL**, **100% TS engine**, or **hybrid** (engine for CSV, SQL for sync)?  
 2. **LTV naming:** Rename KPI “customer lifetime value” in `mv_kpis` consumer UIs to “average revenue per customer” or similar?  
-3. **Repeat purchase API:** Should date-filtered repeat rates **reuse** engine functions with the same customer universe rules?  
+3. **Repeat purchase API:** ~~Should date-filtered repeat rates reuse engine functions?~~ ✅ Yes — implemented Sprint B; maintain filter parity on API changes.
 4. **Channel quality:** Is **month × channel spend vs cohort LTV** the first ship, or **attribution-quality** requirements block shipping?  
-5. **Durability:** Keep **heuristic posture** vs evolve to a **published formula** (weighting, statistical guardrails)?  
+5. **Durability:** ~~Keep heuristic posture vs evolve to published formula?~~ Posture logic centralised Sprint C; next: parity test across dashboard + insights call sites.
 6. **What to delete later:** `REDHomePage.tsx` and duplicate dashboard metrics API if superseded — confirm with stakeholders.  
 7. **`customer-intelligence/composition` mock page:** Remove from sidebar or label **Prototype** until wired to real data.
 
@@ -160,7 +202,7 @@ Strict interpretation: **core** formulas should live in `lib/metrics`; React sti
 
 | Layer | Paths |
 |-------|--------|
-| Engine | `lib/metrics/*.ts` (notably `cohorts.ts`, `retention.ts`, `repeat-purchase.ts`, `ltv.ts`, `acquisition.ts`, `*-view-model.ts`, `cohort-matrix.ts`, `dashboard-view-model.ts`) |
+| Engine | `lib/metrics/*.ts` (notably `cohorts.ts`, `retention.ts`, `repeat-purchase.ts`, `ltv.ts`, `acquisition.ts`, `revenue-durability-status.ts`, `*-view-model.ts`, `cohort-matrix.ts`, `dashboard-view-model.ts`) |
 | Insights | `lib/insights/*.ts` |
 | Demo / data | `lib/demo/*`, `lib/data-source/*`, `components/data/AcquisitionDataPreview.tsx` |
 | Types | `lib/types/*` |

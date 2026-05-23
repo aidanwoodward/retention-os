@@ -123,6 +123,19 @@ export {
   type AcquisitionPageViewModel,
 } from "./acquisition-view-model";
 
+export {
+  calculateFirstProductCustomerQuality,
+  calculateFirstProductCustomerQualityFromDataset,
+  deriveFirstProductIdForCustomer,
+  MIN_CUSTOMERS_FOR_SIGNAL,
+  MATERIAL_DELTA,
+  HIGH_DRAG,
+  type CalculateFirstProductCustomerQualityOptions,
+  type FirstProductCustomerQualityResult,
+  type FirstProductQualityRow,
+  type ProductQualitySignal,
+} from "./product-quality";
+
 /**
  * Example wiring (not executed here):
  *

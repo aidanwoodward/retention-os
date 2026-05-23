@@ -14,6 +14,16 @@
   },
   "include": [
     "lib/metrics/revenue-durability-status.ts",
-    "lib/metrics/revenue-durability-status.test.ts"
+    "lib/metrics/revenue-durability-status.test.ts",
+    "lib/metrics/product-quality.ts",
+    "lib/metrics/product-quality.test.ts",
+    "lib/metrics/repeat-purchase.ts",
+    "lib/metrics/utils.ts",
+    "lib/demo/index.ts",
+    "lib/demo/**/*.ts",
+    "lib/types/**/*.ts",
+    "lib/data-source/dataset-types.ts",
+    "lib/data-source/dataset-helpers.ts",
+    "lib/data-source/demo-source.ts"
   ]
 }

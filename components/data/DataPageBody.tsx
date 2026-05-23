@@ -114,7 +114,8 @@ export function DataPageBody({
           <h2 className="mt-1 text-lg font-semibold text-zinc-900">Marketing spend preview</h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">
             Validate a month × channel spend file against the RetentionOS import contract, optionally save to session for this tab, then review CAC / LTV:CAC /
-            payback <span className="font-medium text-zinc-800">previews</span> in the acquisition section below — not a full /acquisition workspace yet.
+            payback <span className="font-medium text-zinc-800">previews</span> below. The full KPI workspace lives on{" "}
+            <span className="font-medium text-zinc-800">/acquisition</span> (dataset-native spend only).
           </p>
         </div>
         <div className="pt-5">
@@ -127,8 +128,8 @@ export function DataPageBody({
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Acquisition economics preview</p>
           <h2 className="mt-1 text-lg font-semibold text-zinc-900">CAC · LTV:CAC · payback readiness</h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">
-            Uses the metric engine’s LTV ladders with explicit marketing spend (session or merged upload). Not a full acquisition workspace — transparency for
-            Layer 4 onboarding only.
+            Uses the metric engine’s LTV ladders with explicit marketing spend (session preview on demo, or merged upload). Orphan session spend can be previewed here before orders upload; the{" "}
+            <span className="font-medium text-zinc-800">/acquisition</span> route uses dataset-native spend only.
           </p>
         </div>
         <div className="pt-5">

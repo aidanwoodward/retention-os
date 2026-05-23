@@ -81,6 +81,11 @@ export function buildDataPageViewModelFromDataset(
         description: "Cumulative net revenue LTV and contribution LTV staircases.",
       },
       {
+        href: "/acquisition",
+        label: "/acquisition",
+        description: "CAC, LTV:CAC, and payback when dataset-native marketing spend is available.",
+      },
+      {
         href: "/insights",
         label: "/insights",
         description: "Deterministic diagnostic cards from `/lib/insights` on the same fixture.",
@@ -107,7 +112,7 @@ export function buildDataPageViewModelFromDataset(
       },
       {
         title: "Marketing spend",
-        notes: "Canonical `MarketingSpend` rows exist in the fixture for future acquisition economics — not consumed by active MVP routes yet.",
+        notes: "Canonical `MarketingSpend` rows — consumed by `/acquisition` when spend is attached to the selected orders source (demo fixture or uploaded session merge).",
       },
       {
         title: "Margin assumptions",

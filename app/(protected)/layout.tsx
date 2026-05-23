@@ -23,7 +23,7 @@ import { DemoModeProvider } from "@/lib/demo-mode/context"
 const PRODUCT_CRUMB = { label: RETENTIONOS_MARK, path: "/dashboard" } as const
 const COMMAND_CENTRE_CRUMB = { label: MVP_COMMAND_CENTRE_NAME, path: "/dashboard" } as const
 
-const MVP_ROUTE_SEGMENTS = new Set(["dashboard", "cohorts", "retention", "ltv", "insights", "data"])
+const MVP_ROUTE_SEGMENTS = new Set(["dashboard", "cohorts", "retention", "ltv", "acquisition", "insights", "data"])
 
 export default function ProtectedLayout({
   children,

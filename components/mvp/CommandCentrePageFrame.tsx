@@ -54,12 +54,21 @@ export function CommandCentrePageFrame({
   activeMetricDatasetSource = "demo",
 }: CommandCentrePageFrameProps) {
   const copy =
-    routeId === "dashboard" || routeId === "cohorts" || routeId === "retention" || routeId === "ltv" || routeId === "insights"
+    routeId === "dashboard" ||
+    routeId === "cohorts" ||
+    routeId === "retention" ||
+    routeId === "ltv" ||
+    routeId === "acquisition" ||
+    routeId === "insights"
       ? getMvpPageCopyForActiveSource(routeId, activeMetricDatasetSource)
       : getMvpPageCopy(routeId);
 
   const isMetricSurface =
-    routeId === "dashboard" || routeId === "cohorts" || routeId === "retention" || routeId === "ltv";
+    routeId === "dashboard" ||
+    routeId === "cohorts" ||
+    routeId === "retention" ||
+    routeId === "ltv" ||
+    routeId === "acquisition";
 
   const activeLabel = MVP_NAV.find((n) => n.id === routeId)?.label ?? routeId;
 

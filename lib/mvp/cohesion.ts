@@ -8,7 +8,7 @@ export const RETENTIONOS_MARK = "RetentionOS" as const;
 
 export const DEMO_DATASET_LABEL = "Demo dataset" as const;
 
-export type MvpRouteId = "dashboard" | "cohorts" | "retention" | "ltv" | "insights" | "data";
+export type MvpRouteId = "dashboard" | "cohorts" | "retention" | "ltv" | "acquisition" | "insights" | "data";
 
 export interface MvpNavItem {
   readonly id: MvpRouteId;
@@ -22,6 +22,7 @@ export const MVP_NAV: readonly MvpNavItem[] = [
   { id: "cohorts", href: "/cohorts", label: "Cohorts" },
   { id: "retention", href: "/retention", label: "Retention" },
   { id: "ltv", href: "/ltv", label: "LTV" },
+  { id: "acquisition", href: "/acquisition", label: "Acquisition" },
   { id: "insights", href: "/insights", label: "Insights" },
   { id: "data", href: "/data", label: "Data" },
 ];
@@ -92,6 +93,19 @@ export const MVP_PAGE_COPY: Record<MvpRouteId, MvpPageCopy> = {
       "Loop back to Dashboard for headline averages before stakeholder reviews.",
     ],
   },
+  acquisition: {
+    title: "Acquisition economics",
+    hook: "CAC, LTV:CAC, and payback diagnostics when marketing spend travels with the selected orders source.",
+    lookingAt:
+      `Monthly CAC, blended CAC, terminal revenue and contribution LTV:CAC, and contribution payback previews from the ${DEMO_DATASET_LABEL.toLowerCase()} plus its fixture marketing spend (${DEMO_BRAND_NAME}) — dataset-native spend only on this route.`,
+    matters:
+      "Scaling spend without calendar-aligned CAC and payback visibility invites liquidity risk. This page keeps acquisition economics tied to the same orders snapshot as LTV and cohort routes — no orphan spend blending.",
+    nextSteps: [
+      "Cross-check terminal LTV spreads on LTV before trusting LTV:CAC ratios.",
+      "Save orders and marketing spend together on Data when using uploaded CSV — session spend previews on /data do not override demo economics here.",
+      "Escalate to Diagnostic Insights when acquisition-quality variance shows up alongside weak payback.",
+    ],
+  },
   insights: {
     title: "Diagnostic Insights",
     hook: `${MVP_COMMAND_CENTRE_NAME} — prioritized moves from deterministic rules.`,
@@ -109,7 +123,7 @@ export const MVP_PAGE_COPY: Record<MvpRouteId, MvpPageCopy> = {
     title: "Data & sources",
     hook: `${MVP_COMMAND_CENTRE_NAME} — trust ledger, demo fixture counts, and session CSV source control.`,
     lookingAt:
-      `Canonical ${DEMO_BRAND_NAME} fixture counts (customers, orders, line rows, cohort months) plus object definitions — always visible for audit. Until you save a passing CSV snapshot to sessionStorage here, Dashboard, Cohorts, Retention, LTV, and Insights consume the demo fixture; after save, those KPI routes use your uploaded slice for this browser tab only.`,
+      `Canonical ${DEMO_BRAND_NAME} fixture counts (customers, orders, line rows, cohort months) plus object definitions — always visible for audit. Until you save a passing CSV snapshot to sessionStorage here, Dashboard, Cohorts, Retention, LTV, Acquisition, and Insights consume the demo fixture; after save, those KPI routes use your uploaded slice for this browser tab only.`,
     matters:
       "Operators cannot judge revenue durability honestly if provenance is vague. This page states the active source, lists route coverage, and makes session-only CSV explicit — no Supabase mirror and no live Shopify on the MVP spine.",
     nextSteps: [
@@ -126,19 +140,20 @@ export function getMvpPageCopy(routeId: MvpRouteId): MvpPageCopy {
 
 /** Command-centre routes: adjust “What you’re looking at” when the active dataset is a session upload. */
 export function getMvpPageCopyForActiveSource(
-  routeId: "dashboard" | "cohorts" | "retention" | "ltv" | "insights",
+  routeId: "dashboard" | "cohorts" | "retention" | "ltv" | "acquisition" | "insights",
   source: "demo" | "uploaded_csv",
 ): MvpPageCopy {
   const base = MVP_PAGE_COPY[routeId];
   if (source === "demo") {
     return base;
   }
-  type SourceAwareRoute = "dashboard" | "cohorts" | "retention" | "ltv" | "insights";
+  type SourceAwareRoute = "dashboard" | "cohorts" | "retention" | "ltv" | "acquisition" | "insights";
   const lookingAt: Record<SourceAwareRoute, string> = {
     dashboard: `A single-plane summary of cohort scale, repeat depth, first-to-second within 90 days, Month +N active rates, and cumulative net revenue / contribution LTV — computed on your session-saved uploaded CSV (this browser tab only; not the ${DEMO_BRAND_NAME} demo fixture).`,
     cohorts: `First-order monthly cohorts with net merchandise revenue, modeled contribution, and Month +N active rates from your session-saved uploaded CSV (UTC cohort months; sessionStorage in this tab only).`,
     retention: `Portfolio repeat rate, first-to-second within 90 days, average spacing to second order, and cohort Month +0/+N active rates from your session-saved uploaded CSV (sessionStorage in this tab only).`,
     ltv: `Average cumulative net revenue per customer by cohort-age offset, with parallel contribution ladders where margin assumptions apply — from your session-saved uploaded CSV (sessionStorage in this tab only).`,
+    acquisition: `Monthly CAC, blended CAC, terminal LTV:CAC, and contribution payback from your session-saved uploaded orders plus session marketing spend merged by the resolver (sessionStorage in this tab only — orphan spend without orders upload does not apply here).`,
     insights: `Executive evidence cards from deterministic rules on your session-saved uploaded CSV outputs (wired through /lib/metrics → /lib/insights — sessionStorage in this tab only, not persisted to Supabase).`,
   };
   return { ...base, lookingAt: lookingAt[routeId] };
@@ -146,10 +161,12 @@ export function getMvpPageCopyForActiveSource(
 
 /** Scope sentence inserted after brand tagline in amber banners on metric-heavy pages. */
 export type MetricsBannerScopeFn = (
-  routeId: "dashboard" | "cohorts" | "retention" | "ltv",
+  routeId: "dashboard" | "cohorts" | "retention" | "ltv" | "acquisition",
 ) => string;
 
-export function metricsBannerScopeLine(routeId: "dashboard" | "cohorts" | "retention" | "ltv" | "insights"): string {
+export function metricsBannerScopeLine(
+  routeId: "dashboard" | "cohorts" | "retention" | "ltv" | "acquisition" | "insights",
+): string {
   switch (routeId) {
     case "dashboard":
       return `This Dashboard summarises cohort scale, reorder behaviour, Revenue durability primitives, and LTV ladders in one executive canvas.`;
@@ -157,6 +174,8 @@ export function metricsBannerScopeLine(routeId: "dashboard" | "cohorts" | "reten
       return `These cohort economics tables quantify acquisition-month dispersion and Month +N active breadth.`;
     case "retention":
       return `These retention KPIs juxtapose ninety-day reorder timing with cohort calendar-month strips.`;
+    case "acquisition":
+      return `These acquisition economics diagnostics show CAC, LTV:CAC, and payback when marketing spend is attached to the selected orders source.`;
     case "insights":
       return `These Diagnostic Insights cards interpret the same deterministic bundle as Dashboard / KPI routes — prioritized operator moves tied to thresholds.`;
     default:

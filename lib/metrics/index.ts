@@ -117,6 +117,12 @@ export {
   type RetentionPageViewModel,
 } from "./retention-view-model";
 
+export {
+  buildAcquisitionPageViewModelFromDataset,
+  type AcquisitionPageSummaryView,
+  type AcquisitionPageViewModel,
+} from "./acquisition-view-model";
+
 /**
  * Example wiring (not executed here):
  *

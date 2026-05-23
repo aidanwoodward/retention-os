@@ -19,6 +19,7 @@ function buildCoverageRows(hasUpload: boolean, demoBrandName: string): readonly 
     { href: "/cohorts", headline: "Cohort economics (/cohorts)", body: `${kpiBody} Acquisition-month rollups.` },
     { href: "/retention", headline: "Retention & repeat (/retention)", body: `${kpiBody} Journey + calendar-strip retention.` },
     { href: "/ltv", headline: "LTV ladders (/ltv)", body: `${kpiBody} Net revenue and contribution ladders.` },
+    { href: "/acquisition", headline: "Acquisition economics (/acquisition)", body: `${kpiBody} CAC, LTV:CAC, and payback when dataset-native marketing spend is present.` },
     { href: "/insights", headline: "Diagnostic Insights (/insights)", body: `${kpiBody} Deterministic diagnostic cards.` },
     {
       href: "/data",
@@ -36,7 +37,7 @@ export function DataPageRouteCoverageSection({ hasUpload, demoBrandName }: { has
     <section className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-sm sm:p-6">
       <h2 className="text-sm font-semibold text-zinc-900">Route coverage vs active source</h2>
       <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-600">
-        Dashboard, cohorts, retention, LTV, and Insights always honour the{" "}
+        Dashboard, cohorts, retention, LTV, Acquisition, and Insights always honour the{" "}
         <strong className="font-medium text-zinc-900">same browser-tab session selection</strong> as this page.&nbsp;
         {hasUpload ?
           <>

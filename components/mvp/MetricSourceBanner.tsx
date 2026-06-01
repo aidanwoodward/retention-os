@@ -38,7 +38,8 @@ export function MetricSourceBanner({
               </>
             : routeId === "dashboard" ?
               <>
-                KPIs plus on-page diagnostic cards use this upload through <span className={CHIP}>/lib/metrics</span> and{" "}
+                Executive KPIs plus Command-centre spine snapshots (acquisition + product quality) use this upload through{" "}
+                <span className={CHIP}>/lib/metrics</span> and{" "}
                 <span className={CHIP}>/lib/insights</span> view models.
               </>
             : <>

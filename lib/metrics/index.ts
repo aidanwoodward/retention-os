@@ -90,6 +90,21 @@ export {
 } from "./dashboard-view-model";
 
 export {
+  buildDashboardDataCompletenessView,
+  buildSpineObservationBullets,
+  mapDashboardAcquisitionExecutive,
+  mapDashboardProductQualityExecutive,
+  type DashboardAcquisitionExecutiveView,
+  type DashboardDataCompletenessRow,
+  type DashboardDataCompletenessView,
+  type DashboardProductHighlightView,
+  type DashboardProductQualityExecutiveView,
+  type DataCompletenessStatus,
+  type PaybackExecutiveStatus,
+  type ProductQualityExecutiveState,
+} from "./dashboard-executive-spine";
+
+export {
   evaluateRevenueDurabilityStatus,
   FIRST_TO_SECOND_90_HEALTHY,
   FIRST_TO_SECOND_90_WATCH,

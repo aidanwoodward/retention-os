@@ -15,7 +15,24 @@ import {
   REPEAT_PURCHASE_WATCH,
   type RevenueDurabilityStatus,
 } from "./revenue-durability-status";
+import { buildAcquisitionPageViewModelFromDataset } from "./acquisition-view-model";
+import {
+  buildDashboardDataCompletenessView,
+  buildSpineObservationBullets,
+  mapDashboardAcquisitionExecutive,
+  mapDashboardProductQualityExecutive,
+  type DashboardAcquisitionExecutiveView,
+  type DashboardDataCompletenessView,
+  type DashboardProductQualityExecutiveView,
+} from "./dashboard-executive-spine";
+import { buildProductsPageViewModelFromDataset } from "./product-quality-view-model";
 import { netOrderRevenue, orderContribution, safeDivide } from "./utils";
+
+export type {
+  DashboardAcquisitionExecutiveView,
+  DashboardDataCompletenessView,
+  DashboardProductQualityExecutiveView,
+} from "./dashboard-executive-spine";
 
 export type { RevenueDurabilityStatus };
 
@@ -49,6 +66,9 @@ export interface DashboardExecutiveViewModel {
   durability: RevenueDurabilitySnapshotView;
   /** Deterministic bullets for the MVP executive screen. */
   observations: readonly string[];
+  acquisition: DashboardAcquisitionExecutiveView;
+  productQuality: DashboardProductQualityExecutiveView;
+  dataCompleteness: DashboardDataCompletenessView;
 }
 
 function groupLtvCurveByCohort(points: readonly LTVPoint[]): Map<string, LTVPoint[]> {
@@ -154,7 +174,11 @@ function computeDurability(
   return { status, methodologyNotes };
 }
 
-function buildObservations(s: DashboardSummaryView): readonly string[] {
+function buildObservations(
+  s: DashboardSummaryView,
+  acquisition: DashboardAcquisitionExecutiveView,
+  productQuality: DashboardProductQualityExecutiveView,
+): readonly string[] {
   const obs: string[] = [];
 
   if (s.allTimeRepeatPurchaseRate >= REPEAT_PURCHASE_HEALTHY) {
@@ -210,11 +234,12 @@ function buildObservations(s: DashboardSummaryView): readonly string[] {
     );
   }
 
-  return obs.slice(0, 5);
+  const spineBullets = buildSpineObservationBullets(acquisition, productQuality);
+  return [...obs, ...spineBullets].slice(0, 6);
 }
 
 export function buildDashboardExecutiveViewModelFromDataset(dataset: RetentionOSDataset): DashboardExecutiveViewModel {
-  const { customers, orders, marginAssumptions } = dataset;
+  const { customers, orders, marginAssumptions, marketingSpend } = dataset;
 
   const cohortSummaries = calculateCohorts(customers, orders, marginAssumptions);
   const retentionSeries = calculateRetentionByCohort(customers, orders);
@@ -293,9 +318,20 @@ export function buildDashboardExecutiveViewModelFromDataset(dataset: RetentionOS
     summary.bestNetRevenueLtvCohort,
   );
 
-  const observations = buildObservations(summary);
+  const acquisitionVm = buildAcquisitionPageViewModelFromDataset(
+    customers,
+    orders,
+    marginAssumptions,
+    marketingSpend ?? [],
+  );
+  const productsVm = buildProductsPageViewModelFromDataset(dataset);
 
-  return { summary, durability, observations };
+  const acquisition = mapDashboardAcquisitionExecutive(acquisitionVm, summary.avgTerminalNetRevenueLtvAcrossCohorts);
+  const productQuality = mapDashboardProductQualityExecutive(productsVm);
+  const dataCompleteness = buildDashboardDataCompletenessView(dataset, productsVm);
+  const observations = buildObservations(summary, acquisition, productQuality);
+
+  return { summary, durability, observations, acquisition, productQuality, dataCompleteness };
 }
 
 export function buildDashboardExecutiveViewModel(seed?: number): DashboardExecutiveViewModel {

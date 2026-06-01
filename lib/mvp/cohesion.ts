@@ -46,13 +46,13 @@ export const MVP_PAGE_COPY: Record<MvpRouteId, MvpPageCopy> = {
     title: "Executive overview",
     hook: `${MVP_COMMAND_CENTRE_NAME} — portfolio read on Revenue durability economics before you commit capital.`,
     lookingAt:
-      `A single-plane summary of cohort scale, repeat depth, first-to-second within 90 days, Month +N active rates, and cumulative net revenue / contribution LTV — all computed on the ${DEMO_DATASET_LABEL.toLowerCase()} for ${DEMO_BRAND_NAME}.`,
+      `A single-plane summary of cohort scale, repeat depth, first-to-second within 90 days, Month +N active rates, cumulative net revenue / contribution LTV, acquisition economics, and first-product customer quality — all computed on the ${DEMO_DATASET_LABEL.toLowerCase()} for ${DEMO_BRAND_NAME}.`,
     matters:
-      "Revenue durability emerges from depth and timing of repeat purchases and how evenly cohort ladders perform. Weak signals here propagate into acquisition-risk and liquidity decisions.",
+      "Revenue durability emerges from depth and timing of repeat purchases, cohort ladder dispersion, acquisition payback honesty, and entry-product customer quality. Weak signals here propagate into acquisition-risk and liquidity decisions.",
     nextSteps: [
+      "Scan the Command-centre spine cards for acquisition economics and first-product quality before drilling to /acquisition or /products.",
       "Inspect the Revenue durability snapshot label, then drill to Diagnostic Insights when you need prioritized operator moves.",
-      "Use Cohort economics and Retention tabs to verify whether dispersion is breadth (Month +N) vs journey friction (ninety-day conversion).",
-      "Open Data to confirm assumptions, fixtures, and what integrations are deliberately not wired yet.",
+      "Use the data completeness strip to see what is unlocked vs assumption-based, then open Data to attach spend or margin paths.",
     ],
   },
   cohorts: {
@@ -163,7 +163,7 @@ export function getMvpPageCopyForActiveSource(
   }
   type SourceAwareRoute = "dashboard" | "cohorts" | "retention" | "ltv" | "acquisition" | "products" | "insights";
   const lookingAt: Record<SourceAwareRoute, string> = {
-    dashboard: `A single-plane summary of cohort scale, repeat depth, first-to-second within 90 days, Month +N active rates, and cumulative net revenue / contribution LTV — computed on your session-saved uploaded CSV (this browser tab only; not the ${DEMO_BRAND_NAME} demo fixture).`,
+    dashboard: `A single-plane summary of cohort scale, repeat depth, first-to-second within 90 days, Month +N active rates, cumulative net revenue / contribution LTV, acquisition economics, and first-product customer quality — computed on your session-saved uploaded CSV (this browser tab only; not the ${DEMO_BRAND_NAME} demo fixture).`,
     cohorts: `First-order monthly cohorts with net merchandise revenue, modeled contribution, and Month +N active rates from your session-saved uploaded CSV (UTC cohort months; sessionStorage in this tab only).`,
     retention: `Portfolio repeat rate, first-to-second within 90 days, average spacing to second order, and cohort Month +0/+N active rates from your session-saved uploaded CSV (sessionStorage in this tab only).`,
     ltv: `Average cumulative net revenue per customer by cohort-age offset, with parallel contribution ladders where margin assumptions apply — from your session-saved uploaded CSV (sessionStorage in this tab only).`,
@@ -184,7 +184,7 @@ export function metricsBannerScopeLine(
 ): string {
   switch (routeId) {
     case "dashboard":
-      return `This Dashboard summarises cohort scale, reorder behaviour, Revenue durability primitives, and LTV ladders in one executive canvas.`;
+      return `This Dashboard summarises cohort scale, reorder behaviour, Revenue durability primitives, LTV ladders, acquisition economics, and first-product quality in one executive canvas.`;
     case "cohorts":
       return `These cohort economics tables quantify acquisition-month dispersion and Month +N active breadth.`;
     case "retention":

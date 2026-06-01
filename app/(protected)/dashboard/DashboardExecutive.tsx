@@ -4,6 +4,7 @@ import { useLayoutEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
 import { MetricSourceBanner } from "@/components/mvp/MetricSourceBanner";
+import { DashboardSpinePanels } from "@/components/dashboard/DashboardSpinePanels";
 import {
   buildDemoCommandCentreSelection,
   resolveCommandCentreDatasetSource,
@@ -113,7 +114,7 @@ export default function DashboardExecutive() {
     () => buildInsightsPageViewModelFromDataset(selection.dataset),
     [selection.dataset],
   );
-  const { summary, durability, observations } = vm;
+  const { summary, durability, observations, acquisition, productQuality, dataCompleteness } = vm;
 
   const riskSignals = useMemo(() => {
     const ranked = [...insightVm.insights].sort((a, b) => {
@@ -221,6 +222,13 @@ export default function DashboardExecutive() {
           </div>
         </div>
       </section>
+
+      <DashboardSpinePanels
+        acquisition={acquisition}
+        productQuality={productQuality}
+        dataCompleteness={dataCompleteness}
+        isUploaded={selection.isUploaded}
+      />
 
       <div>
         <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Executive KPIs</h2>
@@ -337,12 +345,14 @@ export default function DashboardExecutive() {
 
       <section>
         <h2 className="mb-3 text-sm font-semibold text-zinc-900">Go deeper</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <NavCard
             href="/insights"
             title="Diagnostic Insights"
             description="Rules-based operator cards with evidence, actions, and metric refs."
           />
+          <NavCard href="/acquisition" title="Acquisition economics" description="CAC, LTV:CAC, and payback when spend travels with orders." />
+          <NavCard href="/products" title="First-product quality" description="Which entry products create durable, repeat, profitable customers." />
           <NavCard href="/data" title="Data & sources" description="Fixture lineage and honest integration posture." />
           <NavCard href="/cohorts" title="Cohort economics" description="Acquisition-month rollups and Month +N breadth." />
           <NavCard href="/retention" title="Retention & repeat" description="Journey pacing plus calendar strips." />

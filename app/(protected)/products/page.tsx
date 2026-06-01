@@ -1,24 +1,37 @@
-import { ComingSoon } from "@/components/ui/coming-soon";
-import { Metadata } from "next";
+"use client";
 
-export const metadata: Metadata = {
-  robots: {
-    index: false,
-    follow: false,
-  },
-};
+import { useLayoutEffect, useMemo, useState } from "react";
+import { FirstProductQualityPanel } from "@/components/products/FirstProductQualityPanel";
+import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
+import { MetricSourceBanner } from "@/components/mvp/MetricSourceBanner";
+import {
+  buildDemoCommandCentreSelection,
+  resolveCommandCentreDatasetSource,
+  type CommandCentreDatasetSelection,
+} from "@/lib/data-source/client-selected-source";
+import { buildProductsPageViewModelFromDataset } from "@/lib/metrics/product-quality-view-model";
 
 export default function ProductsPage() {
+  const [selection, setSelection] = useState<CommandCentreDatasetSelection>(() => buildDemoCommandCentreSelection());
+
+  useLayoutEffect(() => {
+    setSelection(resolveCommandCentreDatasetSource());
+  }, []);
+
+  const vm = useMemo(
+    () => buildProductsPageViewModelFromDataset(selection.dataset),
+    [selection.dataset],
+  );
+
   return (
-    <ComingSoon
-      title="Product Analytics"
-      description="Comprehensive product performance insights, cross-sell analysis, and replenishment metrics coming soon."
-      bullets={[
-        "Product performance dashboards with revenue and margin analysis",
-        "Cross-sell and upsell opportunity identification",
-        "Replenishment frequency and timing optimization"
-      ]}
-      area="products"
-    />
+    <CommandCentrePageFrame
+      routeId="products"
+      maxWidth="1600"
+      bannerKind="metrics"
+      metricsBannerSlot={<MetricSourceBanner routeId="products" selection={selection} />}
+      activeMetricDatasetSource={selection.isUploaded ? "uploaded_csv" : "demo"}
+    >
+      <FirstProductQualityPanel vm={vm} />
+    </CommandCentrePageFrame>
   );
 }

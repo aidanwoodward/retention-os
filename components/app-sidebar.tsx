@@ -40,6 +40,7 @@ const data = {
         { title: "Retention", url: "/retention" },
         { title: "LTV", url: "/ltv" },
         { title: "Acquisition", url: "/acquisition" },
+        { title: "Products", url: "/products" },
         { title: "Insights", url: "/insights" },
         { title: "Data", url: "/data" },
       ],

@@ -86,6 +86,11 @@ export function buildDataPageViewModelFromDataset(
         description: "CAC, LTV:CAC, and payback when dataset-native marketing spend is available.",
       },
       {
+        href: "/products",
+        label: "/products",
+        description: "First-product customer quality — repeat, LTV, contribution, and drag by entry product.",
+      },
+      {
         href: "/insights",
         label: "/insights",
         description: "Deterministic diagnostic cards from `/lib/insights` on the same fixture.",
@@ -104,7 +109,7 @@ export function buildDataPageViewModelFromDataset(
       },
       {
         title: "Order line items",
-        notes: "Canonical `OrderLineItem` — quantity, SKU/product links, line economics for future product-quality metrics.",
+        notes: "Canonical `OrderLineItem` — quantity, SKU/product links; powers first-product customer quality on `/products`.",
       },
       {
         title: "Products",

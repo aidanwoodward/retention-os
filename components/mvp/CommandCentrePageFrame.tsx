@@ -36,7 +36,7 @@ export interface CommandCentrePageFrameProps {
   /** When `bannerKind` is `insights`, replaces the default demo-static top banner with source-aware METRIC-style slot. */
   readonly insightsBannerSlot?: ReactNode;
   /**
-   * For dashboard / cohorts / retention / ltv / insights: switches the white context card “What you’re looking at”
+   * For dashboard / cohorts / retention / ltv / acquisition / products / insights: switches the white context card “What you’re looking at”
    * so it does not claim the demo fixture when `uploaded_csv` is active.
    */
   readonly activeMetricDatasetSource?: "demo" | "uploaded_csv";
@@ -59,6 +59,7 @@ export function CommandCentrePageFrame({
     routeId === "retention" ||
     routeId === "ltv" ||
     routeId === "acquisition" ||
+    routeId === "products" ||
     routeId === "insights"
       ? getMvpPageCopyForActiveSource(routeId, activeMetricDatasetSource)
       : getMvpPageCopy(routeId);
@@ -68,7 +69,8 @@ export function CommandCentrePageFrame({
     routeId === "cohorts" ||
     routeId === "retention" ||
     routeId === "ltv" ||
-    routeId === "acquisition";
+    routeId === "acquisition" ||
+    routeId === "products";
 
   const activeLabel = MVP_NAV.find((n) => n.id === routeId)?.label ?? routeId;
 

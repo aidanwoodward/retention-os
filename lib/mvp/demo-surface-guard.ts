@@ -23,6 +23,7 @@ export function getMvpContainmentRedirect(pathname: string): string | null {
     "/retention",
     "/ltv",
     "/acquisition",
+    "/products",
     "/insights",
     "/data",
   ]);
@@ -32,6 +33,7 @@ export function getMvpContainmentRedirect(pathname: string): string | null {
   if (path.startsWith("/retention/")) return "/retention";
   if (path.startsWith("/ltv/")) return "/ltv";
   if (path.startsWith("/acquisition/")) return "/acquisition";
+  if (path.startsWith("/products/")) return "/products";
   if (path.startsWith("/insights/")) return "/insights";
   if (path.startsWith("/data/")) return "/data";
   if (path.startsWith("/dashboard/")) return "/dashboard";

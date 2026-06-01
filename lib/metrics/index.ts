@@ -136,6 +136,15 @@ export {
   type ProductQualitySignal,
 } from "./product-quality";
 
+export {
+  buildProductsPageViewModel,
+  buildProductsPageViewModelFromDataset,
+  FIRST_PRODUCT_ATTRIBUTION_CAVEAT,
+  type FirstProductTableRowView,
+  type ProductsPageSummaryView,
+  type ProductsPageViewModel,
+} from "./product-quality-view-model";
+
 /**
  * Example wiring (not executed here):
  *

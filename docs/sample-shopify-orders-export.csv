@@ -1,0 +1,13 @@
+Name,Email,Financial Status,Created at,Currency,Subtotal,Shipping,Taxes,Total,Discount Amount,Refunded Amount,Source,Id,Lineitem quantity,Lineitem name,Lineitem price,Lineitem SKU
+#1001,alice@example.com,paid,2024-01-08 10:00:00 +0000,USD,118.00,0.00,0.00,110.00,8.00,0.00,web,5001001,2,Lumin Daily Serum,45.00,LMN-SER-30
+,,,,,,,,,,,,,1,Quiet Night Barrier Cream,28.00,QN-BC-50
+#1002,bob@example.com,paid,2024-01-12 15:30:00 +0000,USD,64.00,0.00,0.00,64.00,0.00,0.00,google,5001002,2,Discovery Mini Kit,32.00,DISC-MINI-01
+#1003,alice@example.com,paid,2024-02-20 09:15:00 +0000,USD,89.50,0.00,0.00,72.50,12.00,5.00,email,5001003,1,River Foam Cleanser,24.00,RVR-FOAM-01
+,,,,,,,,,,,,,1,Cliff Mineral SPF 40,42.00,CLF-SPF40-50
+,,,,,,,,,,,,,1,Lumin Daily Serum,23.50,LMN-SER-30
+#1004,chen@example.com,paid,2024-01-25 18:45:00 +0000,USD,42.00,0.00,0.00,42.00,0.00,0.00,tiktok,5001004,1,Discovery Mini Kit,42.00,DISC-MINI-01
+#1005,bob@example.com,paid,2024-03-01 12:00:00 +0000,USD,51.00,0.00,0.00,45.00,6.00,0.00,google,5001005,1,Cliff Mineral SPF 40,51.00,CLF-SPF40-50
+#1006,chen@example.com,paid,2024-03-10 11:20:00 +0000,USD,76.00,0.00,0.00,61.00,0.00,15.00,influencer,5001006,2,Quiet Night Barrier Cream,38.00,QN-BC-50
+#1007,dana@example.com,paid,2024-02-01 08:00:00 +0000,USD,33.00,0.00,0.00,30.00,3.00,0.00,web,5001007,1,River Foam Cleanser,33.00,RVR-FOAM-01
+#1008,dana@example.com,paid,2024-02-28 14:10:00 +0000,USD,54.00,0.00,0.00,54.00,0.00,0.00,web,5001008,1,Discovery Mini Kit,28.00,DISC-MINI-01
+,,,,,,,,,,,,,1,Lumin Daily Serum,26.00,LMN-SER-30

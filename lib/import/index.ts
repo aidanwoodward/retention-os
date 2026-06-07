@@ -52,3 +52,9 @@ export {
   spendBucketToCohortMonthKey,
   type ParseMarketingSpendCsvTextResult,
 } from "./normalise-marketing-spend";
+
+export {
+  importShopifyOrdersCsvFromText,
+  parseShopifyOrdersCsvText,
+  type ParseShopifyOrdersCsvResult,
+} from "./shopify";

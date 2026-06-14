@@ -131,7 +131,7 @@ export function buildImportedCsvMetricPreview(
   }
   if (!hasAnyMargin) {
     warnings.push(
-      "Contribution LTV unavailable — include contribution_margin on order rows or configure margin assumptions in a future step.",
+      "Contribution LTV unavailable - add order-level contribution margin or save margin assumptions on /data.",
     );
   }
 

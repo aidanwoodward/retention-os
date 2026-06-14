@@ -33,6 +33,8 @@
     "lib/import/validate-csv.ts",
     "lib/import/normalise-orders.ts",
     "lib/import/normalise-marketing-spend.ts",
+    "lib/import/detect-orders-csv-format.ts",
+    "lib/import/detect-orders-csv-format.test.ts",
     "lib/import/shopify/**/*.ts",
     "lib/demo/index.ts",
     "lib/demo/**/*.ts",

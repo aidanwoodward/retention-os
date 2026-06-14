@@ -10,7 +10,7 @@ import type {
   CombineOrderCsvImportSummary,
   CsvImportIssue,
 } from "../import";
-import type { RetentionOSDataset, RetentionOSSourceMetadata } from "./dataset-types";
+import type { RetentionOSDataset, RetentionOSSourceMetadata, RetentionOSUploadFormat } from "./dataset-types";
 import { countLineItems, inferOrderWindowFromOrders } from "./dataset-helpers";
 
 export interface BuildImportedRetentionOSDatasetOptions {
@@ -18,6 +18,8 @@ export interface BuildImportedRetentionOSDatasetOptions {
   readonly importedAt?: string;
   /** Override default uploaded label. */
   readonly sourceLabel?: string;
+  /** Orders CSV contract — stored on session metadata when available. */
+  readonly uploadFormat?: RetentionOSUploadFormat;
 }
 
 export type ImportedDatasetBuildFailure = {
@@ -58,9 +60,17 @@ export function buildImportedRetentionOSDataset(
   const firstOrderAt = summary.firstOrderAt ?? windowFromOrders.firstOrderAt;
   const lastOrderAt = summary.lastOrderAt ?? windowFromOrders.lastOrderAt;
 
+  const uploadFormat = options?.uploadFormat;
+  const defaultLabel =
+    uploadFormat === "shopify_orders"
+      ? "Uploaded CSV (Shopify Orders)"
+      : uploadFormat === "retentionos_template"
+        ? "Uploaded CSV (RetentionOS template)"
+        : "Uploaded CSV (combined order + line items)";
+
   const meta: RetentionOSSourceMetadata = {
     sourceType: "uploaded_csv",
-    sourceLabel: options?.sourceLabel ?? "Uploaded CSV (combined order + line items)",
+    sourceLabel: options?.sourceLabel ?? defaultLabel,
     isDemo: false,
     isUploaded: true,
     importedAt: options?.importedAt,
@@ -72,6 +82,7 @@ export function buildImportedRetentionOSDataset(
     lineItemCount,
     warningCount: warnings.length,
     errorCount: 0,
+    ...(uploadFormat !== undefined ? { uploadFormat } : {}),
   };
 
   return {

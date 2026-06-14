@@ -58,3 +58,12 @@ export {
   parseShopifyOrdersCsvText,
   type ParseShopifyOrdersCsvResult,
 } from "./shopify";
+
+export {
+  buildOrdersImportUnlockNotes,
+  detectOrdersCsvImportFormat,
+  importOrdersCsvFromText,
+  ordersCsvFormatLabel,
+  type OrdersCsvImportFormat,
+  type OrdersCsvImportOutcome,
+} from "./detect-orders-csv-format";

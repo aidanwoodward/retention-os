@@ -9,9 +9,14 @@ import type { MarketingSpend } from "../types/marketing";
 
 export type RetentionOSSourceType = "demo" | "uploaded_csv";
 
+/** Upload contract used for `/data` ingestion (Sprint 4I-C). Omitted on demo and legacy session blobs. */
+export type RetentionOSUploadFormat = "shopify_orders" | "retentionos_template";
+
 /** Provenance and rollups for operator trust surfaces and future source switching. */
 export interface RetentionOSSourceMetadata {
   readonly sourceType: RetentionOSSourceType;
+  /** Which orders CSV contract produced this upload, when known. */
+  readonly uploadFormat?: RetentionOSUploadFormat;
   /** Human-readable label (e.g. demo brand or "Uploaded CSV"). */
   readonly sourceLabel: string;
   readonly isDemo: boolean;

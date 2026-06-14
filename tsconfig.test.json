@@ -35,12 +35,18 @@
     "lib/import/normalise-marketing-spend.ts",
     "lib/import/detect-orders-csv-format.ts",
     "lib/import/detect-orders-csv-format.test.ts",
+    "lib/import/metric-preview.ts",
+    "lib/import/import-review-view-model.ts",
+    "lib/import/import-review-view-model.test.ts",
     "lib/import/shopify/**/*.ts",
-    "lib/demo/index.ts",
-    "lib/demo/**/*.ts",
-    "lib/types/**/*.ts",
     "lib/data-source/dataset-types.ts",
     "lib/data-source/dataset-helpers.ts",
-    "lib/data-source/demo-source.ts"
+    "lib/data-source/imported-source.ts",
+    "lib/data-source/demo-source.ts",
+    "lib/data-source/index.ts",
+    "lib/metrics/index.ts",
+    "lib/types/**/*.ts",
+    "lib/demo/index.ts",
+    "lib/demo/**/*.ts"
   ]
 }

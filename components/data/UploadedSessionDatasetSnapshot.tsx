@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import type { RetentionOSDatasetSummary } from "@/lib/data-source";
+import { ordersCsvFormatLabel } from "@/lib/import";
 
 export function formatIsoDateUtcMedium(iso: string | undefined): string {
   if (!iso) return "—";
@@ -25,6 +26,9 @@ export function UploadedSessionDatasetDl({
     <div className={`space-y-3 ${className ?? "mt-4"}`}>
       <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Kv label="Source label" value={summary.sourceLabel} monospace={false} />
+        {summary.uploadFormat ? (
+          <Kv label="Upload format" value={ordersCsvFormatLabel(summary.uploadFormat)} monospace={false} />
+        ) : null}
         <Kv label="Customers" value={summary.customerCount.toLocaleString()} />
         <Kv label="Orders" value={summary.orderCount.toLocaleString()} />
         <Kv label="Products" value={summary.productCount.toLocaleString()} />

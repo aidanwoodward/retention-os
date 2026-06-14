@@ -96,11 +96,18 @@ export function DataPageBody({
 
       <section className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-sm ring-1 ring-black/[0.02] sm:p-6">
         <div className="border-b border-zinc-100 pb-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">CSV upload workflow</p>
-          <h2 className="mt-1 text-lg font-semibold text-zinc-900">CSV onboarding preview</h2>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Orders upload</p>
+          <h2 className="mt-1 text-lg font-semibold text-zinc-900">Shopify Orders CSV onboarding</h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">
-            Validate combined order + line rows against /lib/import contracts, preview metrics, then save to sessionStorage. Saving switches KPI routes on
-            this tab to uploaded data; reverting restores the seeded demo spine.
+            Export orders from Shopify Admin (Orders → Export → Orders), upload here, preview validation and metrics, then save to sessionStorage.
+            Saving switches KPI routes on this tab to your data; reverting restores the seeded demo spine.
+          </p>
+          <p className="mt-2 max-w-2xl text-xs leading-relaxed text-zinc-500">
+            Advanced / testing: the RetentionOS combined template (
+            <code className="rounded-md border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[11px]">
+              docs/sample-retentionos-orders.csv
+            </code>
+            ) is also accepted when headers match exactly.
           </p>
         </div>
         <div className="pt-5">

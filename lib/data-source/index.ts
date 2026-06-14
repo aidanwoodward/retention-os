@@ -10,6 +10,7 @@ export type {
   RetentionOSDatasetSummary,
   RetentionOSSourceMetadata,
   RetentionOSSourceType,
+  RetentionOSUploadFormat,
 } from "./dataset-types";
 
 export {

@@ -10,8 +10,11 @@ import {
 } from "@/lib/data-source";
 import {
   buildImportedCsvMetricPreview,
-  importCombinedOrderCsvFromText,
+  buildOrdersImportUnlockNotes,
+  importOrdersCsvFromText,
+  ordersCsvFormatLabel,
   type CombineOrderCsvImportResult,
+  type OrdersCsvImportFormat,
 } from "@/lib/import";
 import { UploadedSessionDatasetDl } from "@/components/data/UploadedSessionDatasetSnapshot";
 
@@ -54,6 +57,7 @@ export function CsvImportPreview({
   const inputId = useId();
   const fileRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [detectedFormat, setDetectedFormat] = useState<OrdersCsvImportFormat | null>(null);
   const [result, setResult] = useState<CombineOrderCsvImportResult | null>(null);
   const [readError, setReadError] = useState<string | null>(null);
 
@@ -71,6 +75,7 @@ export function CsvImportPreview({
 
   const reset = useCallback(() => {
     setFileName(null);
+    setDetectedFormat(null);
     setResult(null);
     setReadError(null);
     setSessionSaveError(null);
@@ -96,6 +101,10 @@ export function CsvImportPreview({
     const built = buildImportedRetentionOSDataset(result, {
       importedAt: new Date().toISOString(),
       sourceLabel: fileName ? `Uploaded: ${fileName}` : undefined,
+      uploadFormat:
+        detectedFormat === "shopify_orders" || detectedFormat === "retentionos_template"
+          ? detectedFormat
+          : undefined,
     });
     if (!built.ok) {
       setSessionSaveError("This import still has errors in the pipeline — nothing was saved.");
@@ -117,11 +126,12 @@ export function CsvImportPreview({
     setSessionSaveToast(
       `Saved: ${m.customerCount.toLocaleString()} customers, ${m.orderCount.toLocaleString()} orders, ${m.lineItemCount.toLocaleString()} line items.`,
     );
-  }, [fileName, onSessionDatasetChange, refreshSessionSummary, result]);
+  }, [detectedFormat, fileName, onSessionDatasetChange, refreshSessionSummary, result]);
 
   const onFile = useCallback((fileList: FileList | null) => {
     setReadError(null);
     setResult(null);
+    setDetectedFormat(null);
     const file = fileList?.[0];
     if (!file) {
       setFileName(null);
@@ -135,7 +145,9 @@ export function CsvImportPreview({
         setReadError("Could not read file as text.");
         return;
       }
-      setResult(importCombinedOrderCsvFromText(text));
+      const outcome = importOrdersCsvFromText(text);
+      setDetectedFormat(outcome.format);
+      setResult(outcome.result);
     };
     reader.onerror = () => {
       setReadError("File read failed. Try a smaller file or a different browser.");
@@ -152,6 +164,13 @@ export function CsvImportPreview({
     if (result.customers.length === 0 || result.orders.length === 0) return null;
     return buildImportedCsvMetricPreview(result.customers, result.orders, result.products);
   }, [result]);
+
+  const unlockNotes = useMemo(() => {
+    if (!result || detectedFormat == null) return [];
+    return buildOrdersImportUnlockNotes(result, detectedFormat);
+  }, [detectedFormat, result]);
+
+  const unsupportedFormat = detectedFormat === "unsupported";
 
   return (
     <div className="space-y-5">
@@ -214,7 +233,7 @@ export function CsvImportPreview({
           htmlFor={inputId}
           className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm ring-1 ring-black/[0.04] transition-colors hover:bg-zinc-50"
         >
-          Choose CSV
+          Upload Shopify Orders CSV
         </label>
         <button
           type="button"
@@ -233,10 +252,27 @@ export function CsvImportPreview({
       </div>
 
       <p className="text-sm text-zinc-600">
-        Template: copy or adapt{" "}
+        Primary path: export from Shopify Admin → Orders → Export → Orders. Advanced / testing: RetentionOS combined template{" "}
         <code className="rounded-md border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[11px]">docs/sample-retentionos-orders.csv</code>{" "}
-        from the repo — it is not served as a public download from this app in this checkpoint.
+        — not served as a public download from this app.
       </p>
+
+      {detectedFormat != null ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Detected format</span>
+          <span
+            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+              detectedFormat === "shopify_orders"
+                ? "bg-emerald-100 text-emerald-900 ring-1 ring-emerald-200"
+                : detectedFormat === "retentionos_template"
+                  ? "bg-sky-100 text-sky-900 ring-1 ring-sky-200"
+                  : "bg-red-100 text-red-900 ring-1 ring-red-200"
+            }`}
+          >
+            {ordersCsvFormatLabel(detectedFormat)}
+          </span>
+        </div>
+      ) : null}
 
       {readError ? (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-950">
@@ -257,12 +293,20 @@ export function CsvImportPreview({
             }`}
           >
             <p className="font-semibold">
-              {blocked
-                ? "Blocked by errors — no Customer/Order/Product model was produced"
-                : validPreview
-                  ? "Valid preview — parse and validation passed"
-                  : "No data rows — fix the file or header"}
+              {unsupportedFormat
+                ? "Unsupported orders CSV — import blocked"
+                : blocked
+                  ? "Blocked by errors — no Customer/Order/Product model was produced"
+                  : validPreview
+                    ? "Valid preview — parse and validation passed"
+                    : "No data rows — fix the file or header"}
             </p>
+            {unsupportedFormat ? (
+              <p className="mt-2 text-xs leading-relaxed opacity-95">
+                Upload a native Shopify Orders export, or the RetentionOS combined template with exact header names. Other formats are not accepted in
+                this MVP.
+              </p>
+            ) : null}
             {!blocked && validPreview ? (
               <p className="mt-1 text-xs opacity-90">
                 Counts below reflect the normalised import only. Demo fixture counts elsewhere on this page are unchanged.
@@ -330,6 +374,17 @@ export function CsvImportPreview({
                     ) : null}
                     <p className="mt-1 leading-relaxed">{w.message}</p>
                   </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {unlockNotes.length > 0 ? (
+            <div className="rounded-lg border border-zinc-200/90 bg-zinc-50/90 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Metrics unlock notes</p>
+              <ul className="mt-2 list-inside list-disc space-y-1 text-xs leading-relaxed text-zinc-700">
+                {unlockNotes.map((note) => (
+                  <li key={note}>{note}</li>
                 ))}
               </ul>
             </div>

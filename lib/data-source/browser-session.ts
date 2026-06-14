@@ -70,6 +70,15 @@ function parseMeta(meta: unknown): RetentionOSSourceMetadata | null {
     if (typeof n !== "number" || !Number.isFinite(n) || n < 0) return null;
   }
 
+  const uploadFormat = meta.uploadFormat;
+  if (
+    uploadFormat !== undefined &&
+    uploadFormat !== "shopify_orders" &&
+    uploadFormat !== "retentionos_template"
+  ) {
+    return null;
+  }
+
   return meta as unknown as RetentionOSSourceMetadata;
 }
 

@@ -1,4 +1,4 @@
-import { buildDemoRetentionOSDataset, type RetentionOSDataset } from "../data-source";
+import { buildDemoRetentionOSDataset, getDatasetSummary, type RetentionOSDataset } from "../data-source";
 import type { LTVPoint } from "../types";
 import { calculateCohorts, type CohortSummary } from "./cohorts";
 import {
@@ -323,10 +323,16 @@ export function buildDashboardExecutiveViewModelFromDataset(dataset: RetentionOS
     orders,
     marginAssumptions,
     marketingSpend ?? [],
+    getDatasetSummary(dataset).marketingSpendSource,
   );
   const productsVm = buildProductsPageViewModelFromDataset(dataset);
 
-  const acquisition = mapDashboardAcquisitionExecutive(acquisitionVm, summary.avgTerminalNetRevenueLtvAcrossCohorts);
+  const datasetSummary = getDatasetSummary(dataset);
+  const acquisition = mapDashboardAcquisitionExecutive(
+    acquisitionVm,
+    summary.avgTerminalNetRevenueLtvAcrossCohorts,
+    datasetSummary.marketingSpendSource,
+  );
   const productQuality = mapDashboardProductQualityExecutive(productsVm);
   const dataCompleteness = buildDashboardDataCompletenessView(dataset, productsVm);
   const observations = buildObservations(summary, acquisition, productQuality);

@@ -39,7 +39,12 @@ export interface ImportReviewCaveat {
 }
 
 export interface ImportReviewSessionContext {
+  /** Saved marketing spend CSV rows in session. */
+  readonly hasSavedMarketingSpendCsv?: boolean;
+  /** Legacy unlock flag — treated as CSV saved when true. */
   readonly hasSavedMarketingSpend?: boolean;
+  readonly hasSavedMarketingSpendAssumption?: boolean;
+  readonly marketingSpendAssumptionPct?: number;
   readonly hasSavedMarginAssumptions?: boolean;
   readonly marginAssumptionPct?: number;
 }
@@ -178,7 +183,16 @@ function buildCoreMetricRows(
   const productRow = completeness.rows.find((r) => r.id === "product_quality");
   const marginRow = completeness.rows.find((r) => r.id === "margin_contribution");
 
-  const acquisitionUnlocked = sessionContext?.hasSavedMarketingSpend === true;
+  const hasCsvSpend =
+    sessionContext?.hasSavedMarketingSpendCsv === true || sessionContext?.hasSavedMarketingSpend === true;
+  const hasAssumptionSpend = sessionContext?.hasSavedMarketingSpendAssumption === true;
+  const acquisitionUnlocked = hasCsvSpend || hasAssumptionSpend;
+
+  const acquisitionDetail = !acquisitionUnlocked
+    ? "Locked until marketing spend data or an assumption is added on /data."
+    : hasCsvSpend
+      ? "Marketing spend CSV is saved in this browser session — acquisition metrics unlock after save."
+      : "Estimated marketing spend assumption saved in this browser session — acquisition metrics unlock after save.";
 
   return [
     { id: "cohorts", label: "Cohorts", status: cohortStatus, detail: cohortDetail },
@@ -208,9 +222,7 @@ function buildCoreMetricRows(
       id: "acquisition",
       label: "Acquisition",
       status: acquisitionUnlocked ? "unlocked" : "locked",
-      detail: acquisitionUnlocked
-        ? "Marketing spend is saved in this browser session - acquisition metrics unlock after save."
-        : "Locked until marketing spend data or an assumption is added on /data.",
+      detail: acquisitionDetail,
     },
     {
       id: "contribution_ltv",

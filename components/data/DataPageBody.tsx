@@ -8,6 +8,7 @@ import { DataPageRouteCoverageSection } from "@/components/data/DataPageRouteCov
 import type { DataPageDemoLedgerSnapshot } from "@/components/data/DataPageSourceHero";
 import { DataPageSourceHero } from "@/components/data/DataPageSourceHero";
 import { DataUploadedMarginAssumptionsSection } from "@/components/data/DataUploadedMarginAssumptionsSection";
+import { DataUploadedMarketingSpendAssumptionSection } from "@/components/data/DataUploadedMarketingSpendAssumptionSection";
 import { AcquisitionDataPreview } from "@/components/data/AcquisitionDataPreview";
 import { MarketingSpendCsvPreview } from "@/components/data/MarketingSpendCsvPreview";
 import { useDataPageSessionSummary } from "@/components/data/useDataPageSessionSummary";
@@ -115,28 +116,25 @@ export function DataPageBody({
         </div>
       </section>
 
-      <section className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-sm ring-1 ring-black/[0.02] sm:p-6">
-        <div className="border-b border-zinc-100 pb-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Layer 4 prep · marketing spend</p>
-          <h2 className="mt-1 text-lg font-semibold text-zinc-900">Marketing spend preview</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">
-            Validate a month × channel spend file against the RetentionOS import contract, optionally save to session for this tab, then review CAC / LTV:CAC /
-            payback <span className="font-medium text-zinc-800">previews</span> below. The full KPI workspace lives on{" "}
-            <span className="font-medium text-zinc-800">/acquisition</span> (dataset-native spend only).
-          </p>
-        </div>
-        <div className="pt-5">
-          <MarketingSpendCsvPreview sessionSyncEpoch={sessionEpoch} onSessionSpendChange={reconcileSessionSlices} />
-        </div>
-      </section>
+      <DataUploadedMarketingSpendAssumptionSection
+        hasUpload={hasUpload}
+        sessionSyncEpoch={sessionEpoch}
+        onSessionAssumptionChange={reconcileSessionSlices}
+      />
+
+      <DataUploadedMarginAssumptionsSection
+        hasUpload={hasUpload}
+        sessionSyncEpoch={sessionEpoch}
+        onSessionMarginChange={reconcileSessionSlices}
+      />
 
       <section className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-sm ring-1 ring-black/[0.02] sm:p-6">
         <div className="border-b border-zinc-100 pb-4">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Acquisition economics preview</p>
           <h2 className="mt-1 text-lg font-semibold text-zinc-900">CAC · LTV:CAC · payback readiness</h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">
-            Uses the metric engine’s LTV ladders with explicit marketing spend (session preview on demo, or merged upload). Orphan session spend can be previewed here before orders upload; the{" "}
-            <span className="font-medium text-zinc-800">/acquisition</span> route uses dataset-native spend only.
+            Uses the metric engine’s LTV ladders with explicit marketing spend from your saved % assumption or imported CSV. The{" "}
+            <span className="font-medium text-zinc-800">/acquisition</span> route uses the same resolved session source.
           </p>
         </div>
         <div className="pt-5">
@@ -144,11 +142,19 @@ export function DataPageBody({
         </div>
       </section>
 
-      <DataUploadedMarginAssumptionsSection
-        hasUpload={hasUpload}
-        sessionSyncEpoch={sessionEpoch}
-        onSessionMarginChange={reconcileSessionSlices}
-      />
+      <section className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-sm ring-1 ring-black/[0.02] sm:p-6">
+        <div className="border-b border-zinc-100 pb-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Advanced / testing · marketing spend CSV</p>
+          <h2 className="mt-1 text-lg font-semibold text-zinc-900">Marketing spend CSV import</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">
+            Optional actual spend import — overrides the % assumption when saved. Validate a month × channel spend file against the RetentionOS import
+            contract and save to session for this tab.
+          </p>
+        </div>
+        <div className="pt-5">
+          <MarketingSpendCsvPreview sessionSyncEpoch={sessionEpoch} onSessionSpendChange={reconcileSessionSlices} />
+        </div>
+      </section>
 
       <section className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-sm sm:p-6">
         <h2 className="text-sm font-semibold text-zinc-900">Demo brand (canonical fixture identity)</h2>

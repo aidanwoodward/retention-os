@@ -12,4 +12,4 @@ export type {
   RevenueDurabilityScore,
 } from "./metrics";
 export type { Insight, InsightSeverity } from "./insight";
-export type { MarginAssumptions, ScenarioInput, ScenarioOutput } from "./scenario";
+export type { MarginAssumptions, MarketingSpendAssumptions, ScenarioInput, ScenarioOutput } from "./scenario";

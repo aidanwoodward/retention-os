@@ -7,9 +7,10 @@ import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame"
 import { MetricSourceBanner } from "@/components/mvp/MetricSourceBanner";
 import {
   buildDemoCommandCentreSelection,
+  getDatasetSummary,
   resolveCommandCentreDatasetSource,
   type CommandCentreDatasetSelection,
-} from "@/lib/data-source/client-selected-source";
+} from "@/lib/data-source";
 import { buildAcquisitionPageViewModelFromDataset } from "@/lib/metrics/acquisition-view-model";
 
 export default function AcquisitionPage() {
@@ -19,18 +20,19 @@ export default function AcquisitionPage() {
     setSelection(resolveCommandCentreDatasetSource());
   }, []);
 
-  const vm = useMemo(
-    () =>
-      buildAcquisitionPageViewModelFromDataset(
-        selection.dataset.customers,
-        selection.dataset.orders,
-        selection.dataset.marginAssumptions,
-        selection.dataset.marketingSpend ?? [],
-      ),
-    [selection.dataset],
-  );
+  const vm = useMemo(() => {
+    const spendSource = getDatasetSummary(selection.dataset).marketingSpendSource;
+    return buildAcquisitionPageViewModelFromDataset(
+      selection.dataset.customers,
+      selection.dataset.orders,
+      selection.dataset.marginAssumptions,
+      selection.dataset.marketingSpend ?? [],
+      spendSource,
+    );
+  }, [selection.dataset]);
 
   const { summary, preview } = vm;
+  const spendIsEstimated = summary.spendIsEstimated;
 
   return (
     <CommandCentrePageFrame
@@ -45,11 +47,11 @@ export default function AcquisitionPage() {
           <p className="font-semibold">Marketing spend required for acquisition economics</p>
           {selection.isUploaded ?
             <p className="mt-2">
-              Uploaded orders are active, but no marketing spend is attached to this session dataset. Save a marketing spend CSV on{" "}
+              Uploaded orders are active, but no marketing spend is attached to this session dataset. Save a marketing spend % assumption or CSV on{" "}
               <Link href="/data" className="font-medium underline decoration-amber-400 underline-offset-2 hover:decoration-amber-700">
                 /data
               </Link>{" "}
-              alongside your upload to unlock CAC, LTV:CAC, and payback on this page.
+              to unlock CAC, LTV:CAC, and payback on this page.
             </p>
           : <p className="mt-2">
               The demo fixture has no marketing spend for this route. Session-only spend saved on{" "}
@@ -59,6 +61,19 @@ export default function AcquisitionPage() {
               can be previewed there but does not feed /acquisition — upload orders and save spend together, or use the demo fixture when it includes spend.
             </p>
           }
+        </div>
+      : null}
+
+      {summary.hasSpend && spendIsEstimated ?
+        <div className="rounded-lg border border-amber-200/90 bg-amber-50/70 px-4 py-3.5 text-sm leading-relaxed text-amber-950">
+          <p className="font-semibold">Estimated acquisition economics</p>
+          <p className="mt-2 text-xs">
+            Marketing spend is synthesized from your % of net revenue assumption on{" "}
+            <Link href="/data" className="font-medium underline decoration-amber-400 underline-offset-2 hover:decoration-amber-700">
+              /data
+            </Link>{" "}
+            — not imported spend. Metrics below are assumption-based.
+          </p>
         </div>
       : null}
 
@@ -73,7 +88,7 @@ export default function AcquisitionPage() {
         </div>
       : null}
 
-      <AcquisitionEconomicsPanel model={preview} variant="page" />
+      <AcquisitionEconomicsPanel model={preview} variant="page" spendIsEstimated={spendIsEstimated} />
 
       {!summary.hasSpend ?
         <p className="text-sm leading-relaxed text-zinc-600">

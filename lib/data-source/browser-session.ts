@@ -10,6 +10,7 @@ import type {
 } from "./dataset-types";
 import { getDatasetSummary } from "./dataset-helpers";
 import { applyUploadedSessionMarginAssumptions, clearUploadedMarginAssumptions } from "./margin-session";
+import { clearUploadedMarketingSpendAssumption } from "./marketing-spend-assumption-session";
 import { applyUploadedSessionMarketingSpend } from "./marketing-spend-session";
 
 const STORAGE_KEY = "retentionos:uploadedDataset:v1";
@@ -177,6 +178,7 @@ export function loadUploadedRetentionOSDataset(): RetentionOSDataset | null {
 export function clearUploadedRetentionOSDataset(): void {
   if (!isBrowser()) return;
   clearUploadedMarginAssumptions();
+  clearUploadedMarketingSpendAssumption();
   try {
     window.sessionStorage.removeItem(STORAGE_KEY);
   } catch {

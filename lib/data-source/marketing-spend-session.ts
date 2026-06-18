@@ -4,7 +4,10 @@
  */
 
 import type { MarketingSpend } from "../types/marketing";
+import type { MarketingSpendAssumptions } from "../types/scenario";
 import { spendBucketToCohortMonthKey } from "../import/normalise-marketing-spend";
+import { loadUploadedMarketingSpendAssumption } from "./marketing-spend-assumption-session";
+import { synthesizeMarketingSpendFromAssumption } from "./synthesize-marketing-spend-assumption";
 import type { RetentionOSDataset } from "./dataset-types";
 
 const STORAGE_KEY = "retentionos:uploadedMarketingSpend:v1";
@@ -151,11 +154,44 @@ export function getMarketingSpendForAcquisitionPreview(
 }
 
 /**
+ * Pure merge for uploaded datasets — CSV rows win; otherwise synthesize from session assumption.
+ * Exported for unit tests (no browser session reads).
+ */
+export function resolveMarketingSpendForUploadedDataset(
+  dataset: RetentionOSDataset,
+  csvRows: readonly MarketingSpend[] | null,
+  assumption: MarketingSpendAssumptions | null,
+): RetentionOSDataset {
+  if (!dataset.meta.isUploaded) return dataset;
+
+  if (csvRows != null && csvRows.length > 0) {
+    return {
+      ...dataset,
+      marketingSpend: csvRows,
+      marketingSpendAssumptions: undefined,
+    };
+  }
+
+  if (assumption != null) {
+    const spend = synthesizeMarketingSpendFromAssumption(dataset.orders, assumption);
+    if (spend.length > 0) {
+      return {
+        ...dataset,
+        marketingSpendAssumptions: assumption,
+        marketingSpend: spend,
+      };
+    }
+  }
+
+  return { ...dataset, marketingSpendAssumptions: undefined };
+}
+
+/**
  * Attach session marketing spend to an uploaded dataset (does not mutate stored orders JSON).
  */
 export function applyUploadedSessionMarketingSpend(dataset: RetentionOSDataset): RetentionOSDataset {
   if (!dataset.meta.isUploaded) return dataset;
-  const spend = loadUploadedMarketingSpend();
-  if (spend == null || spend.length === 0) return dataset;
-  return { ...dataset, marketingSpend: spend };
+  const csvRows = loadUploadedMarketingSpend();
+  const assumption = loadUploadedMarketingSpendAssumption();
+  return resolveMarketingSpendForUploadedDataset(dataset, csvRows, assumption);
 }

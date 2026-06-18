@@ -63,6 +63,38 @@ describe("buildDashboardExecutiveViewModelFromDataset", () => {
     assert.equal(spendRow?.status, "locked");
   });
 
+  it("unlocks acquisition with partial completeness when spend is assumption-based", () => {
+    const base = buildDemoRetentionOSDataset();
+    const ordersWithoutImportedContrib = base.orders.map((o) => ({
+      ...o,
+      contributionMargin: undefined,
+    }));
+    const uploadedLike = {
+      ...base,
+      marketingSpend: undefined,
+      marketingSpendAssumptions: { marketingSpendPctOfNetRevenue: 0.2 as const },
+      orders: ordersWithoutImportedContrib,
+      meta: {
+        ...base.meta,
+        sourceType: "uploaded_csv" as const,
+        isUploaded: true,
+        isDemo: false,
+        sourceLabel: "Uploaded test",
+      },
+    };
+    const withSpend = {
+      ...uploadedLike,
+      marketingSpend: [{ month: "2024-01", spend: 2000 }],
+    };
+    const vm = buildDashboardExecutiveViewModelFromDataset(withSpend);
+
+    assert.equal(vm.acquisition.lockedMissingSpend, false);
+    assert.equal(vm.acquisition.spendIsEstimated, true);
+    const spendRow = vm.dataCompleteness.rows.find((r) => r.id === "marketing_spend");
+    assert.equal(spendRow?.status, "partial");
+    assert.match(spendRow?.detail ?? "", /Estimated/);
+  });
+
   it("shows insufficient product quality when line items are missing", () => {
     const base = buildDemoRetentionOSDataset();
     const vm = buildDashboardExecutiveViewModelFromDataset(datasetWithoutLineItems(base));

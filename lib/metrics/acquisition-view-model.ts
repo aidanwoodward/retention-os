@@ -2,6 +2,7 @@ import type { Customer } from "../types/customer";
 import type { MarketingSpend } from "../types/marketing";
 import type { Order } from "../types/order";
 import type { MarginAssumptions } from "../types/scenario";
+import type { MarketingSpendSource } from "../data-source/dataset-types";
 import { buildAcquisitionPreviewFromDataset, type AcquisitionPreviewModel } from "./acquisition";
 
 export interface AcquisitionPageSummaryView {
@@ -9,6 +10,8 @@ export interface AcquisitionPageSummaryView {
   readonly blendedCac: number | null;
   readonly spendRowCount: number;
   readonly hasSpend: boolean;
+  readonly spendSource?: MarketingSpendSource;
+  readonly spendIsEstimated: boolean;
   readonly cohortMonthsWithCac: number;
   readonly cohortMonthsWithPayback: number;
   readonly customerCount: number;
@@ -24,6 +27,7 @@ export function buildAcquisitionPageViewModelFromDataset(
   orders: readonly Order[],
   marginAssumptions: MarginAssumptions | undefined,
   marketingSpend: readonly MarketingSpend[],
+  spendSource?: MarketingSpendSource,
 ): AcquisitionPageViewModel {
   const preview = buildAcquisitionPreviewFromDataset(customers, orders, marginAssumptions, marketingSpend);
 
@@ -38,6 +42,8 @@ export function buildAcquisitionPageViewModelFromDataset(
       blendedCac: preview.blendedCac.blendedCac,
       spendRowCount: preview.spendRowCount,
       hasSpend: preview.hasSpend,
+      spendSource,
+      spendIsEstimated: spendSource === "assumption",
       cohortMonthsWithCac,
       cohortMonthsWithPayback,
       customerCount: customers.length,

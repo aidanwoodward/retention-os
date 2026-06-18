@@ -11,6 +11,7 @@ export type {
   RetentionOSSourceMetadata,
   RetentionOSSourceType,
   RetentionOSUploadFormat,
+  MarketingSpendSource,
 } from "./dataset-types";
 
 export {
@@ -55,9 +56,21 @@ export {
   getUploadedMarketingSpendSessionSummary,
   loadUploadedMarketingSpend,
   normaliseMarketingSpendForSession,
+  resolveMarketingSpendForUploadedDataset,
   saveUploadedMarketingSpend,
   type UploadedMarketingSpendSessionSummary,
 } from "./marketing-spend-session";
+
+export {
+  clearUploadedMarketingSpendAssumption,
+  getUploadedMarketingSpendAssumptionSummary,
+  loadUploadedMarketingSpendAssumption,
+  saveUploadedMarketingSpendAssumption,
+  validateUploadedMarketingSpendAssumptions,
+  type UploadedMarketingSpendAssumptionSummary,
+} from "./marketing-spend-assumption-session";
+
+export { synthesizeMarketingSpendFromAssumption } from "./synthesize-marketing-spend-assumption";
 
 export {
   buildDemoCommandCentreSelection,

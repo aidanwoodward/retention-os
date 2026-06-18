@@ -13,6 +13,12 @@ export interface MarginAssumptions {
   netRevenueMultiplier?: number;
 }
 
+/** Session-only marketing spend lever — synthesizes monthly spend from net merchandise revenue (Sprint 5D). */
+export interface MarketingSpendAssumptions {
+  /** Share of net merchandise revenue allocated to marketing (0–1). Example: 0.20 => 20%. */
+  marketingSpendPctOfNetRevenue: number;
+}
+
 /** User-tunable levers for transparent what-if exploration — no probabilistic forecasting in MVP. */
 export interface ScenarioInput {
   /** Baseline reference the engine already computed. */

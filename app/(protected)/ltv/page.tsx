@@ -3,6 +3,8 @@
 import { useLayoutEffect, useMemo, useState } from "react";
 import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
 import { MetricSourceBanner } from "@/components/mvp/MetricSourceBanner";
+import { KpiMetricLabel } from "@/components/ui/kpi-metric-label";
+import type { MetricId } from "@/lib/metrics/metric-definitions";
 import {
   buildDemoCommandCentreSelection,
   resolveCommandCentreDatasetSource,
@@ -123,11 +125,13 @@ export default function LTVPage() {
               title="Avg terminal net revenue LTV"
               sub="Mean across cohort staircase terminals"
               value={formatMoney(summary.avgTerminalNetRevenueLtvAcrossCohorts)}
+              metricId="revenue_ltv"
             />
             <Kpi
               title="Avg terminal contribution LTV"
               sub="Where margin model applies"
               value={formatMoney(summary.avgTerminalContributionLtvAcrossCohorts)}
+              metricId="contribution_ltv"
             />
             <Kpi
               title="Strongest net revenue LTV cohort"
@@ -173,10 +177,14 @@ export default function LTVPage() {
   );
 }
 
-function Kpi({ title, value, sub }: { title: string; value: string; sub?: string }) {
+function Kpi({ title, value, sub, metricId }: { title: string; value: string; sub?: string; metricId?: MetricId }) {
   return (
     <div className="rounded-lg border border-zinc-200/90 bg-white p-4 shadow-sm ring-1 ring-black/[0.02]">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">{title}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+        <KpiMetricLabel metricId={metricId} tooltipSize="sm">
+          {title}
+        </KpiMetricLabel>
+      </p>
       <p className="mt-2 text-xl font-semibold tabular-nums text-zinc-900">{value}</p>
       {sub ? <p className="mt-1 text-xs text-zinc-600">{sub}</p> : null}
     </div>

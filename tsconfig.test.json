@@ -13,6 +13,8 @@
     "isolatedModules": true
   },
   "include": [
+    "lib/metrics/metric-definitions.ts",
+    "lib/metrics/metric-definitions.test.ts",
     "lib/metrics/revenue-durability-status.ts",
     "lib/metrics/revenue-durability-status.test.ts",
     "lib/metrics/product-quality.ts",

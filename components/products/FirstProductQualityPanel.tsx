@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { KpiMetricLabel } from "@/components/ui/kpi-metric-label";
 import type {
   FirstProductTableRowView,
   ProductsPageSummaryView,
@@ -296,7 +297,7 @@ export function FirstProductQualityPanel({ vm }: { vm: ProductsPageViewModel }) 
 
       <div>
         <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
-          First-product customer quality
+          <KpiMetricLabel metricId="product_quality">First-product customer quality</KpiMetricLabel>
         </h2>
         <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-600">
           Each row groups customers by the product on their first order line — repeat behaviour, LTV, and drag reflect

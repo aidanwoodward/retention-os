@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useId, useLayoutEffect, useState } from "react";
+import { KpiMetricLabel } from "@/components/ui/kpi-metric-label";
 import {
   clearUploadedMarketingSpendAssumption,
   getUploadedMarketingSpendAssumptionSummary,
@@ -86,7 +87,11 @@ export function DataUploadedMarketingSpendAssumptionSection({
     <section className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-sm ring-1 ring-black/[0.02] sm:p-6">
       <div className="border-b border-zinc-100 pb-4">
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Acquisition economics · uploads</p>
-        <h2 className="mt-1 text-lg font-semibold text-zinc-900">Estimated marketing spend (% of net revenue)</h2>
+        <h2 className="mt-1 text-lg font-semibold text-zinc-900">
+          <KpiMetricLabel metricId="marketing_spend_assumption" dataQuality="estimated">
+            Estimated marketing spend (% of net revenue)
+          </KpiMetricLabel>
+        </h2>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">
           Set a <span className="font-medium text-zinc-800">single session-only</span> marketing spend rate applied to net merchandise revenue per order
           month. This unlocks assumption-based CAC, LTV:CAC, and payback without importing a spend CSV.

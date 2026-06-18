@@ -1,6 +1,19 @@
 /** Pure metric engine over canonical customer/order collections — UTC calendar months and fractional rates. */
 
 export {
+  ALL_METRIC_IDS,
+  REVENUE_METRIC_IDS,
+  METRIC_DEFINITIONS,
+  SHOPIFY_HELP,
+  formatMetricDefinitionTooltip,
+  getMetricDefinition,
+  type MetricDataQuality,
+  type MetricDefinition,
+  type MetricId,
+  type MetricTooltipSection,
+} from "./metric-definitions";
+
+export {
   utcMonthKeyFromIso,
   netOrderRevenue,
   orderContribution,

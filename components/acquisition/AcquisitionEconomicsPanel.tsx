@@ -1,6 +1,8 @@
 "use client";
 
 import type { AcquisitionPreviewModel } from "@/lib/metrics";
+import { KpiMetricLabel } from "@/components/ui/kpi-metric-label";
+import type { MetricDataQuality, MetricId } from "@/lib/metrics/metric-definitions";
 
 function formatMoney(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return "—";
@@ -30,6 +32,7 @@ export function AcquisitionEconomicsPanel({
 }) {
   const isPage = variant === "page";
   const est = spendIsEstimated ? " (est.)" : "";
+  const spendDataQuality: MetricDataQuality = spendIsEstimated ? "estimated" : "actual";
 
   return (
     <div className="space-y-6">
@@ -45,11 +48,18 @@ export function AcquisitionEconomicsPanel({
         <div>
           <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Spend & blended CAC</h2>
           <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Kpi title={`Total spend${est}`} value={model.hasSpend ? formatMoney(model.totalSpend) : "—"} />
+            <Kpi
+              title={`Total spend${est}`}
+              value={model.hasSpend ? formatMoney(model.totalSpend) : "—"}
+              metricId="marketing_spend_assumption"
+              dataQuality={spendDataQuality}
+            />
             <Kpi
               title={`Blended CAC${est}`}
               sub="Total spend ÷ all customers"
               value={model.blendedCac.blendedCac != null ? formatMoney(model.blendedCac.blendedCac) : "—"}
+              metricId="blended_cac"
+              dataQuality={spendDataQuality}
             />
             <Kpi title="Spend rows" value={String(model.spendRowCount)} />
             <Kpi
@@ -61,10 +71,17 @@ export function AcquisitionEconomicsPanel({
         </div>
       : <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Metric label="Spend rows" value={String(model.spendRowCount)} />
-          <Metric label="Total spend" value={model.hasSpend ? formatMoney(model.totalSpend) : "—"} />
+          <Metric
+            label="Total spend"
+            value={model.hasSpend ? formatMoney(model.totalSpend) : "—"}
+            metricId="marketing_spend_assumption"
+            dataQuality={spendDataQuality}
+          />
           <Metric
             label={`Blended CAC (preview)${est}`}
             value={model.blendedCac.blendedCac != null ? formatMoney(model.blendedCac.blendedCac) : "—"}
+            metricId="blended_cac"
+            dataQuality={spendDataQuality}
           />
         </div>
       }
@@ -208,19 +225,49 @@ export function AcquisitionEconomicsPanel({
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({
+  label,
+  value,
+  metricId,
+  dataQuality,
+}: {
+  label: string;
+  value: string;
+  metricId?: MetricId;
+  dataQuality?: MetricDataQuality;
+}) {
   return (
     <div className="rounded-lg border border-zinc-200/90 bg-zinc-50/80 p-3 ring-1 ring-black/[0.02]">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">{label}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+        <KpiMetricLabel metricId={metricId} dataQuality={dataQuality} tooltipSize="sm">
+          {label}
+        </KpiMetricLabel>
+      </p>
       <p className="mt-1.5 text-sm font-semibold tabular-nums text-zinc-900">{value}</p>
     </div>
   );
 }
 
-function Kpi({ title, value, sub }: { title: string; value: string; sub?: string }) {
+function Kpi({
+  title,
+  value,
+  sub,
+  metricId,
+  dataQuality,
+}: {
+  title: string;
+  value: string;
+  sub?: string;
+  metricId?: MetricId;
+  dataQuality?: MetricDataQuality;
+}) {
   return (
     <div className="rounded-lg border border-zinc-200/90 bg-white p-4 shadow-sm ring-1 ring-black/[0.02]">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">{title}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+        <KpiMetricLabel metricId={metricId} dataQuality={dataQuality} tooltipSize="sm">
+          {title}
+        </KpiMetricLabel>
+      </p>
       <p className="mt-2 text-xl font-semibold tabular-nums text-zinc-900">{value}</p>
       {sub ? <p className="mt-1 text-xs text-zinc-600">{sub}</p> : null}
     </div>

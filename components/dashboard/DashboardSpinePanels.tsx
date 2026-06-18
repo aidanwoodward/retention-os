@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { KpiMetricLabel } from "@/components/ui/kpi-metric-label";
+import type { MetricDataQuality, MetricId } from "@/lib/metrics/metric-definitions";
 import type {
   DashboardAcquisitionExecutiveView,
   DashboardDataCompletenessView,
@@ -67,10 +69,26 @@ function QualitySignalBadge({ signal }: { signal: ProductQualitySignal }) {
   );
 }
 
-function CompactKpi({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function CompactKpi({
+  label,
+  value,
+  sub,
+  metricId,
+  dataQuality,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  metricId?: MetricId;
+  dataQuality?: MetricDataQuality;
+}) {
   return (
     <div>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">{label}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+        <KpiMetricLabel metricId={metricId} dataQuality={dataQuality} tooltipSize="sm">
+          {label}
+        </KpiMetricLabel>
+      </p>
       <p className="mt-1 text-lg font-semibold tabular-nums text-zinc-900">{value}</p>
       {sub ? <p className="mt-0.5 text-[11px] leading-snug text-zinc-600">{sub}</p> : null}
     </div>
@@ -149,18 +167,29 @@ function AcquisitionEconomicsCard({
             label={acquisition.spendIsEstimated ? "Blended CAC (est.)" : "Blended CAC"}
             value={formatMoney(acquisition.blendedCac)}
             sub="Total spend ÷ customers"
+            metricId="blended_cac"
+            dataQuality={acquisition.spendIsEstimated ? "estimated" : "actual"}
           />
           <CompactKpi
             label={acquisition.spendIsEstimated ? "Rev LTV:CAC (est.)" : "Rev LTV:CAC"}
             value={formatRatio(acquisition.revenueLtvToCac)}
             sub="Terminal revenue lens"
+            metricId="revenue_ltv_cac"
+            dataQuality={acquisition.spendIsEstimated ? "estimated" : "actual"}
           />
           <CompactKpi
             label={acquisition.spendIsEstimated ? "Contrib LTV:CAC (est.)" : "Contrib LTV:CAC"}
             value={formatRatio(acquisition.contributionLtvToCac)}
             sub="Requires contribution path"
+            metricId="contribution_ltv_cac"
+            dataQuality={acquisition.spendIsEstimated ? "estimated" : "partial"}
           />
-          <CompactKpi label={acquisition.spendIsEstimated ? "Payback (est.)" : "Payback"} value={acquisition.paybackLabel} />
+          <CompactKpi
+            label={acquisition.spendIsEstimated ? "Payback (est.)" : "Payback"}
+            value={acquisition.paybackLabel}
+            metricId="payback"
+            dataQuality={acquisition.spendIsEstimated ? "estimated" : "partial"}
+          />
         </div>
         </>
       }
@@ -183,7 +212,9 @@ function ProductQualityCard({ productQuality }: { productQuality: DashboardProdu
     <div className="flex h-full flex-col rounded-xl border border-zinc-200/90 bg-white p-4 shadow-sm ring-1 ring-black/[0.02] sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-zinc-900">Product quality</h3>
+          <h3 className="text-sm font-semibold text-zinc-900">
+            <KpiMetricLabel metricId="product_quality">Product quality</KpiMetricLabel>
+          </h3>
           <p className="mt-1 text-xs leading-relaxed text-zinc-600">First-product customer quality — not SKU volume.</p>
         </div>
         <Link

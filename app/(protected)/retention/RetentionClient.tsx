@@ -3,6 +3,8 @@
 import * as React from "react";
 import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
 import { MetricSourceBanner } from "@/components/mvp/MetricSourceBanner";
+import { KpiMetricLabel } from "@/components/ui/kpi-metric-label";
+import type { MetricId } from "@/lib/metrics/metric-definitions";
 import {
   buildDemoCommandCentreSelection,
   resolveCommandCentreDatasetSource,
@@ -92,17 +94,28 @@ export default function RetentionClient() {
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi title="Customers" value={summary.totalCustomers.toLocaleString()} />
-        <Kpi title="All-time repeat purchase rate" sub="Share with 2+ orders" value={formatPct(summary.allTimeRepeatPurchaseRate)} />
+        <Kpi
+          title="All-time repeat purchase rate"
+          sub="Share with 2+ orders"
+          value={formatPct(summary.allTimeRepeatPurchaseRate)}
+          metricId="repeat_purchase_rate"
+        />
         <Kpi
           title="First-to-second within 90 days"
           sub="Second order ≤90 days after first"
           value={formatPct(summary.firstToSecondWithin90DaysRate)}
+          metricId="first_to_second_conversion"
         />
         <Kpi title="Avg days first → second" value={formatDays(summary.averageDaysToSecondOrder)} />
         <Kpi title="Median days first → second" value={formatDays(summary.medianDaysToSecondOrder)} />
-        <Kpi title="Avg Month +1 active rate" sub="Across cohorts with data" value={formatPct(summary.averageMonthPlus1ActiveRate)} />
-        <Kpi title="Avg Month +2 active rate" value={formatPct(summary.averageMonthPlus2ActiveRate)} />
-        <Kpi title="Avg Month +3 active rate" value={formatPct(summary.averageMonthPlus3ActiveRate)} />
+        <Kpi
+          title="Avg Month +1 active rate"
+          sub="Across cohorts with data"
+          value={formatPct(summary.averageMonthPlus1ActiveRate)}
+          metricId="cohort_retention"
+        />
+        <Kpi title="Avg Month +2 active rate" value={formatPct(summary.averageMonthPlus2ActiveRate)} metricId="cohort_retention" />
+        <Kpi title="Avg Month +3 active rate" value={formatPct(summary.averageMonthPlus3ActiveRate)} metricId="cohort_retention" />
       </div>
 
       <p className="rounded-lg border border-zinc-200/90 bg-white px-4 py-3.5 text-sm leading-relaxed text-zinc-700 shadow-sm ring-1 ring-black/[0.02]">
@@ -125,10 +138,14 @@ export default function RetentionClient() {
   );
 }
 
-function Kpi({ title, value, sub }: { title: string; value: string; sub?: string }) {
+function Kpi({ title, value, sub, metricId }: { title: string; value: string; sub?: string; metricId?: MetricId }) {
   return (
     <div className="rounded-lg border border-zinc-200/90 bg-white p-4 shadow-sm ring-1 ring-black/[0.02]">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">{title}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+        <KpiMetricLabel metricId={metricId} tooltipSize="sm">
+          {title}
+        </KpiMetricLabel>
+      </p>
       <p className="mt-2 text-xl font-semibold tabular-nums text-zinc-900">{value}</p>
       {sub ? <p className="mt-1 text-xs text-zinc-600">{sub}</p> : null}
     </div>

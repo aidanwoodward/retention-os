@@ -4,6 +4,8 @@ import { useLayoutEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
 import { MetricSourceBanner } from "@/components/mvp/MetricSourceBanner";
+import { KpiMetricLabel } from "@/components/ui/kpi-metric-label";
+import type { MetricDataQuality, MetricId } from "@/lib/metrics/metric-definitions";
 import { DashboardSpinePanels } from "@/components/dashboard/DashboardSpinePanels";
 import {
   buildDemoCommandCentreSelection,
@@ -155,7 +157,7 @@ export default function DashboardExecutive() {
               <PostureDisc status={durability.status} />
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
-                  Revenue durability posture
+                  <KpiMetricLabel metricId="revenue_durability_posture">Revenue durability posture</KpiMetricLabel>
                 </p>
                 <p className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">{durability.status}</p>
                 <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-600">
@@ -237,6 +239,7 @@ export default function DashboardExecutive() {
           <MetricCard
             className={kpiPrimary}
             prominent
+            metricId="repeat_purchase_rate"
             title="All-time repeat purchase rate"
             sub="Customers with ≥2 qualifying orders"
             value={formatPct(summary.allTimeRepeatPurchaseRate)}
@@ -244,6 +247,7 @@ export default function DashboardExecutive() {
           <MetricCard
             className={kpiPrimary}
             prominent
+            metricId="first_to_second_conversion"
             title="First→second within 90 days"
             sub="Vs first qualifying order timestamp"
             value={formatPct(summary.firstToSecondWithin90DaysRate)}
@@ -251,6 +255,7 @@ export default function DashboardExecutive() {
           <MetricCard
             className={kpiPrimary}
             prominent
+            metricId="revenue_ltv"
             title="Avg terminal net revenue LTV"
             sub="Across cohort staircase tails"
             value={formatMoney(summary.avgTerminalNetRevenueLtvAcrossCohorts)}
@@ -258,6 +263,7 @@ export default function DashboardExecutive() {
           <MetricCard
             className={kpiPrimary}
             prominent
+            metricId="contribution_ltv"
             title="Avg terminal contribution LTV"
             sub="Where margin model applies"
             value={formatMoney(summary.avgTerminalContributionLtvAcrossCohorts)}
@@ -274,6 +280,7 @@ export default function DashboardExecutive() {
           <MetricCard className={kpiSecondary} title="Orders" value={summary.totalOrders.toLocaleString()} />
           <MetricCard
             className={kpiSecondary}
+            metricId="net_revenue"
             title="Total net revenue"
             sub="Gross minus discounts & refunds"
             value={formatMoney(summary.totalNetRevenue)}
@@ -369,16 +376,24 @@ function MetricCard({
   value,
   sub,
   prominent,
+  metricId,
+  dataQuality,
 }: {
   className: string;
   title: string;
   value: string;
   sub?: string;
   prominent?: boolean;
+  metricId?: MetricId;
+  dataQuality?: MetricDataQuality;
 }) {
   return (
     <div className={className}>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">{title}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+        <KpiMetricLabel metricId={metricId} dataQuality={dataQuality} tooltipSize="sm">
+          {title}
+        </KpiMetricLabel>
+      </p>
       <p className={`mt-2 font-semibold tabular-nums text-zinc-900 ${prominent ? "text-2xl" : "text-xl"}`}>{value}</p>
       {sub ? <p className="mt-1 text-xs leading-snug text-zinc-600">{sub}</p> : null}
     </div>

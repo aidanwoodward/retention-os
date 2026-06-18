@@ -5,6 +5,7 @@
 
 import type { RetentionOSDataset } from "../data-source/dataset-types";
 import { getDatasetSummary, hasContributionMarginCoverage } from "../data-source/dataset-helpers";
+import type { MarketingSpendSource } from "../data-source/dataset-types";
 import type { AcquisitionPageViewModel } from "./acquisition-view-model";
 import { MIN_CUSTOMERS_FOR_SIGNAL } from "./product-quality";
 import type { ProductsPageViewModel } from "./product-quality-view-model";
@@ -26,6 +27,8 @@ export type DataCompletenessStatus = "unlocked" | "partial" | "locked";
 
 export interface DashboardAcquisitionExecutiveView {
   readonly lockedMissingSpend: boolean;
+  readonly spendSource?: MarketingSpendSource;
+  readonly spendIsEstimated: boolean;
   readonly blendedCac: number | null;
   readonly revenueLtvToCac: number | null;
   readonly contributionLtvToCac: number | null;
@@ -166,12 +169,16 @@ function derivePaybackExecutive(
 export function mapDashboardAcquisitionExecutive(
   acquisitionVm: AcquisitionPageViewModel,
   avgTerminalNetRevenueLtv: number | null,
+  spendSource?: MarketingSpendSource,
 ): DashboardAcquisitionExecutiveView {
   const { summary, preview } = acquisitionVm;
+  const spendIsEstimated = spendSource === "assumption";
 
   if (!summary.hasSpend) {
     return {
       lockedMissingSpend: true,
+      spendSource,
+      spendIsEstimated: false,
       blendedCac: null,
       revenueLtvToCac: null,
       contributionLtvToCac: null,
@@ -194,6 +201,8 @@ export function mapDashboardAcquisitionExecutive(
 
   return {
     lockedMissingSpend: false,
+    spendSource,
+    spendIsEstimated,
     blendedCac: summary.blendedCac,
     revenueLtvToCac,
     contributionLtvToCac,
@@ -309,10 +318,25 @@ export function buildDashboardDataCompletenessView(
     productQualityDetail = `Line items present but no segment has ≥${MIN_CUSTOMERS_FOR_SIGNAL} customers — insufficient data, not ranked weak/strong.`;
   }
 
-  const spendStatus: DataCompletenessStatus = summary.hasMarketingSpend ? "unlocked" : "locked";
-  const spendDetail = summary.hasMarketingSpend
-    ? `${dataset.marketingSpend?.length ?? 0} spend row(s) attached to this session source.`
-    : "Save marketing spend CSV on /data alongside orders to unlock CAC, LTV:CAC, and payback.";
+  const spendStatus: DataCompletenessStatus = summary.hasMarketingSpend
+    ? summary.marketingSpendSource === "assumption"
+      ? "partial"
+      : "unlocked"
+    : "locked";
+  let spendDetail = "Save marketing spend on /data — use a % assumption or import a CSV — to unlock CAC, LTV:CAC, and payback.";
+  if (summary.hasMarketingSpend) {
+    if (summary.marketingSpendSource === "assumption") {
+      const pct = dataset.marketingSpendAssumptions?.marketingSpendPctOfNetRevenue;
+      spendDetail =
+        pct != null
+          ? `Estimated — ${(pct * 100).toFixed(0)}% of net merchandise revenue; not imported spend.`
+          : "Estimated — marketing spend derived from your % assumption; not imported spend.";
+    } else if (summary.marketingSpendSource === "actual_csv") {
+      spendDetail = `${dataset.marketingSpend?.length ?? 0} imported spend row(s) attached to this session source.`;
+    } else {
+      spendDetail = `${dataset.marketingSpend?.length ?? 0} spend row(s) attached to this snapshot.`;
+    }
+  }
 
   return {
     rows: [

@@ -13,7 +13,7 @@ function readFixture(p: string): string {
   return fs.readFileSync(p, "utf8");
 }
 
-function metricById(vm: { metrics: readonly { id: string; status: string }[] }, id: string) {
+function metricById(vm: { metrics: readonly { id: string; status: string; detail?: string }[] }, id: string) {
   const row = vm.metrics.find((m) => m.id === id);
   assert.ok(row, `expected metric row ${id}`);
   return row;
@@ -68,12 +68,26 @@ describe("buildImportReviewViewModel", () => {
     const vm = buildImportReviewViewModel({
       format,
       result,
-      sessionContext: { hasSavedMarketingSpend: true },
+      sessionContext: { hasSavedMarketingSpendCsv: true, hasSavedMarketingSpend: true },
     });
 
     assert.equal(vm.kind, "review");
     if (vm.kind !== "review") return;
     assert.equal(metricById(vm, "acquisition").status, "unlocked");
+  });
+
+  it("session context with marketing spend assumption unlocks acquisition", () => {
+    const { format, result } = importOrdersCsvFromText(readFixture(SHOPIFY_FIXTURE));
+    const vm = buildImportReviewViewModel({
+      format,
+      result,
+      sessionContext: { hasSavedMarketingSpendAssumption: true, marketingSpendAssumptionPct: 0.2 },
+    });
+
+    assert.equal(vm.kind, "review");
+    if (vm.kind !== "review") return;
+    assert.equal(metricById(vm, "acquisition").status, "unlocked");
+    assert.match(metricById(vm, "acquisition").detail ?? "", /Estimated marketing spend assumption/i);
   });
 
   it("acquisition stays locked without session spend flag", () => {

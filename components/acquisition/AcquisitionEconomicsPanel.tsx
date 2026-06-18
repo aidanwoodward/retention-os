@@ -22,21 +22,32 @@ export type AcquisitionEconomicsPanelVariant = "page" | "preview";
 export function AcquisitionEconomicsPanel({
   model,
   variant = "preview",
+  spendIsEstimated = false,
 }: {
   readonly model: AcquisitionPreviewModel;
   readonly variant?: AcquisitionEconomicsPanelVariant;
+  readonly spendIsEstimated?: boolean;
 }) {
   const isPage = variant === "page";
+  const est = spendIsEstimated ? " (est.)" : "";
 
   return (
     <div className="space-y-6">
+      {spendIsEstimated ?
+        <div className="rounded-lg border border-amber-200/90 bg-amber-50/70 px-4 py-3 text-sm leading-relaxed text-amber-950">
+          <p className="font-semibold">Estimated · assumption-based spend</p>
+          <p className="mt-1.5 text-xs">
+            CAC, LTV:CAC, and payback below use marketing spend synthesized from your % of net revenue assumption — not imported spend data.
+          </p>
+        </div>
+      : null}
       {isPage ?
         <div>
           <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Spend & blended CAC</h2>
           <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Kpi title="Total spend" value={model.hasSpend ? formatMoney(model.totalSpend) : "—"} />
+            <Kpi title={`Total spend${est}`} value={model.hasSpend ? formatMoney(model.totalSpend) : "—"} />
             <Kpi
-              title="Blended CAC"
+              title={`Blended CAC${est}`}
               sub="Total spend ÷ all customers"
               value={model.blendedCac.blendedCac != null ? formatMoney(model.blendedCac.blendedCac) : "—"}
             />
@@ -52,7 +63,7 @@ export function AcquisitionEconomicsPanel({
           <Metric label="Spend rows" value={String(model.spendRowCount)} />
           <Metric label="Total spend" value={model.hasSpend ? formatMoney(model.totalSpend) : "—"} />
           <Metric
-            label="Blended CAC (preview)"
+            label={`Blended CAC (preview)${est}`}
             value={model.blendedCac.blendedCac != null ? formatMoney(model.blendedCac.blendedCac) : "—"}
           />
         </div>

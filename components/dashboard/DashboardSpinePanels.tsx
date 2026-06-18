@@ -127,23 +127,42 @@ function AcquisitionEconomicsCard({
             {isUploaded ?
               "Uploaded orders are active, but no marketing spend is attached to this session source."
             : "No marketing spend is attached to the active demo source for acquisition economics."}{" "}
-            Save spend on{" "}
+            Save a marketing spend % assumption or CSV on{" "}
             <Link href="/data" className="font-medium underline decoration-amber-400 underline-offset-2">
               /data
             </Link>{" "}
             to unlock CAC, LTV:CAC, and payback here.
           </p>
         </div>
-      : <div className="mt-4 grid grid-cols-2 gap-4">
-          <CompactKpi label="Blended CAC" value={formatMoney(acquisition.blendedCac)} sub="Total spend ÷ customers" />
-          <CompactKpi label="Rev LTV:CAC" value={formatRatio(acquisition.revenueLtvToCac)} sub="Terminal revenue lens" />
+      : <>
+          {acquisition.spendIsEstimated ?
+            <div className="mt-4 rounded-lg border border-amber-200/90 bg-amber-50/70 px-3 py-2.5 text-xs leading-relaxed text-amber-950">
+              <span className="font-semibold">Estimated acquisition economics</span> — marketing spend is derived from your % assumption on{" "}
+              <Link href="/data" className="font-medium underline decoration-amber-400 underline-offset-2">
+                /data
+              </Link>
+              , not imported spend.
+            </div>
+          : null}
+          <div className="mt-4 grid grid-cols-2 gap-4">
           <CompactKpi
-            label="Contrib LTV:CAC"
+            label={acquisition.spendIsEstimated ? "Blended CAC (est.)" : "Blended CAC"}
+            value={formatMoney(acquisition.blendedCac)}
+            sub="Total spend ÷ customers"
+          />
+          <CompactKpi
+            label={acquisition.spendIsEstimated ? "Rev LTV:CAC (est.)" : "Rev LTV:CAC"}
+            value={formatRatio(acquisition.revenueLtvToCac)}
+            sub="Terminal revenue lens"
+          />
+          <CompactKpi
+            label={acquisition.spendIsEstimated ? "Contrib LTV:CAC (est.)" : "Contrib LTV:CAC"}
             value={formatRatio(acquisition.contributionLtvToCac)}
             sub="Requires contribution path"
           />
-          <CompactKpi label="Payback" value={acquisition.paybackLabel} />
+          <CompactKpi label={acquisition.spendIsEstimated ? "Payback (est.)" : "Payback"} value={acquisition.paybackLabel} />
         </div>
+        </>
       }
 
       {!acquisition.lockedMissingSpend && acquisition.paybackStatus === "locked_no_contribution" ?

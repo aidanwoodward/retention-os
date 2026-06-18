@@ -32,10 +32,24 @@ export function assertDatasetUsableForMetrics(dataset: RetentionOSDataset): void
 }
 
 export function getDatasetSummary(dataset: RetentionOSDataset): RetentionOSDatasetSummary {
+  const hasMarketingSpend = dataset.marketingSpend != null && dataset.marketingSpend.length > 0;
+  let marketingSpendSource: RetentionOSDatasetSummary["marketingSpendSource"] | undefined;
+  if (hasMarketingSpend) {
+    if (dataset.meta.isDemo) {
+      marketingSpendSource = "fixture";
+    } else if (dataset.marketingSpendAssumptions != null) {
+      marketingSpendSource = "assumption";
+    } else {
+      marketingSpendSource = "actual_csv";
+    }
+  }
+
   return {
     ...dataset.meta,
     hasMarginAssumptions: dataset.marginAssumptions != null,
-    hasMarketingSpend: dataset.marketingSpend != null && dataset.marketingSpend.length > 0,
+    hasMarketingSpend,
+    hasMarketingSpendAssumption: dataset.marketingSpendAssumptions != null,
+    marketingSpendSource,
     hasFullOrderContributionMargin: hasContributionMarginCoverage(dataset),
   };
 }

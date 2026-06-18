@@ -6,6 +6,7 @@ import {
   clearUploadedRetentionOSDataset,
   getUploadedDatasetSessionSummary,
   getUploadedMarginAssumptionsSummary,
+  getUploadedMarketingSpendAssumptionSummary,
   getUploadedMarketingSpendSessionSummary,
   saveUploadedRetentionOSDataset,
   type RetentionOSDatasetSummary,
@@ -74,12 +75,16 @@ export function CsvImportPreview({
     void sessionSyncEpoch;
     if (!result || detectedFormat == null) return null;
     const spend = getUploadedMarketingSpendSessionSummary();
+    const spendAssumption = getUploadedMarketingSpendAssumptionSummary();
     const margin = getUploadedMarginAssumptionsSummary();
     return buildImportReviewViewModel({
       format: detectedFormat,
       result,
       sessionContext: {
+        hasSavedMarketingSpendCsv: spend != null && spend.rowCount > 0,
         hasSavedMarketingSpend: spend != null && spend.rowCount > 0,
+        hasSavedMarketingSpendAssumption: spendAssumption != null,
+        marketingSpendAssumptionPct: spendAssumption?.assumptions.marketingSpendPctOfNetRevenue,
         hasSavedMarginAssumptions: margin != null,
         marginAssumptionPct: margin?.assumptions.contributionMarginPct,
       },

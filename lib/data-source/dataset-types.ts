@@ -4,10 +4,13 @@
  * This module is types + small guards only — no persistence, no routing, no changes to `getDemoDataset()` internals.
  */
 
-import type { Customer, MarginAssumptions, Order, Product } from "../types";
+import type { Customer, MarginAssumptions, MarketingSpendAssumptions, Order, Product } from "../types";
 import type { MarketingSpend } from "../types/marketing";
 
 export type RetentionOSSourceType = "demo" | "uploaded_csv";
+
+/** Provenance for marketing spend attached to a resolved dataset snapshot. */
+export type MarketingSpendSource = "fixture" | "actual_csv" | "assumption";
 
 /** Upload contract used for `/data` ingestion (Sprint 4I-C). Omitted on demo and legacy session blobs. */
 export type RetentionOSUploadFormat = "shopify_orders" | "retentionos_template";
@@ -47,6 +50,8 @@ export interface RetentionOSDataset {
   readonly products: readonly Product[];
   readonly marketingSpend?: readonly MarketingSpend[];
   readonly marginAssumptions?: MarginAssumptions;
+  /** Present when synthesized spend rows are driven by a session assumption (not CSV). */
+  readonly marketingSpendAssumptions?: MarketingSpendAssumptions;
   readonly meta: RetentionOSSourceMetadata;
 }
 
@@ -54,5 +59,7 @@ export interface RetentionOSDataset {
 export interface RetentionOSDatasetSummary extends RetentionOSSourceMetadata {
   readonly hasMarginAssumptions: boolean;
   readonly hasMarketingSpend: boolean;
+  readonly hasMarketingSpendAssumption: boolean;
+  readonly marketingSpendSource?: MarketingSpendSource;
   readonly hasFullOrderContributionMargin: boolean;
 }

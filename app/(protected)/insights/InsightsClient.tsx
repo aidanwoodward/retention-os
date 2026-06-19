@@ -10,10 +10,7 @@ import {
   type CommandCentreDatasetSelection,
 } from "@/lib/data-source/client-selected-source";
 import { buildInsightsPageViewModelFromDataset, type RevenueDurabilityStatus } from "@/lib/insights";
-import { RULES_ENGINE_INSIGHTS_NOTICE } from "@/lib/mvp/cohesion";
 import type { InsightSeverity } from "@/lib/types/insight";
-
-const INSIGHT_DIAGNOSTICS_RULE_DETAIL = RULES_ENGINE_INSIGHTS_NOTICE.replace(/^Rules-based engine\.\s*/, "");
 
 function durabilityShellClass(status: RevenueDurabilityStatus): string {
   switch (status) {
@@ -77,16 +74,7 @@ export default function InsightsClient() {
       routeId="insights"
       maxWidth="6xl"
       bannerKind="insights"
-      insightsBannerSlot={
-        <div className="space-y-2">
-          <MetricSourceBanner routeId="insights" selection={selection} />
-          <div className="rounded-lg border border-zinc-700/90 bg-gradient-to-br from-zinc-950 via-zinc-950 to-zinc-900 px-4 py-2.5 shadow-sm ring-1 ring-black/30">
-            <p className="text-xs leading-relaxed text-zinc-400">
-              <span className="font-semibold text-zinc-200">Rules-based diagnostic engine.</span> {INSIGHT_DIAGNOSTICS_RULE_DETAIL}
-            </p>
-          </div>
-        </div>
-      }
+      insightsBannerSlot={<MetricSourceBanner routeId="insights" selection={selection} />}
       activeMetricDatasetSource={selection.isUploaded ? "uploaded_csv" : "demo"}
     >
       <section className={`rounded-xl border px-5 py-5 shadow-sm sm:px-6 sm:py-6 ${durabilityShellClass(vm.durabilityStatus)}`}>
@@ -108,8 +96,7 @@ export default function InsightsClient() {
           <div>
             <h2 className="text-sm font-semibold text-zinc-900">Operator decision cards</h2>
             <p className="mt-1 max-w-2xl text-xs leading-relaxed text-zinc-600">
-              Deterministic rules in <span className="font-mono text-[11px]">/lib/insights</span> — each card ties evidence to a commercial
-              move. No LLMs, no chat copilots.
+              Each card ties evidence to a commercial move — transparent rules, not black-box diagnostics.
             </p>
           </div>
         </div>
@@ -175,9 +162,11 @@ export default function InsightsClient() {
 
       <section>
         <h2 className="mb-3 text-sm font-semibold text-zinc-900">Explore supporting metrics</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <NavCard href="/dashboard" title="Dashboard" description={navDashboardDescription} />
-          <NavCard href="/data" title="Data" description="Fixture lineage and integration honesty." />
+          <NavCard href="/acquisition" title="Acquisition economics" description="CAC, LTV:CAC, and payback when spend is attached." />
+          <NavCard href="/products" title="First-product quality" description="Which entry products create durable customers." />
+          <NavCard href="/data" title="Data" description="Upload, assumptions, and active source control." />
           <NavCard href="/cohorts" title="Cohort economics" description="Acquisition-month rollups and Month +N breadth." />
           <NavCard href="/retention" title="Retention & repeat" description="Journey pacing plus calendar strips." />
           <NavCard href="/ltv" title="LTV ladders" description="Staircase averages for net revenue vs contribution." />

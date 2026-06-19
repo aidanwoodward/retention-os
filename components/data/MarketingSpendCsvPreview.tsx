@@ -129,21 +129,14 @@ export function MarketingSpendCsvPreview({
   return (
     <div className="space-y-5">
       <div className="rounded-lg border border-slate-200/90 bg-slate-50/50 px-4 py-3 text-sm leading-relaxed text-slate-950 ring-1 ring-slate-900/10">
-        <p className="font-semibold">Marketing spend CSV (Layer 4 prep)</p>
+        <p className="font-semibold">Optional: import actual marketing spend</p>
         <ul className="mt-2 list-inside list-disc space-y-1 text-slate-900/95">
           <li>
-            Parse and validate in-browser. <strong className="font-medium">Saving to session</strong> stores spend in{" "}
-            <code className="rounded border border-slate-300/80 bg-white/80 px-1 py-0.5 font-mono text-[11px]">sessionStorage</code> for this tab
-            only — <strong className="font-medium">not Supabase</strong>.
+            Parse and validate in-browser. Saving stores spend <strong className="font-medium">for this browser tab only</strong>.
           </li>
           <li>
-            <strong className="font-medium">Uploaded orders</strong> merge session spend in the command-centre dataset resolver (alongside margin
-            assumptions). <strong className="font-medium">KPI routes do not add CAC cards yet</strong> — this sprint prepares economics and /data previews
-            only.
-          </li>
-          <li>
-            <strong className="font-medium">This enables CAC / LTV:CAC / payback previews on /data</strong> but does not ship a full{" "}
-            <code className="font-mono text-[11px]">/acquisition</code> page.
+            When saved alongside uploaded orders, spend flows to <strong className="font-medium">Acquisition</strong>, Dashboard, and the acquisition
+            preview above — and overrides the % assumption.
           </li>
         </ul>
       </div>

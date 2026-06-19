@@ -127,25 +127,16 @@ export function buildDataPageViewModelFromDataset(
     ],
     comingNext: [
       {
-        title: "CSV upload",
-        detail: "Not implemented. Imports will normalize into the same canonical objects before touching `/lib/metrics`.",
+        title: "Live Shopify sync",
+        detail: "Connect Shopify directly and keep orders in sync automatically — not available in this MVP; use CSV export today.",
       },
       {
-        title: "Marketing spend import",
-        detail: "Fixture rows only today — no file or API import path wired for operators.",
+        title: "Cloud persistence",
+        detail: "Saved uploads stay in this browser tab only — multi-tenant account storage and team sharing are on the roadmap.",
       },
       {
-        title: "Margin assumption editor",
-        detail: "Demo uses fixed `DEMO_MARGIN_ASSUMPTIONS`; no in-app tuning surface yet.",
-      },
-      {
-        title: "Shopify ingestion",
-        detail:
-          "OAuth/sync code exists elsewhere in the repo for future use — this MVP stack does **not** read live Shopify totals on these routes.",
-      },
-      {
-        title: "Supabase / live account adapters",
-        detail: "Production data paths are out of scope for this restart checkpoint; `/data` reflects the intentional demo-only posture.",
+        title: "Scenario modelling",
+        detail: "Model spend or retention changes before you commit capital — planned for a future release.",
       },
     ],
   };

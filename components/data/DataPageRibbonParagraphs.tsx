@@ -8,22 +8,15 @@ type DataPageRibbonParagraphsProps = {
 export function DataPageMetricEngineRibbonBody({ hasUpload }: DataPageRibbonParagraphsProps) {
   return hasUpload ? (
     <>
-      <span className="font-semibold text-zinc-900">Command-centre source:</span> all KPI routes below read your{" "}
-      <strong className="font-medium text-zinc-900">uploaded CSV session dataset</strong> via{" "}
-      <span className="font-mono text-[11px]">sessionStorage</span> (<span className="font-mono text-[11px]">/lib/metrics</span> +{" "}
-      <span className="font-mono text-[11px]">/lib/insights</span>). <span className="font-semibold text-zinc-900">Session-only.</span>{" "}
-      <span className="font-semibold text-zinc-900">Not persisted to Supabase.</span> Fixture tables further down still mirror the canonical{" "}
-      <span className="font-mono text-[11px]">getDemoDataset()</span> lineage for auditing.
-      <span className="font-semibold text-zinc-900"> Live Shopify / Supabase adapters:</span> off on these routes.
+      <span className="font-semibold text-zinc-900">Active source:</span> all KPI routes below read your{" "}
+      <strong className="font-medium text-zinc-900">saved upload</strong> for this browser tab. Data is not stored in the cloud. Fixture tables
+      further down still show the demo dataset for reference.
     </>
   ) : (
     <>
-      <span className="font-semibold text-zinc-900">Command-centre source:</span> KPI routes consume the canonical demo fixture through{" "}
-      <span className="font-mono text-[11px]">getDemoDataset()</span> → <span className="font-mono text-[11px]">/lib/metrics</span> until you
-      save a passing CSV to <span className="font-mono text-[11px]">sessionStorage</span> below. Saved uploads apply to Dashboard, Cohorts,
-      Retention, LTV, and Insights in <span className="font-semibold text-zinc-900">this tab only</span> — still{" "}
-      <span className="font-semibold text-zinc-900">not persisted to Supabase.</span>
-      <span className="font-semibold text-zinc-900"> Live Shopify / Supabase adapters:</span> off.
+      <span className="font-semibold text-zinc-900">Active source:</span> KPI routes use the demo dataset until you upload and save a CSV below.
+      Saved uploads apply to Dashboard, Cohorts, Retention, LTV, Acquisition, Products, and Insights in{" "}
+      <span className="font-semibold text-zinc-900">this tab only</span>.
     </>
   );
 }
@@ -31,19 +24,14 @@ export function DataPageMetricEngineRibbonBody({ hasUpload }: DataPageRibbonPara
 export function DataPageCanonicalRoutesIntroBody({ hasUpload }: DataPageRibbonParagraphsProps) {
   return hasUpload ? (
     <>
-      While this tab retains a saved session CSV, Dashboard, Cohorts, Retention, LTV, and Insights use that uploaded snapshot{" "}
-      <strong className="font-medium text-zinc-900">instead of</strong> <span className="font-mono text-[11px]">getDemoDataset()</span>.{" "}
-      <span className="font-mono text-[11px]">/data</span> is where you inspect fixtures, preview imports, revert to demo, and confirm trust
-      lineage — none of these links are live multi-tenant pipelines in this MVP. Use{" "}
-      <strong className="font-medium text-zinc-900">Revert to demo dataset</strong> above to restore the demo command-centre source for all KPI
-      routes.
+      While this tab has a saved upload, Dashboard, Cohorts, Retention, LTV, Acquisition, Products, and Insights use that snapshot{" "}
+      <strong className="font-medium text-zinc-900">instead of</strong> the demo dataset. Use{" "}
+      <strong className="font-medium text-zinc-900">Revert to demo dataset</strong> above to restore the demo source for all KPI routes.
     </>
   ) : (
     <>
-      Dashboard, Cohorts, Retention, LTV, and Insights all read <span className="font-mono text-[11px]">getDemoDataset()</span> today —{" "}
-      <strong className="font-medium text-zinc-900">not</strong> live storefront telemetry here. Saving a validated CSV snapshot on this tab
-      switches those routes (this browser session only) to your uploaded slice. Visit every route&apos;s banner to confirm the{" "}
-      <strong className="font-medium text-zinc-900">Active source</strong> line matches what you expect.
+      Dashboard, Cohorts, Retention, LTV, Acquisition, Products, and Insights all read the demo dataset today. Saving a validated CSV on this tab
+      switches those routes to your upload for this browser session. Visit each route&apos;s source banner to confirm what is active.
     </>
   );
 }

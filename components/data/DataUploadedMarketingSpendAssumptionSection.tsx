@@ -118,10 +118,9 @@ export function DataUploadedMarketingSpendAssumptionSection({
           : null}
 
           <div className="mt-5 rounded-lg border border-violet-200/90 bg-violet-50/50 px-4 py-3 text-sm leading-relaxed text-violet-950 ring-1 ring-violet-900/10">
-            <p className="font-semibold">Session-only · not persisted to Supabase</p>
+            <p className="font-semibold">Saved for this browser tab only</p>
             <p className="mt-2 text-violet-950/95">
-              Stored in <span className="font-mono text-[11px]">sessionStorage</span> under a dedicated key. Clearing the upload removes this assumption.
-              Closing the tab discards it.
+              Clearing your upload removes this assumption. Closing the tab discards unsaved work.
             </p>
             {assumptionSummary ?
               <p className="mt-2 text-xs font-medium text-violet-900/90">

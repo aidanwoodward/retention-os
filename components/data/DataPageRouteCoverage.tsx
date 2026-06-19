@@ -11,21 +11,21 @@ type Row = Readonly<{
 function buildCoverageRows(hasUpload: boolean, demoBrandName: string): readonly Row[] {
   const kpiBody =
     hasUpload ?
-      `Uses selected source — uploaded CSV session dataset in sessionStorage for this browser tab (${demoBrandName} demo dormant until you revert). KPI calculators are unchanged — only inputs switch.`
-    : `Uses selected source — canonical demo dataset (${demoBrandName}) resolved through getDemoDataset() → /lib/metrics (and /lib/insights for diagnostic cards).`;
+      `Uses your saved upload for this browser tab (${demoBrandName} demo dormant until you revert). Same calculators — only the data source changes.`
+    : `Uses the ${demoBrandName} demo dataset until you upload and save your own CSV on this page.`;
 
   return [
-    { href: "/dashboard", headline: "Dashboard (/dashboard)", body: `${kpiBody} Executive KPIs and durability snapshot.` },
-    { href: "/cohorts", headline: "Cohort economics (/cohorts)", body: `${kpiBody} Acquisition-month rollups.` },
-    { href: "/retention", headline: "Retention & repeat (/retention)", body: `${kpiBody} Journey + calendar-strip retention.` },
-    { href: "/ltv", headline: "LTV ladders (/ltv)", body: `${kpiBody} Net revenue and contribution ladders.` },
-    { href: "/acquisition", headline: "Acquisition economics (/acquisition)", body: `${kpiBody} CAC, LTV:CAC, and payback when dataset-native marketing spend is present.` },
-    { href: "/insights", headline: "Diagnostic Insights (/insights)", body: `${kpiBody} Deterministic diagnostic cards.` },
+    { href: "/dashboard", headline: "Dashboard", body: `${kpiBody} Executive KPIs and durability snapshot.` },
+    { href: "/cohorts", headline: "Cohort economics", body: `${kpiBody} Acquisition-month rollups.` },
+    { href: "/retention", headline: "Retention & repeat", body: `${kpiBody} Journey + calendar-strip retention.` },
+    { href: "/ltv", headline: "LTV ladders", body: `${kpiBody} Net revenue and contribution ladders.` },
+    { href: "/acquisition", headline: "Acquisition economics", body: `${kpiBody} CAC, LTV:CAC, and payback when marketing spend is attached.` },
+    { href: "/products", headline: "First-product quality", body: `${kpiBody} Which entry products create durable, repeat, profitable customers.` },
+    { href: "/insights", headline: "Diagnostic Insights", body: `${kpiBody} Prioritized operator moves from deterministic rules.` },
     {
       href: "/data",
-      headline: "Data (/data)",
-      body:
-        "Trust + control hub for this MVP: lineage tables, canonical demo counts, CSV validation via /lib/import, metric previews, saving or clearing sessionStorage uploads, and reverting every KPI route to the demo fixture. Does not hydrate Supabase or external connectors.",
+      headline: "Data",
+      body: "Upload control centre: active source, CSV validation, spend and margin assumptions, and revert to demo.",
     },
   ];
 }
@@ -37,16 +37,14 @@ export function DataPageRouteCoverageSection({ hasUpload, demoBrandName }: { has
     <section className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-sm sm:p-6">
       <h2 className="text-sm font-semibold text-zinc-900">Route coverage vs active source</h2>
       <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-600">
-        Dashboard, cohorts, retention, LTV, Acquisition, and Insights always honour the{" "}
-        <strong className="font-medium text-zinc-900">same browser-tab session selection</strong> as this page.&nbsp;
+        Dashboard, Cohorts, Retention, LTV, Acquisition, Products, and Insights always use the{" "}
+        <strong className="font-medium text-zinc-900">same data source</strong> as this page.&nbsp;
         {hasUpload ?
           <>
-            KPI routes resolve <span className="font-semibold text-zinc-900">Uploaded CSV session dataset</span>; match the dark banner atop each KPI
-            page.
+            KPI routes use your <span className="font-semibold text-zinc-900">saved upload</span>; match the source banner atop each KPI page.
           </>
         : <>
-            KPI routes resolve <span className="font-semibold text-zinc-900">Demo dataset ({demoBrandName})</span> until an upload replaces it for this
-            tab.
+            KPI routes use the <span className="font-semibold text-zinc-900">demo dataset ({demoBrandName})</span> until you upload and save here.
           </>
         }
       </p>

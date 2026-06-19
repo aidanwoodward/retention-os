@@ -50,9 +50,9 @@ export const MVP_PAGE_COPY: Record<MvpRouteId, MvpPageCopy> = {
     matters:
       "Revenue durability emerges from depth and timing of repeat purchases, cohort ladder dispersion, acquisition payback honesty, and entry-product customer quality. Weak signals here propagate into acquisition-risk and liquidity decisions.",
     nextSteps: [
-      "Scan the Command-centre spine cards for acquisition economics and first-product quality before drilling to /acquisition or /products.",
-      "Inspect the Revenue durability snapshot label, then drill to Diagnostic Insights when you need prioritized operator moves.",
-      "Use the data completeness strip to see what is unlocked vs assumption-based, then open Data to attach spend or margin paths.",
+      "Read the revenue durability posture label, then scan acquisition economics and first-product quality in the spine cards.",
+      "Open Diagnostic Insights for prioritized operator moves backed by evidence.",
+      "Check the data completeness strip — open Data if you need to upload orders or add marketing spend and margin assumptions.",
     ],
   },
   cohorts: {
@@ -63,9 +63,9 @@ export const MVP_PAGE_COPY: Record<MvpRouteId, MvpPageCopy> = {
     matters:
       "Before scaling spend you need conviction that newer cohort tails resemble mature ones. Wide variance across acquisition months signals acquisition-quality variance risk tied to Revenue durability posture.",
     nextSteps: [
-      "Contrast strongest vs weakest ladders, then correlate with Diagnostic Insights for rules-based narration.",
-      "Pair with Retention to separate calendar-month breadth from journey pacing.",
-      "Return to the Dashboard headline metrics when reporting upward.",
+      "Contrast strongest vs weakest cohort ladders, then validate patterns in Diagnostic Insights.",
+      "Pair with Retention to separate calendar-month breadth from ninety-day reorder pacing.",
+      "Return to Dashboard for headline metrics before a stakeholder review.",
     ],
   },
   retention: {
@@ -76,9 +76,9 @@ export const MVP_PAGE_COPY: Record<MvpRouteId, MvpPageCopy> = {
     matters:
       "Misreading Month +1 softness as existential churn is easy when ninety-day reordering is intact. Operators need both views to steward Revenue durability conversations honestly.",
     nextSteps: [
-      "Escalate to Diagnostic Insights when you want blunt prioritisation tied to deterministic rules.",
-      "Cross-check LTV staircases when repeat looks healthy yet contribution could still lag.",
-      "Consult Data for lineage on how these metrics are stitched from canonical orders.",
+      "Open Diagnostic Insights when you want prioritized moves tied to your metrics.",
+      "Cross-check LTV staircases when repeat looks healthy but contribution may still lag.",
+      "Upload or review your data source on Data if you need to confirm what powers these numbers.",
     ],
   },
   ltv: {
@@ -89,9 +89,9 @@ export const MVP_PAGE_COPY: Record<MvpRouteId, MvpPageCopy> = {
     matters:
       "Net revenue LTV is not interchangeable with contribution LTV — confusing them undermines underwriting and payout planning. Robust Revenue durability insists both stories stay visible.",
     nextSteps: [
-      "Contrast terminal cohort spreads with Acquisition-quality variance flagged in Insights.",
-      "Stress-test hypotheses on Cohort economics when terminal tails diverge materially.",
-      "Loop back to Dashboard for headline averages before stakeholder reviews.",
+      "Compare terminal cohort spreads with acquisition-quality signals in Insights.",
+      "Stress-test dispersion on Cohort economics when tails diverge materially.",
+      "Return to Dashboard for portfolio headline averages before scaling spend.",
     ],
   },
   acquisition: {
@@ -103,8 +103,8 @@ export const MVP_PAGE_COPY: Record<MvpRouteId, MvpPageCopy> = {
       "Scaling spend without calendar-aligned CAC and payback visibility invites liquidity risk. This page keeps acquisition economics tied to the same orders snapshot as LTV and cohort routes — no orphan spend blending.",
     nextSteps: [
       "Cross-check terminal LTV spreads on LTV before trusting LTV:CAC ratios.",
-      "Save orders and marketing spend together on Data when using uploaded CSV — session spend previews on /data do not override demo economics here.",
-      "Escalate to Diagnostic Insights when acquisition-quality variance shows up alongside weak payback.",
+      "When using your own CSV, save orders and add a marketing spend % on Data to unlock these metrics.",
+      "Open Diagnostic Insights when weak payback shows up alongside acquisition-quality variance.",
     ],
   },
   products: {
@@ -116,34 +116,34 @@ export const MVP_PAGE_COPY: Record<MvpRouteId, MvpPageCopy> = {
       "Not all entry products create equal downstream economics. Before scaling merchandising or acquisition around a SKU, you need to know whether it attracts one-and-done buyers or customers who repeat and retain margin.",
     nextSteps: [
       "Compare strongest vs weakest entry products, then cross-check Retention and LTV for portfolio context.",
-      "Read the attribution note above the table — first product is the first order line, not basket composition.",
-      "Upload combined order + line-item CSV on Data when you need this lens on your own catalog slice.",
+      "Read the attribution note above the table — first product is the first order line, not the full basket.",
+      "Upload a combined order and line-item CSV on Data to run this lens on your own catalog.",
     ],
   },
   insights: {
     title: "Diagnostic Insights",
     hook: `${MVP_COMMAND_CENTRE_NAME} — prioritized moves from deterministic rules.`,
     lookingAt:
-      `Executive evidence cards surfaced by the Rules-based engine in /lib/insights on ${DEMO_DATASET_LABEL.toLowerCase()} outputs from /lib/metrics.`,
+      `Executive evidence cards from deterministic rules on the ${DEMO_DATASET_LABEL.toLowerCase()} — the same metrics bundle as Dashboard and KPI routes.`,
     matters:
-      "Metrics alone do not prescribe focus. This route compresses repeatable interpretation into actionable evidence without invoking LLMs or black-box diagnostics.",
+      "Metrics alone do not prescribe focus. This page compresses repeatable interpretation into actionable evidence without black-box diagnostics.",
     nextSteps: [
-      "Treat cards as hypotheses to validate commercially — each maps to Metric references you can reconcile in other tabs.",
-      "Return to Dashboard for the summarized Revenue durability label; open Data whenever provenance debates arise.",
-      "Route owners to Retention vs LTV based on whether timing or monetisation dominates the flagged pattern.",
+      "Treat each card as a hypothesis to validate commercially — use the linked metrics in other tabs to confirm.",
+      "Return to Dashboard for the summarized revenue durability label.",
+      "Drill into Retention or LTV depending on whether timing or monetisation dominates the flagged pattern.",
     ],
   },
   data: {
     title: "Data & sources",
-    hook: `${MVP_COMMAND_CENTRE_NAME} — trust ledger, demo fixture counts, and session CSV source control.`,
+    hook: `${MVP_COMMAND_CENTRE_NAME} — upload your shop data, set assumptions, and control what powers every KPI route.`,
     lookingAt:
-      `Canonical ${DEMO_BRAND_NAME} fixture counts (customers, orders, line rows, cohort months) plus object definitions — always visible for audit. Until you save a passing CSV snapshot to sessionStorage here, Dashboard, Cohorts, Retention, LTV, Acquisition, Products, and Insights consume the demo fixture; after save, those KPI routes use your uploaded slice for this browser tab only.`,
+      `Active data source for this browser tab: the ${DEMO_BRAND_NAME} demo fixture until you upload and save a Shopify Orders CSV. After save, Dashboard, Cohorts, Retention, LTV, Acquisition, Products, and Insights use your upload for this tab only.`,
     matters:
-      "Operators cannot judge revenue durability honestly if provenance is vague. This page states the active source, lists route coverage, and makes session-only CSV explicit — no Supabase mirror and no live Shopify on the MVP spine.",
+      "You cannot judge revenue durability honestly if the data source is unclear. This page shows what is active, lets you upload and review quality, and sets marketing spend and margin assumptions.",
     nextSteps: [
-      "Share this page internally before implying multi-tenant or server-persisted ingestion exists.",
-      "Return to Insights or Dashboard armed with lineage when sceptics push on provenance.",
-      "Plan next-wave work knowing tenant persistence, Shopify connectors, and margin editors are still roadmap for this product path.",
+      "Upload your Shopify Orders export, review data quality and caveats, then save.",
+      "Add marketing spend as a % of net revenue to unlock acquisition economics.",
+      "Open Dashboard to diagnose customer economics — then drill into Acquisition, Retention, LTV, Products, and Insights.",
     ],
   },
 };
@@ -163,13 +163,13 @@ export function getMvpPageCopyForActiveSource(
   }
   type SourceAwareRoute = "dashboard" | "cohorts" | "retention" | "ltv" | "acquisition" | "products" | "insights";
   const lookingAt: Record<SourceAwareRoute, string> = {
-    dashboard: `A single-plane summary of cohort scale, repeat depth, first-to-second within 90 days, Month +N active rates, cumulative net revenue / contribution LTV, acquisition economics, and first-product customer quality — computed on your session-saved uploaded CSV (this browser tab only; not the ${DEMO_BRAND_NAME} demo fixture).`,
-    cohorts: `First-order monthly cohorts with net merchandise revenue, modeled contribution, and Month +N active rates from your session-saved uploaded CSV (UTC cohort months; sessionStorage in this tab only).`,
-    retention: `Portfolio repeat rate, first-to-second within 90 days, average spacing to second order, and cohort Month +0/+N active rates from your session-saved uploaded CSV (sessionStorage in this tab only).`,
-    ltv: `Average cumulative net revenue per customer by cohort-age offset, with parallel contribution ladders where margin assumptions apply — from your session-saved uploaded CSV (sessionStorage in this tab only).`,
-    acquisition: `Monthly CAC, blended CAC, terminal LTV:CAC, and contribution payback from your session-saved uploaded orders plus session marketing spend merged by the resolver (sessionStorage in this tab only — orphan spend without orders upload does not apply here).`,
-    products: `First-product customer quality from your session-saved uploaded CSV — customers grouped by first order line item with repeat, LTV, and drag metrics (sessionStorage in this tab only; requires line items with product_id).`,
-    insights: `Executive evidence cards from deterministic rules on your session-saved uploaded CSV outputs (wired through /lib/metrics → /lib/insights — sessionStorage in this tab only, not persisted to Supabase).`,
+    dashboard: `A single-plane summary of cohort scale, repeat depth, first-to-second within 90 days, Month +N active rates, cumulative net revenue / contribution LTV, acquisition economics, and first-product customer quality — computed on your saved uploaded CSV (this browser tab only; not the ${DEMO_BRAND_NAME} demo).`,
+    cohorts: `First-order monthly cohorts with net merchandise revenue, modeled contribution, and Month +N active rates from your saved uploaded CSV (UTC cohort months; this browser tab only).`,
+    retention: `Portfolio repeat rate, first-to-second within 90 days, average spacing to second order, and cohort Month +0/+N active rates from your saved uploaded CSV (this browser tab only).`,
+    ltv: `Average cumulative net revenue per customer by cohort-age offset, with parallel contribution ladders where margin assumptions apply — from your saved uploaded CSV (this browser tab only).`,
+    acquisition: `Monthly CAC, blended CAC, terminal LTV:CAC, and contribution payback from your saved uploaded orders plus marketing spend merged for this tab (add spend on Data if these metrics are locked).`,
+    products: `First-product customer quality from your saved uploaded CSV — customers grouped by first order line item with repeat, LTV, and drag metrics (requires line items with product_id).`,
+    insights: `Executive evidence cards from deterministic rules on your saved uploaded CSV — the same metrics bundle as Dashboard and KPI routes (this browser tab only).`,
   };
   return { ...base, lookingAt: lookingAt[routeId] };
 }
@@ -204,9 +204,9 @@ export const RULES_ENGINE_INSIGHTS_NOTICE =
   "Rules-based engine. Cards synthesize evidence using transparent thresholds — not LLMs, chat copilots, or hidden models." as const;
 
 export function insightsDemoNotice(): string {
-  return `${DEMO_DATASET_LABEL}. ${DEMO_BRAND_NAME} — ${DEMO_BRAND_TAGLINE} Insight cards derive from deterministic /lib/metrics inputs (demo fixture by default); save a validated CSV session snapshot on /data to run the same rules on your upload for this browser tab.`;
+  return `${DEMO_DATASET_LABEL}. ${DEMO_BRAND_NAME} — ${DEMO_BRAND_TAGLINE} Save a validated CSV on Data to run the same diagnostic rules on your upload for this browser tab.`;
 }
 
 export function dataModeBannerSentence(): string {
-  return `${DEMO_DATASET_LABEL} lineage: ${DEMO_BRAND_NAME} — ${DEMO_BRAND_TAGLINE} Transparent demo counts are grounded in runDemoMetricSanityCheck(); this page also controls demo vs session-saved CSV for KPI routes (browser tab only — not Supabase). Live Shopify and warehouse adapters remain off this spine.`;
+  return `${DEMO_DATASET_LABEL}: ${DEMO_BRAND_NAME} — ${DEMO_BRAND_TAGLINE} This page controls demo vs your saved upload for KPI routes (this browser tab only). Live Shopify sync is not available in this MVP.`;
 }

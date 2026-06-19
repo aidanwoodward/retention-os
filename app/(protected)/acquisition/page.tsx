@@ -47,33 +47,20 @@ export default function AcquisitionPage() {
           <p className="font-semibold">Marketing spend required for acquisition economics</p>
           {selection.isUploaded ?
             <p className="mt-2">
-              Uploaded orders are active, but no marketing spend is attached to this session dataset. Save a marketing spend % assumption or CSV on{" "}
+              Uploaded orders are active, but no marketing spend is attached. Save a marketing spend % assumption or CSV on{" "}
               <Link href="/data" className="font-medium underline decoration-amber-400 underline-offset-2 hover:decoration-amber-700">
-                /data
+                Data
               </Link>{" "}
               to unlock CAC, LTV:CAC, and payback on this page.
             </p>
           : <p className="mt-2">
-              The demo fixture has no marketing spend for this route. Session-only spend saved on{" "}
+              Marketing spend is not attached to the active dataset. Open{" "}
               <Link href="/data" className="font-medium underline decoration-amber-400 underline-offset-2 hover:decoration-amber-700">
-                /data
+                Data
               </Link>{" "}
-              can be previewed there but does not feed /acquisition — upload orders and save spend together, or use the demo fixture when it includes spend.
+              to add a marketing spend % assumption or upload a spend CSV alongside your orders.
             </p>
           }
-        </div>
-      : null}
-
-      {summary.hasSpend && spendIsEstimated ?
-        <div className="rounded-lg border border-amber-200/90 bg-amber-50/70 px-4 py-3.5 text-sm leading-relaxed text-amber-950">
-          <p className="font-semibold">Estimated acquisition economics</p>
-          <p className="mt-2 text-xs">
-            Marketing spend is synthesized from your % of net revenue assumption on{" "}
-            <Link href="/data" className="font-medium underline decoration-amber-400 underline-offset-2 hover:decoration-amber-700">
-              /data
-            </Link>{" "}
-            — not imported spend. Metrics below are assumption-based.
-          </p>
         </div>
       : null}
 

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
+import { DiagnosisContinueSection } from "@/components/mvp/DiagnosisContinueSection";
 import { MetricSourceBanner } from "@/components/mvp/MetricSourceBanner";
 import { KpiMetricLabel } from "@/components/ui/kpi-metric-label";
 import type { MetricId } from "@/lib/metrics/metric-definitions";
@@ -134,6 +135,13 @@ export default function RetentionClient() {
         </p>
         <RetentionCohortTable rows={cohortRows} />
       </div>
+
+      <DiagnosisContinueSection
+        links={[
+          { href: "/ltv", label: "LTV ladders" },
+          { href: "/insights", label: "Diagnostic Insights" },
+        ]}
+      />
     </CommandCentrePageFrame>
   );
 }

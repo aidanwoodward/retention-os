@@ -168,19 +168,15 @@ export function CsvImportPreview({
         <ul className="mt-2 list-inside list-disc space-y-1 text-emerald-900/90">
           <li>Files stay in this browser tab until you explicitly save — nothing is uploaded to a server.</li>
           <li>
-            <strong className="font-semibold">Session-only:</strong> after you confirm the review below, the dataset is
-            stored in{" "}
-            <code className="rounded border border-emerald-300/80 bg-white/80 px-1 py-0.5 font-mono text-[11px]">
-              sessionStorage
-            </code>{" "}
-            for this tab. <strong className="font-semibold">Not persisted to Supabase.</strong>
+            After you confirm the review below, your dataset is saved <strong className="font-semibold">for this browser tab only</strong> — not
+            stored in the cloud.
           </li>
           <li>
             When you save,{" "}
             <strong className="font-semibold">
-              Dashboard, Cohorts, Retention, LTV, and Insights use this upload in this browser session
+              Dashboard, Cohorts, Retention, LTV, Acquisition, Products, and Insights use your upload in this browser tab
             </strong>{" "}
-            until you revert to the demo fixture.
+            until you revert to the demo dataset.
           </li>
         </ul>
       </div>
@@ -193,11 +189,14 @@ export function CsvImportPreview({
 
       {sessionSaveToast ? (
         <div className="rounded-lg border border-emerald-200/90 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-950">
-          <p className="font-semibold">Saved for this browser session</p>
+          <p className="font-semibold">Saved for this browser tab</p>
           <p className="mt-1">{sessionSaveToast}</p>
           <p className="mt-2 text-xs leading-relaxed opacity-90">
-            Session-only — not persisted to Supabase. Dashboard, Cohorts, Retention, LTV, and Insights now consume this
-            snapshot on this tab until you clear it or close the tab.
+            Dashboard, Cohorts, Retention, LTV, Acquisition, Products, and Insights now use this upload until you clear it or close the tab.
+          </p>
+          <p className="mt-3 text-sm font-medium text-emerald-950">
+            Next step: scroll down to{" "}
+            <span className="font-semibold">add marketing spend as a % of net revenue</span> to unlock acquisition economics.
           </p>
         </div>
       ) : null}
@@ -313,10 +312,10 @@ export function CsvImportPreview({
 function SessionStoredDatasetCardEmptyState() {
   return (
     <div className="rounded-lg border border-dashed border-zinc-300/90 bg-zinc-50/80 px-4 py-3 text-sm text-zinc-700">
-      <p className="font-semibold text-zinc-900">No uploaded CSV in sessionStorage yet</p>
+      <p className="font-semibold text-zinc-900">No saved upload yet</p>
       <p className="mt-2 text-xs leading-relaxed text-zinc-600">
-        Save a validated import below to switch Dashboard, Cohorts, Retention, LTV, and Insights on this browser tab.&nbsp;
-        <span className="font-semibold text-zinc-800">Active source stays the demo fixture</span> until then.
+        Save a validated import below to switch Dashboard, Cohorts, Retention, LTV, Acquisition, Products, and Insights to your data on this tab.&nbsp;
+        <span className="font-semibold text-zinc-800">The demo dataset stays active</span> until then.
       </p>
     </div>
   );
@@ -331,10 +330,9 @@ function SessionStoredDatasetCard({
 }) {
   return (
     <div className="rounded-lg border border-sky-200/90 bg-sky-50/70 px-4 py-3 text-sm text-sky-950 ring-1 ring-sky-900/10">
-      <p className="font-semibold">Session dataset on file (mirror of control banner)</p>
+      <p className="font-semibold">Saved upload (this tab)</p>
       <p className="mt-2 text-xs leading-relaxed opacity-95">
-        <strong className="font-semibold">Session-only — not persisted to Supabase.</strong> Clearing below has the{" "}
-        <strong className="font-semibold">same effect as Revert to demo dataset</strong> in the banner.
+        Clearing below has the <strong className="font-semibold">same effect as Revert to demo dataset</strong> in the banner above.
       </p>
 
       <UploadedSessionDatasetDl

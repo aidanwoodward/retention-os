@@ -3,6 +3,7 @@
 import { useLayoutEffect, useMemo, useState } from "react";
 import { FirstProductQualityPanel } from "@/components/products/FirstProductQualityPanel";
 import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
+import { DiagnosisContinueSection } from "@/components/mvp/DiagnosisContinueSection";
 import { MetricSourceBanner } from "@/components/mvp/MetricSourceBanner";
 import {
   buildDemoCommandCentreSelection,
@@ -32,6 +33,13 @@ export default function ProductsPage() {
       activeMetricDatasetSource={selection.isUploaded ? "uploaded_csv" : "demo"}
     >
       <FirstProductQualityPanel vm={vm} />
+
+      <DiagnosisContinueSection
+        links={[
+          { href: "/retention", label: "Retention & repeat" },
+          { href: "/dashboard", label: "Dashboard" },
+        ]}
+      />
     </CommandCentrePageFrame>
   );
 }

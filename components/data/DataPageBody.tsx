@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { CsvImportPreview } from "@/components/data/CsvImportPreview";
+import { DemoJourneyStrip } from "@/components/data/DemoJourneyStrip";
 import { DataPageCanonicalRoutesIntroBody, DataPageMetricEngineRibbonBody } from "@/components/data/DataPageRibbonParagraphs";
 import { DataPageRouteCoverageSection } from "@/components/data/DataPageRouteCoverage";
 import type { DataPageDemoLedgerSnapshot } from "@/components/data/DataPageSourceHero";
@@ -12,6 +13,11 @@ import { DataUploadedMarketingSpendAssumptionSection } from "@/components/data/D
 import { AcquisitionDataPreview } from "@/components/data/AcquisitionDataPreview";
 import { MarketingSpendCsvPreview } from "@/components/data/MarketingSpendCsvPreview";
 import { useDataPageSessionSummary } from "@/components/data/useDataPageSessionSummary";
+import {
+  getUploadedMarginAssumptionsSummary,
+  getUploadedMarketingSpendAssumptionSummary,
+  getUploadedMarketingSpendSessionSummary,
+} from "@/lib/data-source";
 import type { DataPageViewModel } from "@/lib/metrics";
 
 function formatPct(fraction: number, digits = 0): string {
@@ -56,9 +62,25 @@ export function DataPageBody({
     setSessionEpoch((e) => e + 1);
   }, [refreshSessionDataset]);
 
+  const hasSpend = useMemo(() => {
+    void sessionEpoch;
+    if (!hasUpload) return false;
+    const assumption = getUploadedMarketingSpendAssumptionSummary();
+    const csvSpend = getUploadedMarketingSpendSessionSummary();
+    return assumption != null || (csvSpend?.rowCount ?? 0) > 0;
+  }, [hasUpload, sessionEpoch]);
+
+  const hasMargin = useMemo(() => {
+    void sessionEpoch;
+    if (!hasUpload) return false;
+    return getUploadedMarginAssumptionsSummary() != null;
+  }, [hasUpload, sessionEpoch]);
+
   return (
     <>
       <DataPageSourceHero demo={demoSnapshot} uploadSummary={uploadSummary} onUploadCleared={reconcileSessionSlices} />
+
+      <DemoJourneyStrip hasUpload={hasUpload} hasSpend={hasSpend} hasMargin={hasMargin} />
 
       <section className="overflow-hidden rounded-xl border border-zinc-200/90 bg-white shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06)] ring-1 ring-black/[0.02]">
         <div className="border-b border-zinc-100 px-5 py-4 sm:px-6">
@@ -100,8 +122,8 @@ export function DataPageBody({
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Orders upload</p>
           <h2 className="mt-1 text-lg font-semibold text-zinc-900">Shopify Orders CSV onboarding</h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">
-            Export orders from Shopify Admin (Orders → Export → Orders), upload here, preview validation and metrics, then save to sessionStorage.
-            Saving switches KPI routes on this tab to your data; reverting restores the seeded demo spine.
+            Export orders from Shopify Admin (Orders → Export → Orders), upload here, preview validation and metrics, then save for this browser tab.
+            Saving switches KPI routes on this tab to your data; reverting restores the demo dataset.
           </p>
           <p className="mt-2 max-w-2xl text-xs leading-relaxed text-zinc-500">
             Advanced / testing: the RetentionOS combined template (
@@ -258,9 +280,9 @@ export function DataPageBody({
       </section>
 
       <section className="rounded-xl border border-dashed border-zinc-300/90 bg-zinc-50/80 p-5 sm:p-6">
-        <h2 className="text-sm font-semibold text-zinc-900">Not live yet</h2>
+        <h2 className="text-sm font-semibold text-zinc-900">Roadmap (not in this MVP)</h2>
         <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-          Intentionally absent — descriptions match this codebase (no fake green checkmarks, no destructive seed UI on this page).
+          Planned capabilities not yet available in this release — CSV upload, spend assumptions, and margin tuning are live above.
         </p>
         <ul className="mt-4 space-y-2">
           {vm.comingNext.map((item) => (

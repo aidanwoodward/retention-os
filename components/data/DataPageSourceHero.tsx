@@ -94,9 +94,9 @@ function UploadedModePanel({
       <div className="rounded-lg border border-amber-200/90 bg-amber-50/60 px-4 py-3 text-sm leading-relaxed text-amber-950 ring-1 ring-amber-900/10">
         <p className="font-semibold">Session-only retention</p>
         <ul className="mt-2 list-inside list-disc space-y-1 text-amber-950/95">
-          <li>Stored only in sessionStorage — not synced to Supabase or other tenants.</li>
-          <li>Refreshing this tab keeps the CSV snapshot until you clear it or close the tab.</li>
-          <li>Reverting immediately switches Dashboard, Cohorts, Retention, LTV, and Insights back to the canonical demo fixture.</li>
+          <li>Saved only in this browser tab — not synced to the cloud or shared across devices.</li>
+          <li>Refreshing this tab keeps your upload until you clear it or close the tab.</li>
+          <li>Reverting immediately switches Dashboard, Cohorts, Retention, LTV, Acquisition, Products, and Insights back to the demo dataset.</li>
         </ul>
       </div>
 

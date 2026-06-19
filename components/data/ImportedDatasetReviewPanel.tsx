@@ -78,6 +78,7 @@ export function ImportedDatasetReviewPanel({
 }) {
   const unlockedMetrics = viewModel.metrics.filter((m) => m.status === "unlocked");
   const limitedMetrics = viewModel.metrics.filter((m) => m.status !== "unlocked");
+  const acquisitionLocked = viewModel.metrics.some((m) => m.id === "acquisition" && m.status === "locked");
 
   return (
     <div className="rounded-xl border border-zinc-300/90 bg-gradient-to-b from-white to-zinc-50/80 p-5 shadow-sm ring-1 ring-black/[0.03] sm:p-6">
@@ -186,6 +187,12 @@ export function ImportedDatasetReviewPanel({
             </ul>
           </div>
         ) : null}
+        {acquisitionLocked ?
+          <p className="rounded-lg border border-amber-200/90 bg-amber-50/70 px-3.5 py-3 text-xs leading-relaxed text-amber-950">
+            <strong className="font-semibold">Acquisition economics is locked.</strong> After you save, scroll down to add marketing spend as a % of
+            net revenue — that unlocks CAC, LTV:CAC, and payback on Acquisition and Dashboard.
+          </p>
+        : null}
       </section>
 
       {viewModel.caveats.length > 0 ? (

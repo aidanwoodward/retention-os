@@ -207,7 +207,7 @@ export default function DashboardExecutive() {
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Recommended moves</p>
                 {nextMoves.length === 0 ? (
-                  <p className="mt-2 text-sm text-zinc-600">Extend rules coverage to unlock more prioritized actions.</p>
+                  <p className="mt-2 text-sm text-zinc-600">No prioritized moves from the current dataset — open Diagnostic Insights for the full card set.</p>
                 ) : (
                   <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm leading-snug text-zinc-700">
                     {nextMoves.map((line) => (
@@ -215,10 +215,7 @@ export default function DashboardExecutive() {
                     ))}
                   </ol>
                 )}
-                <p className="mt-2 text-xs leading-relaxed text-zinc-500">
-                  Derived from deterministic insight cards (<span className="font-mono text-[11px]">/lib/insights</span>
-                  ).
-                </p>
+                <p className="mt-2 text-xs leading-relaxed text-zinc-500">Derived from deterministic insight cards on the Insights page.</p>
               </div>
             </div>
           </div>
@@ -351,7 +348,10 @@ export default function DashboardExecutive() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold text-zinc-900">Go deeper</h2>
+        <h2 className="mb-1 text-sm font-semibold text-zinc-900">Go deeper</h2>
+        <p className="mb-3 text-xs leading-relaxed text-zinc-600">
+          Suggested order: Insights → Acquisition → Retention → LTV → Products
+        </p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <NavCard
             href="/insights"

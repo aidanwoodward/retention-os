@@ -1,8 +1,9 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { useCallback, useId, useLayoutEffect, useState } from "react";
-import {
-  clearUploadedMarginAssumptions,
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {  clearUploadedMarginAssumptions,
   getUploadedMarginAssumptionsSummary,
   saveUploadedMarginAssumptions,
   validateUploadedMarginAssumptions,
@@ -78,38 +79,39 @@ export function DataUploadedMarginAssumptionsSection({
   }, [onSessionMarginChange]);
 
   return (
-    <section className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-sm ring-1 ring-black/[0.02] sm:p-6">
-      <div className="border-b border-zinc-100 pb-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Contribution economics · uploads</p>
-        <h2 className="mt-1 text-lg font-semibold text-zinc-900">Margin assumptions for uploaded data</h2>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">
-          When your CSV omits <code className="rounded border border-zinc-200 bg-zinc-50 px-1 py-0.5 font-mono text-[11px]">contribution_margin</code> on
-          some or all orders, you may set a <span className="font-medium text-zinc-800">single session-only</span> retained-margin rate applied to net
-          revenue per order that lacks a finite order-level contribution. Order-level values always take precedence for rows that have them — this is
-          fallback coverage, not a silent replacement.
-        </p>
-      </div>
-
+    <Collapsible defaultOpen={false}>
+      <section className="overflow-hidden rounded-xl border border-zinc-200/90 bg-white shadow-sm ring-1 ring-black/[0.02]">
+        <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 px-5 py-4 text-left sm:px-6">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Contribution economics</p>
+            <h2 className="mt-1 text-lg font-semibold text-zinc-900">Margin assumption (optional)</h2>
+            <p className="mt-1 max-w-2xl text-sm text-zinc-600">
+              Fallback contribution rate when your CSV lacks margin on some orders. Order-level values always win when present.
+            </p>
+          </div>
+          <ChevronDown className="size-4 shrink-0 text-zinc-500 transition group-data-[state=open]:rotate-180" />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="border-t border-zinc-100 px-5 pb-5 pt-4 sm:px-6 sm:pb-6">
       {!hasUpload ?
-        <p className="mt-5 text-sm leading-relaxed text-zinc-600">
-          Save a valid combined-order CSV to this tab first. Margin controls activate once an uploaded session dataset is active in the banner above.
+        <p className="text-sm leading-relaxed text-zinc-600">
+          Save a valid orders CSV first. Margin controls activate once an upload is active.
         </p>
       : <>
-          <div className="mt-5 rounded-lg border border-violet-200/90 bg-violet-50/50 px-4 py-3 text-sm leading-relaxed text-violet-950 ring-1 ring-violet-900/10">
+          <div className="rounded-lg border border-violet-200/90 bg-violet-50/50 px-4 py-3 text-sm leading-relaxed text-violet-950 ring-1 ring-violet-900/10">
             <p className="font-semibold">Saved for this browser tab only</p>
             <p className="mt-2 text-violet-950/95">
               Clearing your upload or reverting to demo removes this assumption. Closing the tab discards unsaved work.
             </p>
             {marginSummary ?
               <p className="mt-2 text-xs font-medium text-violet-900/90">
-                Active assumption label: {marginSummary.provenanceLabel} · {formatPctFromFraction(marginSummary.assumptions.contributionMarginPct, 1)}{" "}
-                of net revenue per uncovered order.
+                Active: {marginSummary.provenanceLabel} · {formatPctFromFraction(marginSummary.assumptions.contributionMarginPct, 1)} of net revenue per
+                uncovered order.
               </p>
             : null}
           </div>
 
-          <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end">
-            <div className="min-w-0 flex-1">
+          <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end">            <div className="min-w-0 flex-1">
               <label htmlFor={pctFieldId} className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
                 Contribution margin (%)
               </label>
@@ -155,6 +157,9 @@ export function DataUploadedMarginAssumptionsSection({
           : null}
         </>
       }
-    </section>
+          </div>
+        </CollapsibleContent>
+      </section>
+    </Collapsible>
   );
 }

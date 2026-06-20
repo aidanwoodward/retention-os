@@ -270,35 +270,29 @@ function ProductQualityCard({ productQuality }: { productQuality: DashboardProdu
 function DataCompletenessStrip({ dataCompleteness }: { dataCompleteness: DashboardDataCompletenessView }) {
   return (
     <section className="rounded-xl border border-zinc-200/90 bg-white p-4 shadow-sm ring-1 ring-black/[0.02] sm:p-5">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h3 className="text-sm font-semibold text-zinc-900">Data completeness</h3>
-          <p className="mt-1 text-xs leading-relaxed text-zinc-600">What this session source unlocks — not a KPI wall.</p>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-zinc-900">Data completeness</h3>
         <Link
           href="/data"
           className="text-xs font-medium text-zinc-700 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-900"
         >
-          Manage on /data →
+          Manage on Data →
         </Link>
       </div>
-      <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mt-3 flex flex-wrap gap-2">
         {dataCompleteness.rows.map((row) => (
-          <div
+          <span
             key={row.id}
-            className="rounded-lg border border-zinc-100 bg-zinc-50/70 px-3 py-2.5 ring-1 ring-black/[0.02]"
+            className="inline-flex items-center gap-1.5 rounded-md border border-zinc-100 bg-zinc-50/80 px-2.5 py-1.5 ring-1 ring-black/[0.02]"
             title={row.detail}
           >
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">{row.label}</p>
-              <span
-                className={`shrink-0 rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${COMPLETENESS_STYLES[row.status]}`}
-              >
-                {COMPLETENESS_LABELS[row.status]}
-              </span>
-            </div>
-            <p className="mt-2 text-[11px] leading-snug text-zinc-700">{row.detail}</p>
-          </div>
+            <span className="text-[11px] font-medium text-zinc-800">{row.label}</span>
+            <span
+              className={`shrink-0 rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${COMPLETENESS_STYLES[row.status]}`}
+            >
+              {COMPLETENESS_LABELS[row.status]}
+            </span>
+          </span>
         ))}
       </div>
     </section>
@@ -318,10 +312,7 @@ export function DashboardSpinePanels({
 }) {
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Command-centre spine</h2>
-        <p className="mt-1 text-xs text-zinc-600">Executive snapshots from acquisition and product-quality routes — drill down for tables.</p>
-      </div>
+      <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Command-centre spine</h2>
       <div className="grid gap-4 lg:grid-cols-2">
         <AcquisitionEconomicsCard acquisition={acquisition} isUploaded={isUploaded} />
         <ProductQualityCard productQuality={productQuality} />

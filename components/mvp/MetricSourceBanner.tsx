@@ -1,6 +1,7 @@
 "use client";
 
 import type { CommandCentreDatasetSelection } from "@/lib/data-source/client-selected-source";
+import { DEMO_BRAND_NAME } from "@/lib/demo";
 import { metricsBannerScopeLine } from "@/lib/mvp/cohesion";
 
 export type MetricSourceBannerRouteId = "dashboard" | "cohorts" | "retention" | "ltv" | "acquisition" | "products" | "insights";
@@ -19,12 +20,12 @@ export function MetricSourceBanner({
   const scope = metricsBannerScopeLine(routeId);
   const provenanceDetail = selection.isUploaded
     ? "Your uploaded orders power metrics on this page for this browser tab only. Data is not saved to the cloud — refresh or close the tab and you will need to upload again."
-    : "Demo brand data powers this page. Upload your Shopify Orders export on Data to analyse your own shop in this tab.";
+    : `${DEMO_BRAND_NAME} demo data powers this page — fixture spend and margin assumptions included. Upload your Shopify Orders export on Data to analyse your own shop in this tab.`;
 
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-lg border border-zinc-200/90 bg-zinc-50/70 px-3 py-2 text-sm ring-1 ring-black/[0.02]">
       <span className={selection.isUploaded ? SOURCE_BADGE_UPLOAD : SOURCE_BADGE_DEMO}>
-        {selection.isUploaded ? "Your upload" : "Demo data"}
+        {selection.isUploaded ? "Your upload" : `Demo — ${DEMO_BRAND_NAME}`}
       </span>
       <span className="min-w-0 text-zinc-600">{scope}</span>
       {selection.isUploaded ? (

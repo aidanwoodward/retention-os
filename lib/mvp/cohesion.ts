@@ -97,8 +97,8 @@ export const MVP_PAGE_COPY: Record<MvpRouteId, MvpPageCopy> = {
     lookingAt: `Active source for this tab: ${DEMO_BRAND_NAME} demo until you upload and save a Shopify Orders CSV. After save, all KPI routes use your upload here only.`,
     matters: "You cannot judge customer economics honestly if the data source and assumptions are unclear.",
     nextSteps: [
-      "Upload Shopify Orders, review quality and caveats, then save.",
-      "Add marketing spend as a % of net revenue to unlock CAC and payback.",
+      "Explore KPI routes on the Lumin & River demo — fixture spend and margin assumptions are already included.",
+      "Upload your Shopify Orders CSV, then add spend or margin assumptions if your file does not include them.",
       "Open Dashboard, then drill into Acquisition, Retention, LTV, and Insights.",
     ],
   },

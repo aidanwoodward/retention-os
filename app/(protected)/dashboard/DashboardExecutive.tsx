@@ -46,7 +46,8 @@ export default function DashboardExecutive() {
   }, []);
 
   const vm = useMemo(() => buildDashboardExecutiveViewModelFromDataset(selection.dataset), [selection.dataset]);
-  const { summary, durability, acquisition, productQuality, dataCompleteness } = vm;
+  const { summary, durability, observations, acquisition, productQuality, dataCompleteness } = vm;
+  const observationStrip = observations.slice(0, 3);
 
   return (
     <CommandCentrePageFrame
@@ -81,6 +82,19 @@ export default function DashboardExecutive() {
         dataCompleteness={dataCompleteness}
         isUploaded={selection.isUploaded}
       />
+
+      {observationStrip.length > 0 ?
+        <section className="rounded-lg border border-zinc-200/80 bg-zinc-50/60 px-4 py-3 ring-1 ring-black/[0.02]">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">From this dataset</p>
+          <ul className="mt-2 space-y-1.5">
+            {observationStrip.map((line) => (
+              <li key={line} className="text-sm leading-snug text-zinc-700">
+                {line}
+              </li>
+            ))}
+          </ul>
+        </section>
+      : null}
 
       <div>
         <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Executive KPIs</h2>

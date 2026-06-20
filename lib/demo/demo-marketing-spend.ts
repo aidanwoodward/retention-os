@@ -11,11 +11,11 @@ import {
  * TikTok is deliberately expensive per retained dollar; email lean but not free (creators + ESP).
  */
 const EFFECTIVE_ACQUISITION_COST_USD: Record<DemoChannel, number> = {
-  influencer: 54,
-  meta_paid: 49,
-  google_paid: 56,
-  tiktok_paid: 74,
-  email_owned: 11,
+  influencer: 32,
+  meta_paid: 30,
+  google_paid: 34,
+  tiktok_paid: 45,
+  email_owned: 7,
 };
 
 function buildDemoMarketingSpend(): MarketingSpend[] {

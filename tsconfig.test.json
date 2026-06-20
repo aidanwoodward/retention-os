@@ -30,6 +30,8 @@
     "lib/metrics/dashboard-executive-spine.ts",
     "lib/metrics/dashboard-view-model.ts",
     "lib/metrics/dashboard-view-model.test.ts",
+    "lib/metrics/demo-sanity-check.ts",
+    "lib/metrics/demo-sanity-check.test.ts",
     "lib/import/csv-schema.ts",
     "lib/import/import-types.ts",
     "lib/import/validate-csv.ts",

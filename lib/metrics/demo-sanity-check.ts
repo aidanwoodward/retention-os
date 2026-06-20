@@ -1,5 +1,8 @@
 import type { Order } from "../types/order";
 import { getDemoDataset } from "../demo";
+import { buildDemoRetentionOSDataset } from "../data-source/demo-source";
+import { calculateFirstProductCustomerQualityFromDataset } from "./product-quality";
+import { buildDashboardExecutiveViewModelFromDataset } from "./dashboard-view-model";
 import { calculateCohorts } from "./cohorts";
 import { calculateLTVByCohort } from "./ltv";
 import {
@@ -38,6 +41,95 @@ function rawNetMerchandise(order: Order): number {
 function checkFraction(label: string, value: number, warnings: string[]): void {
   if (value < 0 || value > 1 || Number.isNaN(value)) {
     warnings.push(`${label} outside [0, 1] or NaN: ${value}`);
+  }
+}
+
+function checkRange(label: string, value: number, min: number, max: number, warnings: string[]): void {
+  if (value < min || value > max || Number.isNaN(value)) {
+    warnings.push(`${label} outside [${min}, ${max}]: ${value}`);
+  }
+}
+
+function checkNarrativeGuardrails(
+  result: Omit<DemoMetricSanityCheckResult, "warnings">,
+  warnings: string[],
+): void {
+  checkRange("customerCount", result.customerCount, 2800, 3200, warnings);
+  checkRange("orderCount", result.orderCount, 3500, 4500, warnings);
+  checkRange("productCount", result.productCount, 6, 10, warnings);
+  checkRange("cohortCount", result.cohortCount, 30, 40, warnings);
+  checkRange("marketingSpendRowCount", result.marketingSpendRowCount, 100, 220, warnings);
+
+  if (result.firstCohort !== "2023-07") {
+    warnings.push(`Expected first cohort 2023-07, got ${result.firstCohort ?? "null"}.`);
+  }
+  if (result.lastCohort !== "2026-05") {
+    warnings.push(`Expected last cohort 2026-05, got ${result.lastCohort ?? "null"}.`);
+  }
+
+  checkRange("totalRepeatPurchaseRate", result.totalRepeatPurchaseRate, 0.28, 0.42, warnings);
+  checkRange("firstToSecondWithin90DaysRate", result.firstToSecondWithin90DaysRate, 0.22, 0.36, warnings);
+
+  if (result.latestAverageRevenueLTV != null && result.latestAverageContributionLTV != null) {
+    if (result.latestAverageContributionLTV >= result.latestAverageRevenueLTV) {
+      warnings.push("Contribution LTV should remain below revenue LTV in the demo narrative.");
+    }
+    const ratio = result.latestAverageContributionLTV / result.latestAverageRevenueLTV;
+    checkRange("contributionToRevenueLtvRatio", ratio, 0.32, 0.42, warnings);
+  }
+
+  const dataset = buildDemoRetentionOSDataset();
+  const dashboard = buildDashboardExecutiveViewModelFromDataset(dataset);
+  if (dashboard.durability.status !== "Mixed") {
+    warnings.push(`Expected Mixed durability posture, got ${dashboard.durability.status}.`);
+  }
+  if (dashboard.acquisition.lockedMissingSpend) {
+    warnings.push("Demo acquisition economics should be unlocked with fixture spend.");
+  }
+  if (dashboard.productQuality.state !== "ready") {
+    warnings.push(`Expected product quality state ready, got ${dashboard.productQuality.state}.`);
+  }
+  if (dashboard.productQuality.strongest == null || dashboard.productQuality.weakest == null) {
+    warnings.push("Demo should expose strongest and weakest entry-product segments.");
+  }
+
+  const productQuality = calculateFirstProductCustomerQualityFromDataset(dataset);
+  if (productQuality.strongestProduct !== "prod_lumin_daily_serum") {
+    warnings.push(
+      `Expected serum as strongest entry product, got ${productQuality.strongestProduct ?? "null"}.`,
+    );
+  }
+  if (
+    productQuality.weakestProduct !== "prod_quiet_night_barrier_cream" &&
+    productQuality.weakestProduct !== "prod_discovery_mini_kit" &&
+    productQuality.weakestProduct !== "prod_welcome_routine_set"
+  ) {
+    warnings.push(
+      `Expected a weak entry product (barrier cream, discovery kit, or welcome set), got ${productQuality.weakestProduct ?? "null"}.`,
+    );
+  }
+
+  const ordersWithLineItems = dataset.orders.filter((o) => o.lineItems.length > 0).length;
+  if (ordersWithLineItems !== dataset.orders.length) {
+    warnings.push("All demo orders should carry line items for product quality analysis.");
+  }
+
+  const ordersWithDiscounts = dataset.orders.filter((o) => o.discounts > 0).length;
+  if (ordersWithDiscounts < Math.floor(dataset.orders.length * 0.08)) {
+    warnings.push("Demo should include a meaningful discount share across orders.");
+  }
+
+  const ordersWithRefunds = dataset.orders.filter((o) => o.refunds > 0).length;
+  if (ordersWithRefunds < Math.floor(dataset.orders.length * 0.015)) {
+    warnings.push("Demo should include refunds at a modest rate.");
+  }
+
+  const recentCohort = "2026-05";
+  const retention = calculateRetentionByCohort(dataset.customers, dataset.orders);
+  const recentRetention = retention.find((row) => row.cohortPeriod === recentCohort);
+  const matureRetention = retention.find((row) => row.cohortPeriod === "2023-07");
+  if (recentRetention && matureRetention && recentRetention.points.length >= matureRetention.points.length) {
+    warnings.push("Recent cohort should have fewer retention offsets than mature cohorts.");
   }
 }
 
@@ -200,7 +292,7 @@ export function runDemoMetricSanityCheck(seed?: number): DemoMetricSanityCheckRe
     warnings.push("LTV curve check failed: at least one cohort shows decreasing cumulative net-revenue LTV.");
   }
 
-  return {
+  const result: DemoMetricSanityCheckResult = {
     customerCount,
     orderCount,
     productCount,
@@ -218,6 +310,13 @@ export function runDemoMetricSanityCheck(seed?: number): DemoMetricSanityCheckRe
     latestAverageRevenueLTV,
     latestAverageContributionLTV,
     ltvNonDecreasingByCohort,
+    warnings,
+  };
+
+  checkNarrativeGuardrails(result, warnings);
+
+  return {
+    ...result,
     warnings,
   };
 }

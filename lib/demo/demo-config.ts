@@ -8,13 +8,19 @@ export const DEMO_BRAND_NAME = "Lumin & River" as const;
 
 /** Short positioning line for transparency copy — aligns with simulation intent, not audited financials. */
 export const DEMO_BRAND_TAGLINE =
-  "DTC skincare plus light wellness — a deterministic spreadsheet-grade fixture for customer economics demos." as const;
+  "DTC skincare plus light wellness — ~3 years of deterministic order history for customer economics demos." as const;
 
 /** Inclusive simulation window for orders (ISO end-of-day UTC). */
-export const DEMO_WINDOW_END = "2025-03-31T23:59:59.000Z";
+export const DEMO_WINDOW_END = "2026-05-31T23:59:59.000Z";
 
-/** First-order cohort months (15 months of demo history). */
+/** First-order cohort months (35 months: 2023-07 through 2026-05). */
 export const DEMO_MONTH_KEYS = [
+  "2023-07",
+  "2023-08",
+  "2023-09",
+  "2023-10",
+  "2023-11",
+  "2023-12",
   "2024-01",
   "2024-02",
   "2024-03",
@@ -30,14 +36,36 @@ export const DEMO_MONTH_KEYS = [
   "2025-01",
   "2025-02",
   "2025-03",
+  "2025-04",
+  "2025-05",
+  "2025-06",
+  "2025-07",
+  "2025-08",
+  "2025-09",
+  "2025-10",
+  "2025-11",
+  "2025-12",
+  "2026-01",
+  "2026-02",
+  "2026-03",
+  "2026-04",
+  "2026-05",
 ] as const;
 
 /**
- * New paying customers acquired each month. Mid-window growth + late 2024 spike
- * mirrors paid social scale before a TikTok-heavy Q4 pushes volume with weaker fidelity.
+ * New paying customers acquired each month. Modest 2023 H2 base, steady growth through 2024,
+ * Nov 2024 paid-social spike, TikTok-heavy Q4/Q1 with weaker fidelity, sustained 2025 volume,
+ * slightly smaller recent cohorts for immature-cohort caveats.
  */
 export const DEMO_NEW_CUSTOMERS_BY_MONTH: readonly number[] = [
-  22, 24, 27, 28, 30, 31, 33, 34, 32, 35, 36, 58, 45, 38, 33,
+  // 2023 H2 — establishing base
+  62, 64, 66, 68, 70, 72,
+  // 2024 — growth year
+  74, 76, 78, 80, 82, 84, 86, 88, 90, 92, 96, 118,
+  // 2025 — scaled but mixed quality
+  92, 90, 88, 86, 84, 82, 84, 86, 88, 90, 92, 90,
+  // 2026 — recent immature cohorts
+  80, 78, 76, 74, 72,
 ];
 
 export type DemoChannel =
@@ -82,7 +110,7 @@ export function allocateCustomersByChannel(monthIndex: number): Record<DemoChann
   return out;
 }
 
-/** Influencer/Meta-strong early flywheel; TikTok share rises toward month index 14. */
+/** Influencer/Meta-strong early flywheel; TikTok share rises toward the end of the window. */
 export function channelWeightsForMonth(monthIndex: number): Record<DemoChannel, number> {
   const t = monthIndex / (DEMO_MONTH_KEYS.length - 1);
   const tiktok = 0.06 + t * 0.26;
@@ -151,6 +179,13 @@ export const DEMO_CATALOG: readonly DemoCatalogEntry[] = [
     handle: "discovery-mini-kit",
     sku: "DSC-KIT-01",
     price: 44,
+  },
+  {
+    id: "prod_welcome_routine_set",
+    title: "Welcome Routine Set (Serum + Cleanser)",
+    handle: "welcome-routine-set",
+    sku: "WLC-SET-02",
+    price: 52,
   },
 ];
 

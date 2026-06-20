@@ -30,44 +30,49 @@ function randomTimeInMonth(monthKey: string, rand: DemoRand): string {
 }
 
 /**
- * First-product mix by acquisition source. TikTok over-indexes on the viral barrier cream;
- * owned email leans on the hero serum; Google captures high-intent SPF + discovery kit trials.
+ * First-product mix by acquisition source. TikTok over-indexes barrier cream + cleanser;
+ * owned email leans hero serum; Meta pushes welcome offer; Google captures SPF + kit trials.
  */
 function pickFirstProductId(channel: DemoChannel, rand: DemoRand): string {
   const r = rand();
   if (channel === "tiktok_paid") {
-    if (r < 0.52) return "prod_quiet_night_barrier_cream";
+    if (r < 0.38) return "prod_quiet_night_barrier_cream";
+    if (r < 0.58) return "prod_river_foam_cleanser";
     if (r < 0.72) return "prod_lumin_daily_serum";
-    if (r < 0.88) return "prod_river_foam_cleanser";
-    if (r < 0.96) return "prod_cliff_mineral_spf40";
+    if (r < 0.84) return "prod_welcome_routine_set";
+    if (r < 0.94) return "prod_cliff_mineral_spf40";
     return "prod_discovery_mini_kit";
   }
   if (channel === "google_paid") {
-    if (r < 0.32) return "prod_cliff_mineral_spf40";
-    if (r < 0.52) return "prod_discovery_mini_kit";
-    if (r < 0.74) return "prod_lumin_daily_serum";
+    if (r < 0.28) return "prod_cliff_mineral_spf40";
+    if (r < 0.46) return "prod_discovery_mini_kit";
+    if (r < 0.62) return "prod_welcome_routine_set";
+    if (r < 0.78) return "prod_lumin_daily_serum";
     if (r < 0.9) return "prod_river_foam_cleanser";
     return "prod_steady_reset_magnesium";
   }
   if (channel === "email_owned") {
-    if (r < 0.58) return "prod_lumin_daily_serum";
-    if (r < 0.78) return "prod_cliff_mineral_spf40";
-    if (r < 0.92) return "prod_river_foam_cleanser";
-    return "prod_steady_reset_magnesium";
+    if (r < 0.52) return "prod_lumin_daily_serum";
+    if (r < 0.7) return "prod_cliff_mineral_spf40";
+    if (r < 0.84) return "prod_steady_reset_magnesium";
+    if (r < 0.94) return "prod_river_foam_cleanser";
+    return "prod_quiet_night_barrier_cream";
   }
   if (channel === "influencer") {
-    if (r < 0.46) return "prod_lumin_daily_serum";
-    if (r < 0.68) return "prod_quiet_night_barrier_cream";
-    if (r < 0.86) return "prod_cliff_mineral_spf40";
-    if (r < 0.95) return "prod_river_foam_cleanser";
-    return "prod_discovery_mini_kit";
+    if (r < 0.44) return "prod_lumin_daily_serum";
+    if (r < 0.62) return "prod_quiet_night_barrier_cream";
+    if (r < 0.78) return "prod_cliff_mineral_spf40";
+    if (r < 0.9) return "prod_river_foam_cleanser";
+    if (r < 0.96) return "prod_discovery_mini_kit";
+    return "prod_steady_reset_magnesium";
   }
-  // meta_paid
-  if (r < 0.4) return "prod_lumin_daily_serum";
-  if (r < 0.62) return "prod_quiet_night_barrier_cream";
-  if (r < 0.8) return "prod_cliff_mineral_spf40";
+  // meta_paid — scale volume via cleanser + welcome offer
+  if (r < 0.28) return "prod_river_foam_cleanser";
+  if (r < 0.48) return "prod_welcome_routine_set";
+  if (r < 0.66) return "prod_lumin_daily_serum";
+  if (r < 0.8) return "prod_quiet_night_barrier_cream";
   if (r < 0.92) return "prod_discovery_mini_kit";
-  return "prod_steady_reset_magnesium";
+  return "prod_cliff_mineral_spf40";
 }
 
 /**
@@ -83,7 +88,7 @@ export function createDemoCustomers(rand: DemoRand): Customer[] {
       const n = alloc[ch];
       for (let i = 0; i < n; i++) {
         seq += 1;
-        const id = `cust_${String(seq).padStart(4, "0")}`;
+        const id = `cust_${String(seq).padStart(5, "0")}`;
         customers.push({
           id,
           firstOrderAt: randomTimeInMonth(monthKey, rand),

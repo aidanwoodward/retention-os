@@ -110,7 +110,7 @@ export function MarketingSpendCsvPreview({
     refreshSessionSummary();
     onSessionSpendChange?.();
     setSessionSaveToast(
-      `Saved ${result.marketingSpend.length} spend row(s) to this tab’s session — uploaded orders will pick this up automatically; demo fixture uses it only on /data previews.`,
+      `Saved ${result.marketingSpend.length} spend row(s) to this tab’s session — uploaded orders will use these rows for CAC, LTV:CAC, and payback on Acquisition and Dashboard.`,
     );
   }, [onSessionSpendChange, refreshSessionSummary, result]);
 

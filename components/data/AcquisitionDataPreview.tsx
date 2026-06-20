@@ -18,7 +18,7 @@ export function AcquisitionDataPreview({ sessionEpoch }: { readonly sessionEpoch
     setSelection(resolveCommandCentreDatasetSource());
   }, [sessionEpoch]);
 
-  const { model, spendIsEstimated, sourceLabel } = useMemo(() => {
+  const { model, spendIsEstimated, sourceLabel, isUploaded } = useMemo(() => {
     const spend = selection.dataset.marketingSpend ?? [];
     const summary = getDatasetSummary(selection.dataset);
     return {
@@ -30,6 +30,7 @@ export function AcquisitionDataPreview({ sessionEpoch }: { readonly sessionEpoch
       ),
       spendIsEstimated: summary.marketingSpendSource === "assumption",
       sourceLabel: selection.isUploaded ? "Uploaded orders dataset" : "Canonical demo dataset",
+      isUploaded: selection.isUploaded,
     };
   }, [selection]);
 
@@ -39,8 +40,10 @@ export function AcquisitionDataPreview({ sessionEpoch }: { readonly sessionEpoch
         <p className="font-semibold">Acquisition preview (Layer 4 onboarding on /data)</p>
         <ul className="mt-2 list-inside list-disc space-y-1 text-indigo-950/95">
           <li>
-            Customer/order inputs follow the <span className="font-medium">active command-centre source</span>: {sourceLabel}. Spend follows your saved{" "}
-            <span className="font-medium">% assumption</span> or <span className="font-medium">CSV rows</span> (CSV wins when both exist).
+            Customer/order inputs follow the <span className="font-medium">active command-centre source</span>: {sourceLabel}.
+            {isUploaded ?
+              <> Spend follows your saved <span className="font-medium">% assumption</span> or <span className="font-medium">CSV rows</span> (CSV wins when both exist).</>
+            : <> The demo includes <span className="font-medium">fixture marketing spend</span> and margin assumptions — CAC and payback match the Acquisition page.</>}
           </li>
           <li>
             Open <span className="font-medium">/acquisition</span> for the full KPI workspace on the same resolved session source.

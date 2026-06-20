@@ -19,7 +19,7 @@ export default function DataPage() {
   const windowEndFormatted = formatIsoDate(DEMO_WINDOW_END);
 
   return (
-    <CommandCentrePageFrame routeId="data" maxWidth="6xl" bannerKind="data">
+    <CommandCentrePageFrame routeId="data" maxWidth="6xl" bannerKind="data" showNextSteps>
       <DataPageBody vm={vm} windowEndFormatted={windowEndFormatted} demoDatasetSourceLabel={demoDatasetMeta.sourceLabel} />
     </CommandCentrePageFrame>
   );

@@ -6,6 +6,7 @@ import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame"
 import { MetricSourceBanner } from "@/components/mvp/MetricSourceBanner";
 import { KpiMetricLabel } from "@/components/ui/kpi-metric-label";
 import type { MetricDataQuality, MetricId } from "@/lib/metrics/metric-definitions";
+import { DashboardCommandCentreHero } from "@/components/dashboard/DashboardCommandCentreHero";
 import { DashboardSpinePanels } from "@/components/dashboard/DashboardSpinePanels";
 import {
   buildDemoCommandCentreSelection,
@@ -46,8 +47,7 @@ export default function DashboardExecutive() {
   }, []);
 
   const vm = useMemo(() => buildDashboardExecutiveViewModelFromDataset(selection.dataset), [selection.dataset]);
-  const { summary, durability, observations, acquisition, productQuality, dataCompleteness } = vm;
-  const observationStrip = observations.slice(0, 3);
+  const { summary, hero, acquisition, productQuality, dataCompleteness } = vm;
 
   return (
     <CommandCentrePageFrame
@@ -57,44 +57,7 @@ export default function DashboardExecutive() {
       metricsBannerSlot={<MetricSourceBanner routeId="dashboard" selection={selection} />}
       activeMetricDatasetSource={selection.isUploaded ? "uploaded_csv" : "demo"}
     >
-      <section className="overflow-hidden rounded-xl border border-zinc-200/90 bg-white shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06)]">
-        <div className="border-b border-zinc-100 bg-gradient-to-br from-white to-zinc-50/70 px-5 py-5 sm:px-6">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
-            <KpiMetricLabel metricId="revenue_durability_posture">Revenue durability posture</KpiMetricLabel>
-          </p>
-          <p className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">{durability.status}</p>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-600">
-            Informal label from repeatable threshold checks — not a finance-grade index. Full methodology and prioritized moves live on Diagnostic
-            Insights.
-          </p>
-          <Link
-            href="/insights"
-            className="mt-4 inline-flex items-center rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 shadow-sm ring-1 ring-black/[0.02] transition hover:border-zinc-300 hover:bg-zinc-50"
-          >
-            Open Diagnostic Insights →
-          </Link>
-        </div>
-      </section>
-
-      <DashboardSpinePanels
-        acquisition={acquisition}
-        productQuality={productQuality}
-        dataCompleteness={dataCompleteness}
-        isUploaded={selection.isUploaded}
-      />
-
-      {observationStrip.length > 0 ?
-        <section className="rounded-lg border border-zinc-200/80 bg-zinc-50/60 px-4 py-3 ring-1 ring-black/[0.02]">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">From this dataset</p>
-          <ul className="mt-2 space-y-1.5">
-            {observationStrip.map((line) => (
-              <li key={line} className="text-sm leading-snug text-zinc-700">
-                {line}
-              </li>
-            ))}
-          </ul>
-        </section>
-      : null}
+      <DashboardCommandCentreHero hero={hero} />
 
       <div>
         <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Executive KPIs</h2>
@@ -147,6 +110,13 @@ export default function DashboardExecutive() {
           <MetricCard className={kpiSecondary} title="Cohort months (first-order)" value={String(summary.cohortCount)} />
         </div>
       </div>
+
+      <DashboardSpinePanels
+        acquisition={acquisition}
+        productQuality={productQuality}
+        dataCompleteness={dataCompleteness}
+        isUploaded={selection.isUploaded}
+      />
 
       <section>
         <h2 className="mb-3 text-sm font-semibold text-zinc-900">Go deeper</h2>

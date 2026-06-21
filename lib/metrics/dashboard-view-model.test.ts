@@ -2,7 +2,10 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { buildDemoRetentionOSDataset } from "../data-source/demo-source";
 import type { RetentionOSDataset } from "../data-source/dataset-types";
+import { MVP_NAV } from "../mvp/cohesion";
 import { buildDashboardExecutiveViewModelFromDataset } from "./dashboard-view-model";
+
+const MVP_ROUTE_HREFS = new Set(MVP_NAV.map((n) => n.href));
 
 function datasetWithoutSpend(base: RetentionOSDataset): RetentionOSDataset {
   return { ...base, marketingSpend: [] };
@@ -111,5 +114,45 @@ describe("buildDashboardExecutiveViewModelFromDataset", () => {
     const vm = buildDashboardExecutiveViewModelFromDataset(buildDemoRetentionOSDataset());
     assert.ok(vm.observations.length <= 6);
     assert.ok(vm.observations.some((o) => o.includes("Acquisition economics") || o.includes("Entry-product")));
+  });
+
+  it("builds command-centre hero structure on demo fixture", () => {
+    const vm = buildDashboardExecutiveViewModelFromDataset(buildDemoRetentionOSDataset());
+
+    assert.equal(vm.hero.posture, vm.durability.status);
+    assert.equal(vm.hero.signals.length, 4);
+    assert.ok(vm.hero.whyBullets.length >= 2 && vm.hero.whyBullets.length <= 3);
+    assert.ok(MVP_ROUTE_HREFS.has(vm.hero.investigate.href));
+    assert.ok(vm.hero.biggestLeak.label.length > 0);
+    assert.ok(vm.hero.biggestLeak.detail.length > 0);
+    assert.ok(vm.hero.strongestProof.label.length > 0);
+    assert.ok(vm.hero.strongestProof.detail.length > 0);
+    assert.equal(
+      vm.hero.signals.map((s) => s.id).join(","),
+      "repeat,acquisition,payback,product",
+    );
+  });
+
+  it("locks hero acquisition tile and routes to data when spend is missing", () => {
+    const base = buildDemoRetentionOSDataset();
+    const vm = buildDashboardExecutiveViewModelFromDataset(datasetWithoutSpend(base));
+
+    const acquisitionTile = vm.hero.signals.find((s) => s.id === "acquisition");
+    assert.equal(acquisitionTile?.tone, "locked");
+    assert.equal(acquisitionTile?.value, "Locked");
+    assert.equal(vm.hero.investigate.href, "/data");
+    assert.match(vm.hero.biggestLeak.detail, /marketing spend|locked/i);
+  });
+
+  it("reflects missing line items in hero product tile and leak copy", () => {
+    const base = buildDemoRetentionOSDataset();
+    const vm = buildDashboardExecutiveViewModelFromDataset(datasetWithoutLineItems(base));
+
+    const productTile = vm.hero.signals.find((s) => s.id === "product");
+    assert.ok(productTile?.tone === "locked" || productTile?.value === "Insufficient data");
+    assert.match(
+      `${vm.hero.biggestLeak.detail} ${productTile?.sub ?? ""}`,
+      /line item|product_id|locked|first-product/i,
+    );
   });
 });

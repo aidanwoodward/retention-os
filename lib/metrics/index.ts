@@ -96,7 +96,9 @@ export {
 export {
   buildDashboardExecutiveViewModel,
   buildDashboardExecutiveViewModelFromDataset,
+  type DashboardCommandCentreHeroView,
   type DashboardExecutiveViewModel,
+  type DashboardHeroSignalTileView,
   type DashboardSummaryView,
   type RevenueDurabilitySnapshotView,
   type RevenueDurabilityStatus,

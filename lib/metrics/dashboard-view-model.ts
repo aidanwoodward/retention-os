@@ -11,10 +11,14 @@ import {
   evaluateRevenueDurabilityStatus,
   FIRST_TO_SECOND_90_HEALTHY,
   FIRST_TO_SECOND_90_WATCH,
+  LTV_COHORT_SPREAD_MATERIAL_USD,
+  MONTH_PLUS_1_ACTIVE_HEALTHY,
+  MONTH_PLUS_1_ACTIVE_WATCH,
   REPEAT_PURCHASE_HEALTHY,
   REPEAT_PURCHASE_WATCH,
   type RevenueDurabilityStatus,
 } from "./revenue-durability-status";
+import type { MetricDataQuality, MetricId } from "./metric-definitions";
 import { buildAcquisitionPageViewModelFromDataset } from "./acquisition-view-model";
 import {
   buildDashboardDataCompletenessView,
@@ -66,9 +70,40 @@ export interface DashboardExecutiveViewModel {
   durability: RevenueDurabilitySnapshotView;
   /** Deterministic bullets for the MVP executive screen. */
   observations: readonly string[];
+  hero: DashboardCommandCentreHeroView;
   acquisition: DashboardAcquisitionExecutiveView;
   productQuality: DashboardProductQualityExecutiveView;
   dataCompleteness: DashboardDataCompletenessView;
+}
+
+export interface DashboardHeroSignalTileView {
+  readonly id: "repeat" | "acquisition" | "payback" | "product";
+  readonly title: string;
+  readonly value: string;
+  readonly sub?: string;
+  readonly metricId?: MetricId;
+  readonly dataQuality?: MetricDataQuality;
+  readonly tone: "neutral" | "positive" | "watch" | "locked";
+}
+
+export interface DashboardCommandCentreHeroView {
+  readonly posture: RevenueDurabilityStatus;
+  readonly whyBullets: readonly string[];
+  readonly caveat: string;
+  readonly signals: readonly DashboardHeroSignalTileView[];
+  readonly biggestLeak: {
+    readonly label: string;
+    readonly detail: string;
+  };
+  readonly strongestProof: {
+    readonly label: string;
+    readonly detail: string;
+  };
+  readonly investigate: {
+    readonly href: `/${string}`;
+    readonly label: string;
+    readonly detail: string;
+  };
 }
 
 function groupLtvCurveByCohort(points: readonly LTVPoint[]): Map<string, LTVPoint[]> {
@@ -238,6 +273,418 @@ function buildObservations(
   return [...obs, ...spineBullets].slice(0, 6);
 }
 
+function formatHeroPct(rate: number, digits = 1): string {
+  return `${(rate * 100).toFixed(digits)}%`;
+}
+
+function formatHeroMoney(amount: number | null | undefined): string {
+  if (amount == null || Number.isNaN(amount)) return "—";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+function formatHeroRatio(n: number | null | undefined, digits = 1): string {
+  if (n == null || !Number.isFinite(n)) return "—";
+  return `${n.toFixed(digits)}×`;
+}
+
+function buildHeroWhyBullets(summary: DashboardSummaryView): readonly string[] {
+  const bullets: string[] = [];
+  const repeat = summary.allTimeRepeatPurchaseRate;
+  const f2s = summary.firstToSecondWithin90DaysRate;
+
+  if (repeat < REPEAT_PURCHASE_WATCH) {
+    bullets.push(`Repeat depth is thin at ${formatHeroPct(repeat)} — below the watch band.`);
+  } else if (repeat >= REPEAT_PURCHASE_HEALTHY) {
+    bullets.push(`Repeat depth is solid at ${formatHeroPct(repeat)} — above the healthy band.`);
+  } else {
+    bullets.push(`Repeat sits in the mid band at ${formatHeroPct(repeat)} — respectable but not a moat.`);
+  }
+
+  if (f2s < FIRST_TO_SECOND_90_WATCH) {
+    bullets.push(`First-to-second within 90 days is soft at ${formatHeroPct(f2s)}.`);
+  } else if (f2s >= FIRST_TO_SECOND_90_HEALTHY) {
+    bullets.push(`First-to-second within 90 days is disciplined at ${formatHeroPct(f2s)}.`);
+  } else {
+    bullets.push(`First-to-second within 90 days is mixed at ${formatHeroPct(f2s)} — a clear journey lever.`);
+  }
+
+  const m1 = summary.averageMonthPlus1ActiveRate;
+  if (m1 != null) {
+    if (m1 < MONTH_PLUS_1_ACTIVE_WATCH) {
+      bullets.push(`Month +1 active rate is low at ${formatHeroPct(m1)} across cohorts.`);
+    } else if (m1 >= MONTH_PLUS_1_ACTIVE_HEALTHY) {
+      bullets.push(`Month +1 calendar retention is healthy at ${formatHeroPct(m1)}.`);
+    }
+  } else if (summary.weakestNetRevenueLtvCohort && summary.bestNetRevenueLtvCohort) {
+    const gap =
+      summary.bestNetRevenueLtvCohort.terminalNetRevenueLtv -
+      summary.weakestNetRevenueLtvCohort.terminalNetRevenueLtv;
+    if (gap >= LTV_COHORT_SPREAD_MATERIAL_USD) {
+      bullets.push(
+        `Cohort LTV spread is material — about ${formatHeroMoney(gap)} between strongest and weakest acquisition months.`,
+      );
+    } else {
+      bullets.push(`Cohort terminal LTV dispersion is modest in this snapshot.`);
+    }
+  }
+
+  return bullets.slice(0, 3);
+}
+
+function buildHeroSignalTiles(
+  summary: DashboardSummaryView,
+  acquisition: DashboardAcquisitionExecutiveView,
+  productQuality: DashboardProductQualityExecutiveView,
+): readonly DashboardHeroSignalTileView[] {
+  const repeatRate = summary.allTimeRepeatPurchaseRate;
+  let repeatTone: DashboardHeroSignalTileView["tone"] = "neutral";
+  if (repeatRate >= REPEAT_PURCHASE_HEALTHY) repeatTone = "positive";
+  else if (repeatRate < REPEAT_PURCHASE_WATCH) repeatTone = "watch";
+
+  const repeatTile: DashboardHeroSignalTileView = {
+    id: "repeat",
+    title: "Repeat quality",
+    value: formatHeroPct(repeatRate),
+    sub: `F2S 90d ${formatHeroPct(summary.firstToSecondWithin90DaysRate)}`,
+    metricId: "repeat_purchase_rate",
+    tone: repeatTone,
+  };
+
+  let acquisitionTile: DashboardHeroSignalTileView;
+  if (acquisition.lockedMissingSpend) {
+    acquisitionTile = {
+      id: "acquisition",
+      title: "Acquisition efficiency",
+      value: "Locked",
+      sub: "Add marketing spend on Data",
+      metricId: "blended_cac",
+      dataQuality: "unavailable",
+      tone: "locked",
+    };
+  } else {
+    const est = acquisition.spendIsEstimated;
+    acquisitionTile = {
+      id: "acquisition",
+      title: est ? "Acquisition efficiency (est.)" : "Acquisition efficiency",
+      value: formatHeroRatio(acquisition.revenueLtvToCac),
+      sub: `CAC ${formatHeroMoney(acquisition.blendedCac)} · rev LTV:CAC`,
+      metricId: "revenue_ltv_cac",
+      dataQuality: est ? "estimated" : "actual",
+      tone:
+        acquisition.revenueLtvToCac != null && acquisition.revenueLtvToCac >= 2
+          ? "positive"
+          : acquisition.revenueLtvToCac != null && acquisition.revenueLtvToCac < 1.5
+            ? "watch"
+            : "neutral",
+    };
+  }
+
+  let paybackTile: DashboardHeroSignalTileView;
+  if (acquisition.lockedMissingSpend) {
+    paybackTile = {
+      id: "payback",
+      title: "Payback pressure",
+      value: "Locked",
+      sub: "Needs marketing spend",
+      metricId: "payback",
+      dataQuality: "unavailable",
+      tone: "locked",
+    };
+  } else if (acquisition.paybackStatus === "locked_no_contribution") {
+    paybackTile = {
+      id: "payback",
+      title: "Payback pressure",
+      value: "Locked",
+      sub: "Needs contribution LTV path",
+      metricId: "payback",
+      dataQuality: "partial",
+      tone: "locked",
+    };
+  } else {
+    const est = acquisition.spendIsEstimated;
+    paybackTile = {
+      id: "payback",
+      title: est ? "Payback (est.)" : "Payback pressure",
+      value: acquisition.paybackLabel,
+      sub:
+        acquisition.contributionLtvToCac != null
+          ? `Contrib LTV:CAC ${formatHeroRatio(acquisition.contributionLtvToCac)}`
+          : undefined,
+      metricId: "payback",
+      dataQuality: est ? "estimated" : "partial",
+      tone:
+        acquisition.paybackStatus === "none_achieved"
+          ? "watch"
+          : acquisition.paybackStatus === "partial"
+            ? "neutral"
+            : acquisition.paybackStatus === "achieved"
+              ? "positive"
+              : "neutral",
+    };
+  }
+
+  let productTile: DashboardHeroSignalTileView;
+  if (productQuality.state === "locked_no_line_items") {
+    productTile = {
+      id: "product",
+      title: "Entry-product signal",
+      value: "Locked",
+      sub: "Line items with product_id required",
+      metricId: "product_quality",
+      dataQuality: "unavailable",
+      tone: "locked",
+    };
+  } else if (productQuality.state === "insufficient_segments") {
+    productTile = {
+      id: "product",
+      title: "Entry-product signal",
+      value: "Insufficient data",
+      sub: productQuality.segmentCoverageLabel,
+      metricId: "product_quality",
+      dataQuality: "partial",
+      tone: "watch",
+    };
+  } else if (productQuality.strongest && productQuality.weakest) {
+    productTile = {
+      id: "product",
+      title: "Entry-product signal",
+      value: productQuality.weakest.qualitySignal === "weak" ? "Weak anchor" : "Mixed segments",
+      sub: `Strong: ${productQuality.strongest.productTitle}`,
+      metricId: "product_quality",
+      tone:
+        productQuality.weakest.qualitySignal === "weak"
+          ? "watch"
+          : productQuality.strongest.qualitySignal === "strong"
+            ? "positive"
+            : "neutral",
+    };
+  } else {
+    productTile = {
+      id: "product",
+      title: "Entry-product signal",
+      value: "—",
+      sub: productQuality.segmentCoverageLabel,
+      metricId: "product_quality",
+      tone: "neutral",
+    };
+  }
+
+  return [repeatTile, acquisitionTile, paybackTile, productTile];
+}
+
+function buildHeroActionRow(
+  summary: DashboardSummaryView,
+  acquisition: DashboardAcquisitionExecutiveView,
+  productQuality: DashboardProductQualityExecutiveView,
+): Pick<DashboardCommandCentreHeroView, "biggestLeak" | "strongestProof" | "investigate"> {
+  if (acquisition.lockedMissingSpend) {
+    return {
+      biggestLeak: {
+        label: "Biggest leak",
+        detail: "Acquisition economics are locked without marketing spend on this source.",
+      },
+      strongestProof: {
+        label: "Strongest proof",
+        detail: `Portfolio repeat is ${formatHeroPct(summary.allTimeRepeatPurchaseRate)} — retention signals still readable without spend.`,
+      },
+      investigate: {
+        href: "/data",
+        label: "Investigate on Data",
+        detail: "Attach marketing spend to unlock CAC, LTV:CAC, and payback.",
+      },
+    };
+  }
+
+  if (productQuality.state === "locked_no_line_items") {
+    return {
+      biggestLeak: {
+        label: "Biggest leak",
+        detail: "First-product quality is locked — orders need line items with product_id.",
+      },
+      strongestProof: {
+        label: "Strongest proof",
+        detail:
+          acquisition.revenueLtvToCac != null
+            ? `Revenue LTV:CAC near ${formatHeroRatio(acquisition.revenueLtvToCac)} where spend is attached.`
+            : "Acquisition metrics are available where spend is attached.",
+      },
+      investigate: {
+        href: "/data",
+        label: "Investigate on Data",
+        detail: "Upload combined order + line-item CSV to unlock product quality.",
+      },
+    };
+  }
+
+  if (acquisition.paybackStatus === "none_achieved") {
+    return {
+      biggestLeak: {
+        label: "Biggest leak",
+        detail: "No cohort months achieve contribution payback in this snapshot.",
+      },
+      strongestProof: buildStrongestProof(summary, acquisition, productQuality),
+      investigate: {
+        href: "/acquisition",
+        label: "Investigate Acquisition",
+        detail: "Review month-level CAC and payback ladders.",
+      },
+    };
+  }
+
+  if (acquisition.paybackStatus === "partial") {
+    return {
+      biggestLeak: {
+        label: "Biggest leak",
+        detail: acquisition.paybackLabel,
+      },
+      strongestProof: buildStrongestProof(summary, acquisition, productQuality),
+      investigate: {
+        href: "/acquisition",
+        label: "Investigate Acquisition",
+        detail: "Compare cohorts that pay back vs those that do not.",
+      },
+    };
+  }
+
+  if (productQuality.weakest?.qualitySignal === "weak") {
+    return {
+      biggestLeak: {
+        label: "Biggest leak",
+        detail: `Weakest entry product "${productQuality.weakest.productTitle}" — repeat ${formatHeroPct(productQuality.weakest.repeatPurchaseRate)}.`,
+      },
+      strongestProof: buildStrongestProof(summary, acquisition, productQuality),
+      investigate: {
+        href: "/products",
+        label: "Investigate Products",
+        detail: "Compare entry-product repeat and LTV by first SKU.",
+      },
+    };
+  }
+
+  if (
+    summary.allTimeRepeatPurchaseRate < REPEAT_PURCHASE_WATCH ||
+    summary.firstToSecondWithin90DaysRate < FIRST_TO_SECOND_90_WATCH
+  ) {
+    return {
+      biggestLeak: {
+        label: "Biggest leak",
+        detail: `Journey timing — repeat ${formatHeroPct(summary.allTimeRepeatPurchaseRate)}, F2S 90d ${formatHeroPct(summary.firstToSecondWithin90DaysRate)}.`,
+      },
+      strongestProof: buildStrongestProof(summary, acquisition, productQuality),
+      investigate: {
+        href: "/retention",
+        label: "Investigate Retention",
+        detail: "Read calendar retention alongside ninety-day reorder pacing.",
+      },
+    };
+  }
+
+  if (summary.weakestNetRevenueLtvCohort && summary.bestNetRevenueLtvCohort) {
+    const gap =
+      summary.bestNetRevenueLtvCohort.terminalNetRevenueLtv -
+      summary.weakestNetRevenueLtvCohort.terminalNetRevenueLtv;
+    if (gap >= LTV_COHORT_SPREAD_MATERIAL_USD) {
+      return {
+        biggestLeak: {
+          label: "Biggest leak",
+          detail: `Cohort dispersion — weakest ${summary.weakestNetRevenueLtvCohort.cohortPeriod} vs strongest ${summary.bestNetRevenueLtvCohort.cohortPeriod}.`,
+        },
+        strongestProof: buildStrongestProof(summary, acquisition, productQuality),
+        investigate: {
+          href: "/cohorts",
+          label: "Investigate Cohorts",
+          detail: "Compare acquisition-month economics side by side.",
+        },
+      };
+    }
+  }
+
+  return {
+    biggestLeak: {
+      label: "Biggest leak",
+      detail: "No single dominant leak — posture is mixed across retention, payback, and product quality.",
+    },
+    strongestProof: buildStrongestProof(summary, acquisition, productQuality),
+    investigate: {
+      href: "/insights",
+      label: "Investigate Insights",
+      detail: "See prioritized diagnostic cards and evidence.",
+    },
+  };
+}
+
+function buildStrongestProof(
+  summary: DashboardSummaryView,
+  acquisition: DashboardAcquisitionExecutiveView,
+  productQuality: DashboardProductQualityExecutiveView,
+): { label: string; detail: string } {
+  if (productQuality.strongest?.qualitySignal === "strong") {
+    return {
+      label: "Strongest proof",
+      detail: `"${productQuality.strongest.productTitle}" anchors strong entry-product repeat (${formatHeroPct(productQuality.strongest.repeatPurchaseRate)}).`,
+    };
+  }
+  if (summary.allTimeRepeatPurchaseRate >= REPEAT_PURCHASE_HEALTHY) {
+    return {
+      label: "Strongest proof",
+      detail: `Portfolio repeat is healthy at ${formatHeroPct(summary.allTimeRepeatPurchaseRate)}.`,
+    };
+  }
+  if (acquisition.revenueLtvToCac != null && acquisition.revenueLtvToCac >= 2) {
+    return {
+      label: "Strongest proof",
+      detail: `Revenue LTV:CAC near ${formatHeroRatio(acquisition.revenueLtvToCac)} on blended acquisition economics.`,
+    };
+  }
+  if (
+    acquisition.paybackStatus === "partial" ||
+    acquisition.paybackStatus === "achieved"
+  ) {
+    return {
+      label: "Strongest proof",
+      detail: acquisition.paybackLabel,
+    };
+  }
+  if (
+    summary.avgTerminalContributionLtvAcrossCohorts != null &&
+    summary.avgTerminalNetRevenueLtvAcrossCohorts != null
+  ) {
+    const ratio = safeDivide(
+      summary.avgTerminalContributionLtvAcrossCohorts,
+      summary.avgTerminalNetRevenueLtvAcrossCohorts,
+    );
+    return {
+      label: "Strongest proof",
+      detail: `Contribution LTV runs near ${formatHeroPct(ratio, 0)} of revenue LTV — margin assumptions matter.`,
+    };
+  }
+  return {
+    label: "Strongest proof",
+    detail: `Repeat ${formatHeroPct(summary.allTimeRepeatPurchaseRate)} with ${summary.cohortCount} cohort months of history.`,
+  };
+}
+
+export function buildDashboardCommandCentreHeroView(
+  summary: DashboardSummaryView,
+  durability: RevenueDurabilitySnapshotView,
+  acquisition: DashboardAcquisitionExecutiveView,
+  productQuality: DashboardProductQualityExecutiveView,
+): DashboardCommandCentreHeroView {
+  const actionRow = buildHeroActionRow(summary, acquisition, productQuality);
+  return {
+    posture: durability.status,
+    whyBullets: buildHeroWhyBullets(summary),
+    caveat: "Heuristic posture from threshold votes — not a 0–100 score or finance-grade index.",
+    signals: buildHeroSignalTiles(summary, acquisition, productQuality),
+    ...actionRow,
+  };
+}
+
 export function buildDashboardExecutiveViewModelFromDataset(dataset: RetentionOSDataset): DashboardExecutiveViewModel {
   const { customers, orders, marginAssumptions, marketingSpend } = dataset;
 
@@ -336,8 +783,9 @@ export function buildDashboardExecutiveViewModelFromDataset(dataset: RetentionOS
   const productQuality = mapDashboardProductQualityExecutive(productsVm);
   const dataCompleteness = buildDashboardDataCompletenessView(dataset, productsVm);
   const observations = buildObservations(summary, acquisition, productQuality);
+  const hero = buildDashboardCommandCentreHeroView(summary, durability, acquisition, productQuality);
 
-  return { summary, durability, observations, acquisition, productQuality, dataCompleteness };
+  return { summary, durability, observations, hero, acquisition, productQuality, dataCompleteness };
 }
 
 export function buildDashboardExecutiveViewModel(seed?: number): DashboardExecutiveViewModel {

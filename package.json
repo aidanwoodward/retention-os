@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint --ignore-pattern .test-dist/**",
-    "test": "tsc -p tsconfig.test.json && node --test .test-dist/lib/metrics/metric-definitions.test.js .test-dist/lib/metrics/metric-contract-index.test.js .test-dist/lib/metrics/revenue-durability-status.test.js .test-dist/lib/metrics/product-quality.test.js .test-dist/lib/metrics/dashboard-view-model.test.js .test-dist/lib/metrics/demo-sanity-check.test.js .test-dist/lib/import/shopify/shopify-orders-csv.test.js .test-dist/lib/import/detect-orders-csv-format.test.js .test-dist/lib/import/import-review-view-model.test.js .test-dist/lib/data-source/synthesize-marketing-spend-assumption.test.js .test-dist/lib/data-source/marketing-spend-assumption-session.test.js .test-dist/lib/data-source/resolve-marketing-spend.test.js",
+    "test": "tsc -p tsconfig.test.json && node --test .test-dist/lib/metrics/metric-definitions.test.js .test-dist/lib/metrics/metric-contract-index.test.js .test-dist/lib/metrics/revenue-durability-status.test.js .test-dist/lib/metrics/product-quality.test.js .test-dist/lib/metrics/dashboard-view-model.test.js .test-dist/lib/metrics/demo-sanity-check.test.js .test-dist/lib/metrics/golden-reconciliation.test.js .test-dist/lib/import/shopify/shopify-orders-csv.test.js .test-dist/lib/import/detect-orders-csv-format.test.js .test-dist/lib/import/import-review-view-model.test.js .test-dist/lib/data-source/synthesize-marketing-spend-assumption.test.js .test-dist/lib/data-source/marketing-spend-assumption-session.test.js .test-dist/lib/data-source/resolve-marketing-spend.test.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

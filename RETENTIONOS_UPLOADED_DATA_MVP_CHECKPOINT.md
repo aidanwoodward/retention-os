@@ -1,5 +1,7 @@
 # RetentionOS — Uploaded-Data MVP Checkpoint
 
+> **Supporting historical milestone.** This document remains the detailed record of session CSV ingestion, but its six-route references predate Acquisition and Products joining the retained spine. Use [`docs/RETENTIONOS_ARCHITECTURE.md`](docs/RETENTIONOS_ARCHITECTURE.md) for the current eight-route architecture, inventories, and dispositions.
+
 **Purpose:** Single accountability snapshot for the **post-upload** command-centre MVP (branch `restart-retentionos-mvp`, after demo-script sprint `f38ff0e` / `a125e33`). This document **supplements** `RETENTIONOS_RESTART_AUDIT_V2.md` (historical comparison to pre-restart) and aligns with `docs/RETENTIONOS_MVP_DEMO_SCRIPT.md`.
 
 **Scope:** Repo-grounded claims from `lib/import`, `lib/data-source`, `(protected)` command-centre pages, and `components/data`. Not a statement about any particular production deployment.

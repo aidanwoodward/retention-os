@@ -11,6 +11,7 @@ Use this document when:
 - Recovering from common git/PR mistakes
 
 Related docs:
+- [RETENTIONOS_ARCHITECTURE.md](../RETENTIONOS_ARCHITECTURE.md) — canonical architecture, route/API inventory, and legacy dispositions
 - [SPRINT_TEMPLATE.md](./SPRINT_TEMPLATE.md) — sprint packet structure
 - [PR_WORKFLOW.md](./PR_WORKFLOW.md) — PR creation, merge, and recovery
 
@@ -25,6 +26,20 @@ Related docs:
 | **PR target** | Always open PRs **into `restart-retentionos-mvp`**, not `main` |
 | **No `npm audit fix --force`** | Use targeted version pins + `npm audit fix` only |
 | **No out-of-scope agent edits** | Migrations, dependencies, and CI require explicit sprint approval |
+
+---
+
+## Canonical architecture rules
+
+Read [RETENTIONOS_ARCHITECTURE.md](../RETENTIONOS_ARCHITECTURE.md) before any route, metric, data-source, integration, or dependency sprint.
+
+- The retained metric path is `RetentionOSDataset → lib/metrics → view models → UI`.
+- No new features may target routes, APIs, pipelines, or components classified **quarantine**.
+- CSV is a supported session-based ingestion, QA, and fallback path. It is frozen against feature expansion until a later approved sprint.
+- Shopify is the intended future primary commercial connection, but it must enter through canonical normalization and metric-parity contracts.
+- Use **Revenue Durability Posture**, not a numeric durability score.
+- Cohorts use the UTC calendar month of first order; Month+N is a calendar-month offset.
+- Architecture classifications require current repository evidence. Earlier audits are historical leads, not current proof.
 
 ---
 
@@ -322,19 +337,15 @@ Do **not** merge. Close or retarget the PR to `restart-retentionos-mvp`.
 
 ---
 
-## Current next sprint candidates
+## Current architecture program
 
-Prioritised backlog after Sprint D (pick one per sprint; do not batch unrelated work):
+| Sprint | Scope |
+|--------|-------|
+| **5U-A** | Documentation-only canonical architecture and legacy inventory |
+| **5U-B** | Source-to-screen contracts for retained metrics |
+| **5U-C** | Hand-calculated golden dataset and reconciliation tests |
 
-| Priority | Sprint candidate | Why |
-|----------|------------------|-----|
-| 1 | **Dashboard/insights parity test** | Assert `dashboard-view-model.ts` and `insights/rules.ts` pass the same inputs to `evaluateRevenueDurabilityStatus` |
-| 2 | **Mock/demo fallback cleanup** | Quarantine silent dummy KPIs on `/api/dashboard/metrics` and mock production routes |
-| 3 | **Acquisition / product quality MVP** | Wire `lib/metrics/acquisition.ts` and replace mock product/channel surfaces |
-| 4 | **Tremor / React 19 peer review** | `@tremor/react` peer mismatch — monitor or plan chart-library migration |
-| 5 | **Residual PostCSS tracking** | Next nested `postcss@8.4.31` moderate audit finding — track Next patch releases |
-
-See [METRIC_ENGINE_INVENTORY.md](./METRIC_ENGINE_INVENTORY.md) for open metric-engine risks vs resolved restart work.
+Do not schedule route/API deletion, dependency removal, migration work, or legacy feature development inside 5U-A–C. Those changes require separately approved sprints after metric truth is documented and reconciled.
 
 ---
 

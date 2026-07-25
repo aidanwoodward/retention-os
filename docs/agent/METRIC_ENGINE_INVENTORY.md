@@ -1,5 +1,7 @@
 # RetentionOS Metric Engine Inventory
 
+> **Historical audit — superseded for current architecture.** This Sprint A–E inventory is retained as evidence of the state inspected in May 2026. Use [`docs/RETENTIONOS_ARCHITECTURE.md`](../RETENTIONOS_ARCHITECTURE.md) for the current canonical path, eight-route spine, complete route/API inventory, and dispositions. Do not use classifications or counts below without reproducing them against the current commit.
+
 **Sprint:** A — Metric Engine Inventory (audit/documentation only)  
 **Generated:** 2026-05-18  
 **Scope:** File-path-specific map of where customer economics logic lives, overlaps, and should converge.  

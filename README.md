@@ -1,32 +1,28 @@
-# Retention OS
+# RetentionOS
 
-A Next.js 15 application for e-commerce retention analytics, built with Supabase authentication and designed to integrate with Shopify and Klaviyo.
+RetentionOS is a customer-economics operating system for ecommerce brands. Its current MVP is an eight-route Revenue Durability Command Centre for understanding cohorts, retention, LTV, acquisition economics, first-product customer quality, and diagnostic insights.
 
-<!-- Updated: Enhanced with 5-year growth patterns and geographic insights -->
-<!-- Force deployment: Revenue Cohorts page with AI Analysis -->
-<!-- Fixed Git email configuration for Vercel deployment -->
-<!-- Fresh commit with correct author email for Vercel -->
-<!-- Final fix: Repository-level Git config -->
+The canonical architecture and complete route/API/dependency audit live in [docs/RETENTIONOS_ARCHITECTURE.md](docs/RETENTIONOS_ARCHITECTURE.md).
 
 ## Tech Stack
 
 - **Framework**: Next.js 15 with App Router
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
-- **Authentication**: Supabase with SSR cookies
+- **Authentication**: Supabase with SSR cookies; route coverage is partial and under investigation
 - **Deployment**: Vercel
 - **Database**: Supabase (PostgreSQL)
 
 ## Features
 
-- 🔐 **Flexible Auth**: Magic link and 6-digit OTP flows powered by Supabase
-- 🛡️ **Protected Workspace**: Middleware-enforced access with shared layout, navigation, and session-aware header
-- 📊 **Analytics Modules**: Executive dashboards, revenue cohorts, retention curves, LTV summaries, KPI snapshots, and downloadable reports
-- 🧠 **AI Insights**: Cohort analysis assistants in `components/ai/AIAnalysis.tsx` synthesize notable trends and suggested next steps
-- 🧭 **Customer & Product Intelligence**: Dedicated areas for customer lists, segments, profiles, product performance, cross-sell, and replenishment views
-- 🔄 **Data Operations**: Sync status, dummy-data generation endpoints, and canonical schema queries for customers/orders
-- 🔌 **Integrations**: Shopify OAuth flow, Klaviyo connection scaffold, and integration status surface
-- 🎨 **Modern UI**: Premium gradient design, responsive navigation, and consistent UX patterns built with Tailwind
+- **Canonical metric path:** `RetentionOSDataset → lib/metrics → view models → UI`
+- **Two explicit sources:** deterministic demo data or a validated CSV saved to the current browser session
+- **Customer economics:** cohort retention, repeat purchase behavior, revenue/contribution LTV, CAC, LTV:CAC, payback, and first-product quality
+- **Revenue Durability Posture:** transparent `Healthy` / `Mixed` / `Watch` rules, not a numeric score
+- **Rules-based insights:** deterministic evidence cards from `lib/insights`, not hidden AI output
+- **Supabase authentication:** magic link and OTP flows. Middleware session enforcement is limited to the path prefixes listed in `middleware.ts::protectedPaths`; coverage elsewhere is partial or unresolved.
+
+CSV remains the supported session-based ingestion, QA, and fallback workflow. It is not persisted to Supabase and is frozen against feature expansion. Shopify is the intended future primary commercial connection after persistence, normalization, security, and canonical metric-parity work.
 
 ## Getting Started
 
@@ -48,12 +44,10 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 # Site Configuration
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
-# Shopify Configuration (for OAuth)
+# Shopify investigation configuration (not a supported install flow)
 SHOPIFY_API_KEY=your_shopify_app_api_key
 SHOPIFY_API_SECRET=your_shopify_app_api_secret
 
-# Klaviyo Configuration (for API integration)
-KLAVIYO_API_KEY=your_klaviyo_private_api_key
 ```
 
 ### Local Development
@@ -78,107 +72,53 @@ npm run dev
 
 ## Authentication Flow
 
-The app uses Supabase for authentication with the following flow:
+The app implements Supabase login, verification, callback, and signout flows. This does not imply universal workspace protection: `middleware.ts::protectedPaths` currently session-gates only `/dashboard`, `/sync`, and `/connect` prefixes in production, while `/dashboard` also has a page-level gate. Authentication policy for other retained routes remains unresolved and is tracked in the canonical architecture investigation register.
 
 ### Login Options
 - **Magic Link**: Click the link in your email to sign in
 - **6-Digit Code**: Enter the code sent to your email on the verify page
 
-### Protected Workspace Modules
+### Command-centre and settings routes
 
-- **Executive**
-  - `/executive` – Home overview dashboard with high-level KPIs
-  - `/executive/reconciliation` – Data reconciliation panel
-  - `/executive/exports` – Export management
-- **Cohorts**
-  - `/cohorts` – Cohort explorer with filters and export actions
-  - `/cohorts/category` – Category-level cohort comparisons
-  - `/cohorts/composition` – Composition breakdowns
-- **Retention & LTV**
-  - `/retention-ltv/revenue-cohorts` – Revenue cohort analysis
-  - `/retention-ltv/curves` – Retention curves
-  - `/retention-ltv/ltv-cohorts` – CLR & LTV cohorts
-  - `/retention-ltv/repeat-rates` – Repeat purchase rates
-- **Retention Strategies**
-  - `/retention` – Retention command center
-  - `/retention/churn` – Churn diagnostics (placeholder)
-  - `/retention/curve` – Curve visualization (placeholder)
-  - `/retention/reactivation` – Reactivation opportunities (placeholder)
-- **Customers**
-  - `/customers` – Customer overview (placeholder)
-  - `/customers/list` – Tabular customer listing
-  - `/customers/profile` – Customer profile drill-down
-  - `/customers/segments` – Segment membership view
-- **Customer Intelligence**
-  - `/customer-intelligence/composition` – Customer composition
-  - `/customer-intelligence/segments` – Segment breakdowns
-  - `/customer-intelligence/profiles` – Persona-style profiles
-- **Products**
-  - `/products` – Product overview
-  - `/products/performance` – Performance dashboard
-  - `/products/replenishment` – Replenishment planner
-  - `/products/cross-sell` – Cross-sell insights
-- **Product Economics**
-  - `/product-economics/performance` – Performance metrics
-  - `/product-economics/concentration` – Concentration curve
-  - `/product-economics/discounts` – Discount usage
-  - `/product-economics/replenishment` – Replenishment frequency
-- **Financials**
-  - `/financials/revenue` – Revenue intelligence
-  - `/financials/ltv-summary` – LTV summary
-  - `/financials/forecasts` – Forecasts & scenarios
-- **Reports & Guides**
-  - `/reports` – Reporting hub
-  - `/guides` – Best-practice guides
-- **Integrations & Sync**
-  - `/connect/shopify` – Shopify OAuth connection flow
-  - `/connect/klaviyo` – Klaviyo connection scaffold
-  - `/integrations` – Integration status board
-  - `/sync` – Sync job overview
-- **Feedback & Settings**
-  - `/feedback` – Feedback submission
-  - `/settings` – Account settings
-  - `/settings/integrations` – Integration management
-  - `/settings/feedback` – Support & feedback inbox
+- `/dashboard` — executive customer-economics overview and Revenue Durability Posture
+- `/cohorts` — acquisition-month cohorts and UTC Month+N matrix
+- `/retention` — repeat, first-to-second, and calendar-month retention
+- `/ltv` — revenue and contribution LTV ladders
+- `/acquisition` — CAC, LTV:CAC, and payback when spend is available
+- `/products` — first-product customer quality
+- `/insights` — deterministic diagnostic cards
+- `/data` — demo/CSV source control, validation, spend, and margin assumptions
+- `/settings` — primary-navigation settings prototype under investigation; displayed account, team, RLS, and usage state is not yet trustworthy live state
+
+Other page and API files remain in the repository but are classified and contained according to the canonical architecture audit. Do not build new features on quarantined routes.
 
 ### Auth Components
-- **Header**: Shows user email and logout button (only on protected pages)
-- **Middleware**: Automatically redirects unauthenticated users to login
-- **Server-side logout**: POST to `/auth/signout` clears SSR cookies
+- **Auth UI**: Login, verification, callback, and signout components exist; layout or route-group names do not prove authorization coverage
+- **Middleware**: Refreshes Supabase sessions broadly but redirects unauthenticated requests only for the prefixes in `middleware.ts::protectedPaths`
+- **Server-side logout**: `POST /auth/signout` clears SSR cookies and is retained auth infrastructure, but the active `NavUser` logout item is not wired to it
 
 ## Project Structure
 
 ```
 app/
-├── (protected)/              # Protected workspace layout, navigation, modules
-│   ├── cohorts/              # Cohort analytics surfaces
-│   ├── connect/              # Integration setup pages (Shopify, Klaviyo)
-│   ├── customer-intelligence/# Customer composition, segments, profiles
-│   ├── customers/            # Customer list, profile, and segments
-│   ├── dashboard/            # Executive dashboard shell
-│   ├── executive/            # Executive summaries and exports
-│   ├── financials/           # Revenue, LTV, and forecast views
-│   ├── guides/               # Guides library
-│   ├── integrations/         # Integration status surface
-│   ├── product-economics/    # Economics dashboards
-│   ├── products/             # Product performance + cross-sell
-│   ├── reports/              # Reporting hub
-│   ├── retention/            # Retention strategy workbench
-│   ├── retention-ltv/        # Retention cohorts + curves
-│   ├── segments/             # Segment explorer
-│   ├── settings/             # Settings + feedback
-│   └── sync/                 # Sync status + tooling
-├── api/                      # Edge routes for metrics, reports, integrations
-├── auth/                     # OAuth callback + signout
-├── components/               # Reusable UI components (including AI widgets)
-├── login/                    # Login page with dual auth options
-├── verify/                   # 6-digit code verification
-└── globals.css               # Global styles
+├── (protected)/              # Command-centre pages plus contained legacy files
+├── api/                      # Parallel API/integration surface; see architecture audit
+├── auth/                     # Supabase callback and signout
+├── login/                    # Login page
+└── verify/                   # OTP verification
+lib/
+├── data-source/              # RetentionOSDataset source selection and session state
+├── demo/                     # Deterministic demo fixture
+├── import/                   # CSV detection, validation, normalization, and preview
+├── metrics/                  # Canonical pure metrics and page view models
+├── insights/                 # Rules-based diagnostic layer
+├── mvp/                      # Command-centre cohesion and containment
+└── types/                    # Shared domain contracts
 ```
 
 ## Deployment
 
-The app is deployed on Vercel and automatically builds from the `main` branch:
+The canonical integration and PR target branch is `restart-retentionos-mvp`; sprint work occurs on scoped feature branches.
 
 **Live URL**: https://retention-os-nine.vercel.app
 
@@ -187,28 +127,14 @@ The app is deployed on Vercel and automatically builds from the `main` branch:
 Ensure your Supabase project has:
 - Auth redirect URL set to: `https://your-domain.vercel.app/auth/callback`
 - Email templates configured for magic links and OTP codes
-- Run the database migration: `supabase/migrations/001_create_shopify_connections.sql`
 
-### Shopify App Setup
+### Shopify architecture status
 
-To enable Shopify integration:
-
-1. **Create a Shopify App**:
-   - Go to [Shopify Partners Dashboard](https://partners.shopify.com/)
-   - Create a new app and note your API key and secret
-   - Set the redirect URL to: `https://your-domain.vercel.app/api/shopify/callback`
-
-2. **Configure Environment Variables**:
-   - Add `SHOPIFY_API_KEY` and `SHOPIFY_API_SECRET` to your `.env.local`
-   - Add the same variables to your Vercel deployment settings
-
-3. **Install the App**:
-   - Users can now connect their Shopify stores via `/connect/shopify`
-   - The app will have access to read products, orders, and customers
+`/connect/shopify` is currently redirected/contained and is not a supported installation workflow. The Shopify pages and handlers remain **investigate** architecture. Shopify is the intended future primary commercial connection only after account-scoped persistence, canonical normalization, security review, and metric-parity work are approved. Until then, use the session-based CSV path on `/data` for ingestion, QA, and fallback testing.
 
 ## Development Notes
 
 - Uses `@supabase/ssr` for proper server-side rendering with cookies
-- Protected routes are wrapped in a route group `(protected)` for shared layout
-- All auth state changes are handled client-side with real-time updates
-- Middleware protects routes without breaking SSR performance
+- The `(protected)` route-group name organizes shared layout but does not itself enforce authentication
+- Login/verification use client flows; callback and signout use server route handlers
+- Current middleware enforcement is limited to `middleware.ts::protectedPaths`; see the canonical architecture auth investigation

@@ -1,5 +1,7 @@
 # RetentionOS MVP Implementation Status
 
+> **Historical pre-restart status.** This document is preserved as a record of the broad mock-navigation MVP and is not current product or architecture truth. Use [`docs/RETENTIONOS_ARCHITECTURE.md`](docs/RETENTIONOS_ARCHITECTURE.md) for the retained eight-route command centre and evidence-backed route/API dispositions.
+
 ## ✅ Completed: Full Navigation Restructure
 
 ### Overview

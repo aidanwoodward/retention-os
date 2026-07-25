@@ -1,5 +1,7 @@
 # RetentionOS Active Metrics Map
 
+> **Historical audit — superseded for current architecture.** This map reflects the January 2025 RED dashboard and legacy API surface. The retained dashboard now uses `DashboardExecutive` and the canonical dataset/metric-engine path. Use [`docs/RETENTIONOS_ARCHITECTURE.md`](./RETENTIONOS_ARCHITECTURE.md) for current metric pipelines and dispositions.
+
 **Generated:** 2025-01-27  
 **Purpose:** Phase 0 Step 0 - Complete inventory of all user-facing metrics organized by page  
 **Status:** Audit-only (no code changes)

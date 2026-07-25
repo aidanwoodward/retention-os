@@ -57,6 +57,23 @@ IMPLEMENTING
 
 ---
 
+## Execution discipline
+
+Work to the smallest sufficient scope required to meet the approved sprint completion gate.
+
+- Use canonical repository instructions and source-of-truth documents rather than restating them.
+- Inspect files according to relevance and evidence. Broad repository exploration requires a stated reason.
+- Do not introduce opportunistic refactors, visual polish, adjacent improvements or later-sprint work.
+- Keep operational narration concise and record durable evidence in the sprint record.
+- Avoid repeatedly reading unchanged material or rerunning checks whose relevant inputs have not changed.
+- Run targeted checks during implementation and the complete required validation suite at the final checkpoint.
+- Escalate ambiguity that could materially affect metric correctness, commercial meaning, architecture, approved scope or acceptance criteria.
+- Resolve routine implementation details using the safest evidence-based decision within the approved plan.
+- Stop immediately at every founder gate.
+- Optimise for correctness, scope discipline and decisive execution, not exhaustive output or minimum token use.
+
+---
+
 ## Sprint record
 
 One file per sprint: `docs/agent/sprints/<sprint-id>.md` (copy from [SPRINT_RECORD.md](./SPRINT_RECORD.md)).
@@ -190,6 +207,17 @@ Base: restart-retentionos-mvp @ <short-sha>
 - Independent review: APPROVE (Task | blocked→manual)
 - Automation SLA met: yes/no
 
+## Execution discipline
+
+Status: PASS | EXCEPTION
+
+- Smallest sufficient scope: yes/no
+- Evidence-led inspection: yes/no
+- Opportunistic work excluded: yes/no
+- Targeted then full validation: yes/no
+- Founder stop condition respected: yes/no
+- Exceptions: none | <details>
+
 Approve with: Approve the plan and execute it.
 Or: Reject the plan — <reason>
 ```
@@ -211,6 +239,17 @@ PR: <url> | Head: <short-sha> (frozen)
 - gh pr checks: pass (CI + Vercel)
 - Plan identity unchanged: yes/no
 - Automation SLA met: yes/no
+
+## Execution discipline
+
+Status: PASS | EXCEPTION
+
+- Smallest sufficient scope: yes/no
+- Evidence-led inspection: yes/no
+- Opportunistic work excluded: yes/no
+- Targeted then full validation: yes/no
+- Founder stop condition respected: yes/no
+- Exceptions: none | <details>
 
 Approve with: Approve the merge and close the sprint.
 Or: Reject the merge — <reason>

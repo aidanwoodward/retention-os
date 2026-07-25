@@ -89,6 +89,15 @@ Use branch names like:
 - fix/typecheck-dashboard
 - chore/agent-operating-system
 
+## Ops-01 sprint workflow
+
+Canonical sprint operating system: [docs/agent/OPS_01.md](docs/agent/OPS_01.md).
+
+- Use Ops-01 for planning and execution (`Plan Sprint X using Ops-01.`, `Approve the plan and execute it.`, `Approve the merge and close the sprint.`).
+- Two founder gates are hard stops: no implementation before plan approval; no merge before merge approval.
+- One sprint record per sprint under `docs/agent/sprints/` (template: [docs/agent/SPRINT_RECORD.md](docs/agent/SPRINT_RECORD.md)).
+- PRs target `restart-retentionos-mvp` only. Do not self-merge. Do not invent Gate 2 / DONE by editing the sprint record after PR freeze.
+
 ## Output format
 
 At the end of every task, report:

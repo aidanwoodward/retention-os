@@ -2,18 +2,20 @@
 
 ## Purpose
 
-RetentionOS uses AI-assisted engineering sprints to ship customer-economics features safely and quickly. This runbook defines the **repeatable workflow** for running those sprints with Cursor Agent, PowerShell, and GitHub — without manual back-and-forth between ChatGPT, the terminal, and the PR UI.
+RetentionOS uses AI-assisted engineering sprints to ship customer-economics features safely and quickly.
+
+**Canonical sprint lifecycle:** [OPS_01.md](./OPS_01.md) (Ops-01 Lite). Use founder commands and gates defined there. This runbook keeps branch prep, validation, recovery playbooks, and architecture hard rules.
 
 Use this document when:
-- Starting a new sprint
-- Handing a sprint packet to Cursor Agent
-- Reviewing agent output before commit
-- Recovering from common git/PR mistakes
+- Preparing a branch or recovering from git/PR mistakes
+- Looking up validation commands by sprint type
+- Needing architecture hard rules alongside Ops-01
 
 Related docs:
+- [OPS_01.md](./OPS_01.md) — canonical Ops-01 Lite operating system (plan/execute/merge gates)
+- [SPRINT_RECORD.md](./SPRINT_RECORD.md) — per-sprint record template
 - [RETENTIONOS_ARCHITECTURE.md](../RETENTIONOS_ARCHITECTURE.md) — canonical architecture, route/API inventory, and legacy dispositions
-- [SPRINT_TEMPLATE.md](./SPRINT_TEMPLATE.md) — sprint packet structure
-- [PR_WORKFLOW.md](./PR_WORKFLOW.md) — PR creation, merge, and recovery
+- [PR_WORKFLOW.md](./PR_WORKFLOW.md) — PR creation, merge, and recovery via `gh`
 
 ---
 
@@ -45,38 +47,22 @@ Read [RETENTIONOS_ARCHITECTURE.md](../RETENTIONOS_ARCHITECTURE.md) before any ro
 
 ## Standard sprint lifecycle
 
+Follow [OPS_01.md](./OPS_01.md). Condensed:
+
 ```
-restart-retentionos-mvp
+restart-retentionos-mvp → scoped branch
         │
-        ▼ pull latest
-   scoped branch
+        ▼ Plan Sprint X using Ops-01 (independent plan review)
+   Founder Gate 1 — Approve the plan and execute it.
         │
-        ▼ Cursor Agent + sprint packet
-   review + validate
+        ▼ implement + validate + independent final-diff review
+   commit → push → gh pr create → gh pr checks --watch
         │
-        ▼ commit → push → PR
-   CI / Vercel pass
-        │
-        ▼ merge → pull → re-validate
-   sprint done
+        ▼ Founder Gate 2 — Approve the merge and close the sprint.
+   gh pr comment → gh pr merge --squash --delete-branch → sync base
 ```
 
-### Steps
-
-1. **Start from `restart-retentionos-mvp`**
-2. **Pull latest**
-3. **Create scoped branch**
-4. **Run Cursor Agent with a sprint packet** (use [SPRINT_TEMPLATE.md](./SPRINT_TEMPLATE.md))
-5. **Review Cursor output** — read the final summary; do not trust it blindly
-6. **Run `git status` and `git diff --stat`** — confirm scope matches the sprint
-7. **Validate** — see [Phase 4](#phase-4--validate) (docs-only sprints skip lint/typecheck/build/test)
-8. **Commit**
-9. **Push**
-10. **Open PR into `restart-retentionos-mvp`**
-11. **Wait for CI / Vercel**
-12. **Merge**
-13. **Pull locally**
-14. **Validate again** (unless docs-only)
+Do not merge without Gate 2. Do not commit Gate 2 / `DONE` into the sprint record after PR freeze.
 
 ---
 
@@ -111,28 +97,19 @@ git checkout -b agent/sprint-5a-acquisition-tests
 
 ---
 
-## Phase 2 — Run Cursor Agent
+## Phase 2 — Run Cursor Agent (Ops-01)
 
 1. Open Cursor in the repo root (`C:\code\retention-os`).
-2. Paste a sprint packet based on [SPRINT_TEMPLATE.md](./SPRINT_TEMPLATE.md).
-3. Include explicit **hard rules** in the packet:
-   - Files allowed / forbidden
-   - Whether migrations or dependencies are in scope
-   - Validation commands required
-4. Let the agent run to completion.
-
-**Sprint packet must include:**
-- Objective and commercial reason
-- Scope (likely files + do-not-touch list)
-- Acceptance criteria
-- Stop conditions
-- Required final output format
+2. Use `Plan Sprint X using Ops-01.` / `Approve the plan and execute it.` per [OPS_01.md](./OPS_01.md).
+3. Keep the sprint record under `docs/agent/sprints/<sprint-id>.md` ([SPRINT_RECORD.md](./SPRINT_RECORD.md)).
+4. Hard rules still apply: no unapproved migrations/dependencies; no scope expansion; no work on `main`.
 
 **Stop if:**
 - Agent asks to add dependencies without approval
 - Agent proposes Supabase migration changes without approval
-- Agent scope expands beyond the packet
+- Agent scope expands beyond the approved plan
 - Agent says validation passed but you have not verified locally
+- Agent attempts merge without Founder Gate 2
 
 ---
 
@@ -214,16 +191,19 @@ git push -u origin HEAD
 
 ---
 
-## Phase 6 — Open PR and merge
+## Phase 6 — Open PR and merge (Ops-01)
 
-See [PR_WORKFLOW.md](./PR_WORKFLOW.md) for full PR rules.
+See [PR_WORKFLOW.md](./PR_WORKFLOW.md) and [OPS_01.md](./OPS_01.md).
 
 Quick checklist:
 - Base: **`restart-retentionos-mvp`**
-- Compare: your scoped branch
-- CI green
-- Vercel preview acceptable (if applicable)
-- Merge via GitHub UI (squash or merge per team preference)
+- `gh pr create` after independent final-diff review APPROVE
+- `gh pr checks --watch` green (CI + Vercel)
+- Sprint record frozen at `AWAITING_FOUNDER_MERGE_APPROVAL`
+- Founder Gate 2: `Approve the merge and close the sprint.`
+- Required `gh pr comment` for Gate 2 trail
+- `gh pr merge --squash --delete-branch`
+- Local sync of `restart-retentionos-mvp` — **no** post-merge sprint-record / BUILD_LOG commit solely to close the sprint
 
 ---
 
@@ -239,6 +219,8 @@ npm run lint
 npm run typecheck
 npm run build
 ```
+
+Ops-01 DONE evidence is the merged PR + GitHub metadata + chat completion report — not a new repo commit.
 
 ---
 
@@ -351,53 +333,51 @@ Do not schedule route/API deletion, dependency removal, migration work, or legac
 
 ## Definition of done
 
-A sprint is **done** when all of the following are true:
+A sprint is **done** when all of the following are true (see [OPS_01.md](./OPS_01.md)):
 
 - [ ] Branch was created from latest `restart-retentionos-mvp`
-- [ ] Changes match sprint scope (verified via `git diff --stat`)
+- [ ] Founder Gate 1 approved before implementation
+- [ ] Changes match approved sprint scope (verified via `git diff --stat`)
 - [ ] Validation passed (or docs-only exception documented)
-- [ ] Commit pushed to origin
-- [ ] PR opened with base **`restart-retentionos-mvp`**
-- [ ] CI and Vercel checks green
-- [ ] PR merged
-- [ ] Local `restart-retentionos-mvp` pulled and re-validated
-- [ ] [BUILD_LOG.md](./BUILD_LOG.md) updated with sprint entry
+- [ ] Independent final-diff review APPROVE
+- [ ] Commit pushed; PR opened with base **`restart-retentionos-mvp`**
+- [ ] CI and Vercel checks green (`gh pr checks --watch`)
+- [ ] Sprint record in PR frozen at `AWAITING_FOUNDER_MERGE_APPROVAL`
+- [ ] Founder Gate 2 approved; required `gh pr comment`; squash-merged
+- [ ] Local `restart-retentionos-mvp` pulled
 - [ ] No out-of-scope files changed (migrations, deps, CI) unless sprint approved them
+- [ ] No closure-only post-merge commit
 
 ---
 
-## Quick reference — full sprint command sequence
+## Quick reference — Ops-01 command sequence
 
 ```powershell
 cd C:\code\retention-os
 
-# 1–3: Branch setup
 git checkout restart-retentionos-mvp
 git pull origin restart-retentionos-mvp
 git checkout -b agent/my-sprint-name
 
-# 4–5: Run Cursor Agent (in IDE), then review
+# In Cursor: Plan Sprint X using Ops-01. → Gate 1 → Approve the plan and execute it.
+
 git status
 git diff --stat
-
-# 6–7: Validate (add npm test for metric-engine sprints)
+# Validate per sprint type (docs-only may skip npm)
 npm test          # lib/metrics changes only
 npm run lint
 npm run typecheck
 npm run build
 
-# 8–9: Commit and push
-git add .
+git add <scoped-files>
 git commit -m "Why this change exists."
 git push -u origin HEAD
+gh pr create --base restart-retentionos-mvp --title "..." --body "..."
+gh pr checks --watch
 
-# 10–12: Open PR in GitHub → wait for CI → merge
-# See PR_WORKFLOW.md
-
-# 13–14: Post-merge
+# Gate 2 → Approve the merge and close the sprint.
+gh pr comment --body "Founder Gate 2 approved. Proceeding to squash merge."
+gh pr merge --squash --delete-branch
 git checkout restart-retentionos-mvp
 git pull origin restart-retentionos-mvp
-npm run lint
-npm run typecheck
-npm run build
 ```

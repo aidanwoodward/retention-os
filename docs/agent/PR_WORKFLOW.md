@@ -6,7 +6,9 @@ This document defines how to create, review, merge, and recover from mistakes wh
 
 **Golden rule:** PRs merge **into `restart-retentionos-mvp`**, never directly into `main`.
 
-Related: [SPRINT_RUNBOOK.md](./SPRINT_RUNBOOK.md)
+**Ops-01 path:** For Ops-01 sprints, use authenticated GitHub CLI (`gh`) as specified in [OPS_01.md](./OPS_01.md). Do not merge without Founder Gate 2. After Gate 2, post a required `gh pr comment`, then `gh pr merge --squash --delete-branch`. Do not create a repository commit solely to record Gate 2 or mark the sprint `DONE`.
+
+Related: [OPS_01.md](./OPS_01.md) · [SPRINT_RUNBOOK.md](./SPRINT_RUNBOOK.md)
 
 ---
 
@@ -25,21 +27,41 @@ your-branch  ──PR──►  restart-retentionos-mvp  ──(later)──► 
 
 ---
 
-## Creating a PR manually in GitHub
+## Creating a PR with GitHub CLI (Ops-01)
 
-1. Push your branch:
-   ```powershell
-   git push -u origin HEAD
-   ```
-2. Open the repo on GitHub.
-3. Click **Compare & pull request** (or **Pull requests → New pull request**).
-4. Set **base** to `restart-retentionos-mvp`.
-5. Set **compare** to your branch.
-6. Confirm the commit count and file list look reasonable.
-7. Fill in title and body (template below).
-8. Create the PR.
-9. Wait for CI and Vercel checks.
-10. Merge when green.
+```powershell
+git push -u origin HEAD
+
+gh pr create `
+  --base restart-retentionos-mvp `
+  --title "Short imperative title" `
+  --body "$( @'
+## Summary
+- ...
+
+## Sprint
+- **Sprint:** ...
+- **Scope type:** docs-only | metric-engine | UI | dependency | migration
+
+## Test plan
+- [ ] Validation per Ops-01 / sprint type
+'@ )"
+
+gh pr checks --watch
+```
+
+Confirm base is `restart-retentionos-mvp`, commit count and file list look reasonable, then wait for CI and Vercel via `gh pr checks --watch`.
+
+**Do not merge yet.** Present Founder Gate 2. After `Approve the merge and close the sprint.`:
+
+```powershell
+gh pr comment --body "Founder Gate 2 approved. Squash-merging into restart-retentionos-mvp."
+gh pr merge --squash --delete-branch
+git checkout restart-retentionos-mvp
+git pull origin restart-retentionos-mvp
+```
+
+Manual GitHub UI create/merge remains a recovery fallback only; Ops-01 automates through `gh`.
 
 ---
 
@@ -142,14 +164,17 @@ If CI fails, see **Recovery: failed CI** below.
 
 ## Merge checklist
 
-Before clicking merge:
+Before merge (Ops-01):
 
 - [ ] Base branch is **`restart-retentionos-mvp`** (not `main`)
 - [ ] Commit count is reasonable (not 50+)
 - [ ] File diff matches sprint scope
-- [ ] CI green (includes `npm test` when metric files changed)
-- [ ] Vercel preview acceptable (if applicable)
-- [ ] PR title and body accurately describe the change
+- [ ] Independent final-diff review APPROVE
+- [ ] CI green via `gh pr checks --watch` (includes `npm test` when metric files changed)
+- [ ] Vercel checks acceptable (if present)
+- [ ] Sprint record frozen at `AWAITING_FOUNDER_MERGE_APPROVAL`
+- [ ] Founder Gate 2 approved in chat
+- [ ] Required `gh pr comment` for Gate 2 trail posted
 - [ ] No unintended migration or dependency changes
 
 After merge:
@@ -157,15 +182,9 @@ After merge:
 ```powershell
 git checkout restart-retentionos-mvp
 git pull origin restart-retentionos-mvp
-
-# Re-validate (skip for docs-only; add npm test when metrics changed)
-npm test
-npm run lint
-npm run typecheck
-npm run build
 ```
 
-Update [BUILD_LOG.md](./BUILD_LOG.md) if not already done.
+Report completion in chat. Do **not** add a post-merge commit solely to flip the sprint record to `DONE` or update BUILD_LOG for closure.
 
 ---
 
@@ -246,51 +265,16 @@ Close the old PR; open a new one from `-v2`.
 
 ---
 
-## Future / optional — GitHub CLI shortcut
+## GitHub CLI — Ops-01 required path
 
-GitHub CLI (`gh`) is **not required** today. When installed and authenticated, it can replace manual GitHub UI steps.
+Requires `gh auth login` (already standard for Ops-01).
 
-### Example: create PR (future / optional)
-
-```powershell
-# Requires: gh auth login (one-time setup)
-git push -u origin HEAD
-
-gh pr create `
-  --base restart-retentionos-mvp `
-  --title "ops: add agent sprint runbook" `
-  --body "$( @'
-## Summary
-- Add sprint runbook and PR workflow docs under docs/agent/
-
-## Sprint
-- **Sprint:** OPS-1 — Sprint workflow runbook
-- **Scope type:** docs-only
-
-## Test plan
-- [x] Only docs/agent/ files changed
-
-## Out of scope (confirmed)
-- [x] No Supabase migration changes
-- [x] No unapproved dependency changes
-'@ )"
-```
-
-### Example: check PR status (future / optional)
-
-```powershell
-gh pr status
-gh pr checks
-gh pr view --web
-```
-
-### Example: merge (future / optional)
-
-```powershell
-gh pr merge --merge --delete-branch
-```
-
-Until `gh` is adopted team-wide, use the GitHub web UI for all PR operations.
+| Action | Command |
+|--------|---------|
+| Create PR | `gh pr create --base restart-retentionos-mvp ...` |
+| Watch checks | `gh pr checks --watch` |
+| Gate 2 trail | `gh pr comment --body "..."` |
+| Merge | `gh pr merge --squash --delete-branch` |
 
 ---
 
@@ -301,6 +285,6 @@ Until `gh` is adopted team-wide, use the GitHub web UI for all PR operations.
 | PR base | `restart-retentionos-mvp` |
 | Never | Target or merge sprint PRs directly to `main` |
 | Pre-PR | Check commit count, file scope, package/migration diffs |
-| Merge gate | CI green + scope verified |
-| Post-merge | Pull canonical branch + re-validate |
+| Merge gate | Ops-01 Gate 2 + CI/Vercel green + required `gh pr comment` |
+| Post-merge | Pull canonical branch; no closure-only commit |
 | Audit deps | Targeted installs + `npm audit fix` — **never `--force`** |

@@ -2,7 +2,7 @@
 
 ## Status
 
-`IMPLEMENTING`
+`AWAITING_FOUNDER_MERGE_APPROVAL`
 
 ## Final plan and scope
 
@@ -136,15 +136,15 @@ Founders need proof that contracted KPI formulas produce known-true numbers on a
 
 ### PR
 
-- URL: _(set after `gh pr create`)_
+- URL: https://github.com/aidanwoodward/retention-os/pull/26
 - Base: `restart-retentionos-mvp`
-- Head SHA: _(set after push)_
+- Head SHA: `e052929093bbde820564c971c8aa54b0359e6bc2`
 
 ### Checks
 
-- `gh pr checks --watch`: _(Gate 2 packet)_
-- CI validate: _(Gate 2 packet)_
-- Vercel: _(Gate 2 packet)_
+- `gh pr checks --watch`: pass
+- CI validate: pass
+- Vercel: pass
 
 ## Notes
 

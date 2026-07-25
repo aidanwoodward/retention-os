@@ -14,6 +14,15 @@ export {
 } from "./metric-definitions";
 
 export {
+  CONTRACTED_METRIC_IDS,
+  METRIC_CONTRACT_INDEX,
+  getMetricContractIndexEntry,
+  isContractedMetricId,
+  type ContractedMetricId,
+  type MetricContractIndexEntry,
+} from "./metric-contract-index";
+
+export {
   utcMonthKeyFromIso,
   netOrderRevenue,
   orderContribution,

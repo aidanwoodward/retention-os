@@ -1,5 +1,7 @@
 # Route Audit Report
 
+> **Historical audit — superseded for current architecture.** This report records the route surface inspected on 2024-12-19. Its counts, navigation model, and recommendations are not current. Use [`docs/RETENTIONOS_ARCHITECTURE.md`](./RETENTIONOS_ARCHITECTURE.md) for the commit-pinned route/API inventory and evidence-backed dispositions.
+
 **Generated:** 2024-12-19  
 **Purpose:** Identify dead routes (unused/legacy) and broken links (pointing to non-existent routes)
 

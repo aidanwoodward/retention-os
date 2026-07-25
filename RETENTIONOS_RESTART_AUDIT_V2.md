@@ -1,5 +1,7 @@
 # RetentionOS Restart Audit V2
 
+> **Historical restart comparison.** This document accurately records its six-route, pre-session-upload checkpoint but is no longer the current architecture source. Acquisition and Products are now on the retained eight-route spine, and session CSV ingestion is implemented. Use [`docs/RETENTIONOS_ARCHITECTURE.md`](docs/RETENTIONOS_ARCHITECTURE.md) for current architecture and `RETENTIONOS_UPLOADED_DATA_MVP_CHECKPOINT.md` for the upload milestone.
+
 **For the post-upload-data MVP state, see RETENTIONOS_UPLOADED_DATA_MVP_CHECKPOINT.md.**
 
 **Purpose:** Re-baseline progress after the restart sprints (post-`804ef25` audit). This document compares the **original** restart audit snapshot to the **current** codebase as of the latest accountability checkpoint. It is founder/operator-facing: honest about what is real, what is demo, and what still carries risk.

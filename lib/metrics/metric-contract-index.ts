@@ -50,6 +50,7 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
     existingTests: [
       "lib/metrics/metric-definitions.test.ts",
       "lib/import/shopify/shopify-orders-csv.test.ts",
+      "lib/metrics/golden-reconciliation.test.ts",
     ],
   },
   discounts: {
@@ -61,6 +62,7 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
     existingTests: [
       "lib/metrics/metric-definitions.test.ts",
       "lib/metrics/product-quality.test.ts",
+      "lib/metrics/golden-reconciliation.test.ts",
     ],
   },
   refunds: {
@@ -72,6 +74,7 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
     existingTests: [
       "lib/metrics/metric-definitions.test.ts",
       "lib/metrics/product-quality.test.ts",
+      "lib/metrics/golden-reconciliation.test.ts",
     ],
   },
   net_revenue: {
@@ -88,6 +91,7 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
       "lib/metrics/demo-sanity-check.test.ts",
       "lib/metrics/dashboard-view-model.test.ts",
       "lib/metrics/metric-definitions.test.ts",
+      "lib/metrics/golden-reconciliation.test.ts",
     ],
   },
   repeat_purchase_rate: {
@@ -104,6 +108,7 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
       "lib/metrics/demo-sanity-check.test.ts",
       "lib/metrics/dashboard-view-model.test.ts",
       "lib/metrics/revenue-durability-status.test.ts",
+      "lib/metrics/golden-reconciliation.test.ts",
     ],
   },
   first_to_second_conversion: {
@@ -121,6 +126,7 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
       "lib/metrics/demo-sanity-check.test.ts",
       "lib/metrics/product-quality.test.ts",
       "lib/metrics/revenue-durability-status.test.ts",
+      "lib/metrics/golden-reconciliation.test.ts",
     ],
   },
   cohort_retention: {
@@ -139,6 +145,7 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
       "lib/metrics/demo-sanity-check.test.ts",
       "lib/metrics/dashboard-view-model.test.ts",
       "lib/metrics/revenue-durability-status.test.ts",
+      "lib/metrics/golden-reconciliation.test.ts",
     ],
   },
   revenue_ltv: {
@@ -156,6 +163,7 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
     existingTests: [
       "lib/metrics/demo-sanity-check.test.ts",
       "lib/metrics/dashboard-view-model.test.ts",
+      "lib/metrics/golden-reconciliation.test.ts",
     ],
   },
   contribution_ltv: {
@@ -176,6 +184,7 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
     existingTests: [
       "lib/metrics/demo-sanity-check.test.ts",
       "lib/metrics/dashboard-view-model.test.ts",
+      "lib/metrics/golden-reconciliation.test.ts",
     ],
   },
   cac: {
@@ -190,6 +199,7 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
     existingTests: [
       "lib/metrics/dashboard-view-model.test.ts",
       "lib/data-source/resolve-marketing-spend.test.ts",
+      "lib/metrics/golden-reconciliation.test.ts",
     ],
   },
   blended_cac: {
@@ -202,7 +212,10 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
       "mapDashboardAcquisitionExecutive",
     ],
     uiRoutes: ["/acquisition", "/dashboard"],
-    existingTests: ["lib/metrics/dashboard-view-model.test.ts"],
+    existingTests: [
+      "lib/metrics/dashboard-view-model.test.ts",
+      "lib/metrics/golden-reconciliation.test.ts",
+    ],
   },
   revenue_ltv_cac: {
     id: "revenue_ltv_cac",
@@ -214,7 +227,10 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
       "mapDashboardAcquisitionExecutive",
     ],
     uiRoutes: ["/acquisition", "/dashboard"],
-    existingTests: ["lib/metrics/dashboard-view-model.test.ts"],
+    existingTests: [
+      "lib/metrics/dashboard-view-model.test.ts",
+      "lib/metrics/golden-reconciliation.test.ts",
+    ],
   },
   contribution_ltv_cac: {
     id: "contribution_ltv_cac",
@@ -225,7 +241,10 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
       "mapDashboardAcquisitionExecutive",
     ],
     uiRoutes: ["/acquisition", "/dashboard"],
-    existingTests: ["lib/metrics/dashboard-view-model.test.ts"],
+    existingTests: [
+      "lib/metrics/dashboard-view-model.test.ts",
+      "lib/metrics/golden-reconciliation.test.ts",
+    ],
   },
   payback: {
     id: "payback",
@@ -237,7 +256,10 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
       "mapDashboardAcquisitionExecutive",
     ],
     uiRoutes: ["/acquisition", "/dashboard"],
-    existingTests: ["lib/metrics/dashboard-view-model.test.ts"],
+    existingTests: [
+      "lib/metrics/dashboard-view-model.test.ts",
+      "lib/metrics/golden-reconciliation.test.ts",
+    ],
   },
   product_quality: {
     id: "product_quality",
@@ -255,6 +277,7 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
     existingTests: [
       "lib/metrics/product-quality.test.ts",
       "lib/metrics/dashboard-view-model.test.ts",
+      "lib/metrics/golden-reconciliation.test.ts",
     ],
   },
   revenue_durability_posture: {

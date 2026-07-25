@@ -34,6 +34,8 @@
     "lib/metrics/dashboard-view-model.test.ts",
     "lib/metrics/demo-sanity-check.ts",
     "lib/metrics/demo-sanity-check.test.ts",
+    "lib/metrics/golden/**/*.ts",
+    "lib/metrics/golden-reconciliation.test.ts",
     "lib/import/csv-schema.ts",
     "lib/import/import-types.ts",
     "lib/import/validate-csv.ts",

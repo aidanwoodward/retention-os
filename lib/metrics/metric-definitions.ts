@@ -196,7 +196,7 @@ export const METRIC_DEFINITIONS: Readonly<Record<MetricId, MetricDefinition>> = 
     shopifySourceUrls: [SHOPIFY_HELP.analyticsFields, SHOPIFY_HELP.salesReports],
     retentionOsBasis:
       "Sum net merchandise revenue through cohort-age month / cohort size (`calculateLTVByCohort`). Terminal value = latest available staircase tail",
-    caveat: RETENTIONOS_NET_DIVERGENCE,
+    caveat: `${RETENTIONOS_NET_DIVERGENCE}. Engine field \`cumulativeAvgGrossRevenue\` stores this net value despite the gross name`,
     defaultDataQuality: "actual",
   },
 

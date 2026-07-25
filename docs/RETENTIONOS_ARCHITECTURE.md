@@ -359,6 +359,7 @@ Package usage statements below are **Confirmed**. **Investigate** is used only w
 | Document | Role after 5U-A | Disposition |
 |---|---|---|
 | `docs/RETENTIONOS_ARCHITECTURE.md` | Current architecture source of truth | Keep |
+| `docs/METRIC_CONTRACTS.md` | Canonical source-to-screen metric contracts (Sprint 5U-B) | Keep |
 | `README.md` | Current project entry point; links here | Keep |
 | `docs/agent/SPRINT_RUNBOOK.md` | Current operating workflow; links here | Keep |
 | `RETENTIONOS_UPLOADED_DATA_MVP_CHECKPOINT.md` | Historical upload milestone and supporting CSV detail | Keep |
@@ -372,7 +373,7 @@ Package usage statements below are **Confirmed**. **Investigate** is used only w
 
 ### Sprint 5U-B — source-to-screen metric contracts
 
-Document each retained KPI's formula, inputs, treatment rules, missing-data behavior, data-quality state, calculator/view-model/UI mapping, and UTC calendar semantics. Cover cohort size, Month+N active, repeat, first-to-second, revenue/contribution LTV, CAC/LTV:CAC/payback, product quality, dashboard inputs, and Revenue Durability Posture. Start from `lib/metrics/metric-definitions.ts` and this audit's duplication matrix.
+**Shipped ledger:** [`docs/METRIC_CONTRACTS.md`](./METRIC_CONTRACTS.md) with thin linkage in `lib/metrics/metric-contract-index.ts`. Document each retained KPI's formula, inputs, treatment rules, missing-data behavior, data-quality state, calculator/view-model/UI mapping, and UTC calendar semantics. Cover cohort size, Month+N active, repeat, first-to-second, revenue/contribution LTV, CAC/LTV:CAC/payback, product quality, dashboard inputs (crosswalk appendix), and Revenue Durability Posture. Tooltip copy remains in `lib/metrics/metric-definitions.ts`.
 
 ### Sprint 5U-C — golden dataset and reconciliation
 

@@ -139,11 +139,11 @@ Merchants must trust that RetentionOS either refuses bad imports with actionable
 
 - URL: https://github.com/aidanwoodward/retention-os/pull/28
 - Base: `restart-retentionos-mvp`
-- Head SHA: `aa8bbe6fd6a238de290bbd9cd907437e3f812601` (implementation + Gate 2 freeze docs; update after this SHA commit)
+- Head SHA: `0d5f1e3b96339832be6c18e7b5d8ae63224e3abc`
 
 ### Checks
 
-- `gh pr checks --watch`: pass on implementation commits; re-verify after final freeze SHA
+- `gh pr checks --watch`: pass
 - CI validate: pass
 - Vercel: pass
 

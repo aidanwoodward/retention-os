@@ -20,7 +20,7 @@ Merchants must trust that RetentionOS either refuses bad imports with actionable
 - Readiness: blocked / accepted_with_limitations / ready (no universal sample-size gate)
 - Prevent fatal order data from becoming the active session dataset
 - No silent row loss for orders or marketing-spend (spend fail-closed)
-- Canonical integrity: line_total ? qty×price beyond epsilon ? fatal
+- Canonical integrity: line_total ? qty?price beyond epsilon ? fatal
 - Negative absolute contribution_margin ? limitation (accept; explain engine floor; contribution metrics limited/unavailable via existing completeness; no engine rewrite)
 - Calculated net < 0 ? limitation (accept; no formula rewrite)
 - Metric sufficiency from existing verified metric logic (e.g. product-quality MIN_CUSTOMERS_FOR_SIGNAL)
@@ -42,12 +42,12 @@ Merchants must trust that RetentionOS either refuses bad imports with actionable
 9. Keep fatal: negative signed G/D/R/qty/price/line inputs; malformed money/dates; missing required fields; order conflicts; unsupported schema.
 10. Incomplete-but-valid (no spend / no margin / metric-specific sample insufficiency) ? limitation.
 11. Estimated only via existing session margin/spend assumptions.
-12. No Shopify Id/Name, Currency, Financial Status, blank?0, or refund-basis semantic changes; no broad UI redesign; preserve 5U-B / 5U-C.
+12. No Shopify Id/Name, Currency, Financial Status, blank-to-zero coercion, or refund-basis semantic changes; no broad UI redesign; preserve 5U-B / 5U-C.
 13. Notices alone do not prevent ready; metric-preview directional <5/<10 warnings must not become a universal readiness gate.
 
 ### Out of scope
 
-- 5W-A Shopify discovery (Id vs Name, Financial Status, cancellations/payment, multi-currency/FX, refund basis, CSV/API field parity, blank?0 coercion)
+- 5W-A Shopify discovery (Id vs Name, Financial Status, cancellations/payment, multi-currency/FX, refund basis, CSV/API field parity, blank-to-zero coercion)
 - Metric-engine rewrite; persistence; Shopify OAuth/API; new formats; broad UI redesign; migrations; new dependencies; later roadmap sprints
 
 ### Acceptance criteria
@@ -139,11 +139,11 @@ Merchants must trust that RetentionOS either refuses bad imports with actionable
 
 - URL: https://github.com/aidanwoodward/retention-os/pull/28
 - Base: `restart-retentionos-mvp`
-- Head SHA: `PENDING_AFTER_FIX_COMMIT`
+- Head SHA: `aa8bbe6fd6a238de290bbd9cd907437e3f812601` (implementation + Gate 2 freeze docs; update after this SHA commit)
 
 ### Checks
 
-- `gh pr checks --watch`: pass (on implementation head; re-verify after freeze fix)
+- `gh pr checks --watch`: pass on implementation commits; re-verify after final freeze SHA
 - CI validate: pass
 - Vercel: pass
 

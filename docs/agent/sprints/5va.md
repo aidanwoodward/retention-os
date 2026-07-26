@@ -2,7 +2,7 @@
 
 ## Status
 
-`IMPLEMENTING`
+`AWAITING_FOUNDER_MERGE_APPROVAL`
 
 ## Final plan and scope
 
@@ -137,15 +137,15 @@ Merchants must trust that RetentionOS either refuses bad imports with actionable
 
 ### PR
 
-- URL:
+- URL: https://github.com/aidanwoodward/retention-os/pull/28
 - Base: `restart-retentionos-mvp`
-- Head SHA:
+- Head SHA: `daa64a5b33d8f46a6686139ba15d042aac31ecd5` (pre-freeze commit; see latest PR head after Gate 2 freeze commit)
 
 ### Checks
 
-- `gh pr checks --watch`:
-- CI validate:
-- Vercel:
+- `gh pr checks --watch`: pass
+- CI validate: pass
+- Vercel: pass
 
 ## Notes
 

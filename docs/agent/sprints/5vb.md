@@ -158,9 +158,9 @@ All activation, replace, refresh, delete and use-demo flows go through `lib/data
 
 ### PR
 
-- URL:
+- URL: https://github.com/aidanwoodward/retention-os/pull/29
 - Base: `restart-retentionos-mvp`
-- Head SHA:
+- Head SHA: `a22d4151c4cd416084527c5a43014e90c177fe12`
 
 ### Checks
 

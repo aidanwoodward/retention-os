@@ -126,7 +126,7 @@ CSV builds `lineItems` in spreadsheet row order; GraphQL fixtures preserve edge 
 
 - URL: https://github.com/aidanwoodward/retention-os/pull/31
 - Base: `restart-retentionos-mvp`
-- Head SHA: ``de3e4396c5d8ba7ce40ad55452569c3ce9454674` (`de3e439`)`
+- Head SHA: `f5ea3d384ad1838fe8a0ca411e86c7c854110fa7` (`f5ea3d3`) — CI-green tip; Gate 2 docs commit follows
 
 ### Checks
 

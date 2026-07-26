@@ -160,13 +160,13 @@ All activation, replace, refresh, delete and use-demo flows go through `lib/data
 
 - URL: https://github.com/aidanwoodward/retention-os/pull/29
 - Base: `restart-retentionos-mvp`
-- Head SHA: `a22d4151c4cd416084527c5a43014e90c177fe12`
+- Head SHA: `918317c137579ef20e657f4cd2cc6397171bdb50`
 
 ### Checks
 
-- `gh pr checks --watch`:
-- CI validate:
-- Vercel:
+- `gh pr checks --watch`: pass
+- CI validate: pass
+- Vercel: pass
 
 ## Notes
 

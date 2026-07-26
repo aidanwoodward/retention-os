@@ -97,8 +97,12 @@ export function MarketingSpendCsvPreview({
   const onSaveSessionSpend = useCallback(() => {
     setSessionSaveError(null);
     setSessionSaveToast(null);
-    if (!result || result.marketingSpend.length === 0) {
-      setSessionSaveError("Import valid spend rows before saving to session.");
+    if (!result || result.errors.length > 0 || result.marketingSpend.length === 0) {
+      setSessionSaveError(
+        result?.errors.length
+          ? "Spend file has validation errors — fix every invalid row before saving. RetentionOS does not keep a partial spend import."
+          : "Import valid spend rows before saving to session.",
+      );
       return;
     }
     try {
@@ -236,10 +240,8 @@ export function MarketingSpendCsvPreview({
             }`}
           >
             <p className="font-semibold">
-              {!hasSpend && hasRowErrors ?
-                "No spend rows produced — fix header or row errors"
-              : hasRowErrors ?
-                "Partial import — some rows were skipped; valid rows are aggregated below"
+              {hasRowErrors ?
+                "Import blocked — fix every invalid row (RetentionOS does not keep a partial spend file)"
               : "Valid preview — CSV parsed and normalised"}
             </p>
           </div>

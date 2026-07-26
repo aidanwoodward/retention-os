@@ -7,7 +7,8 @@
 
 import type { Customer, Order, Product } from "../types";
 
-export type CsvImportSeverity = "error" | "warning";
+/** `error` is fatal (fail-closed). `limitation` / `notice` / `warning` keep valid rows. */
+export type CsvImportSeverity = "error" | "warning" | "limitation" | "notice";
 
 /** Structured validation / reconciliation message with optional 1-based human row index (data rows only; header is row 0). */
 export interface CsvImportIssue {

@@ -76,7 +76,7 @@ describe("buildImportReviewViewModel", () => {
     assert.equal(metricById(vm, "acquisition").status, "unlocked");
   });
 
-  it("session context with marketing spend assumption unlocks acquisition", () => {
+  it("session context with marketing spend assumption marks acquisition Estimated (partial)", () => {
     const { format, result } = importOrdersCsvFromText(readFixture(SHOPIFY_FIXTURE));
     const vm = buildImportReviewViewModel({
       format,
@@ -86,7 +86,7 @@ describe("buildImportReviewViewModel", () => {
 
     assert.equal(vm.kind, "review");
     if (vm.kind !== "review") return;
-    assert.equal(metricById(vm, "acquisition").status, "unlocked");
+    assert.equal(metricById(vm, "acquisition").status, "partial");
     assert.match(metricById(vm, "acquisition").detail ?? "", /Estimated marketing spend assumption/i);
   });
 
@@ -116,7 +116,7 @@ describe("buildImportReviewViewModel", () => {
     assert.equal(metricById(vm, "contribution_ltv").status, "partial");
   });
 
-  it("zero-error sufficient sample can return ready confidence", () => {
+  it("ready only when no source or metric limitations (spend + positive CM + product signal)", () => {
     const customers = Array.from({ length: 6 }, (_, i) => ({
       id: `c${i}`,
       firstOrderAt: "2024-01-01T00:00:00.000Z",
@@ -159,9 +159,29 @@ describe("buildImportReviewViewModel", () => {
       },
     };
 
-    const vm = buildImportReviewViewModel({ format: "retentionos_template", result });
+    const withoutSpend = buildImportReviewViewModel({ format: "retentionos_template", result });
+    assert.equal(withoutSpend.kind, "review");
+    if (withoutSpend.kind !== "review") return;
+    assert.equal(withoutSpend.readiness, "accepted_with_limitations");
+
+    const vm = buildImportReviewViewModel({
+      format: "retentionos_template",
+      result,
+      sessionContext: { hasSavedMarketingSpendCsv: true },
+    });
     assert.equal(vm.kind, "review");
     if (vm.kind !== "review") return;
+    assert.equal(vm.readiness, "ready");
     assert.equal(vm.confidence, "ready");
+  });
+
+  it("missing spend is a limitation, not blocked", () => {
+    const { format, result } = importOrdersCsvFromText(readFixture(RETENTIONOS_FIXTURE));
+    const vm = buildImportReviewViewModel({ format, result });
+    assert.equal(vm.kind, "review");
+    if (vm.kind !== "review") return;
+    assert.equal(vm.canSave, true);
+    assert.equal(vm.readiness, "accepted_with_limitations");
+    assert.equal(metricById(vm, "acquisition").status, "locked");
   });
 });

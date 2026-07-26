@@ -78,7 +78,18 @@ export {
   type ImportReviewMetricRow,
   type ImportReviewMetricStatus,
   type ImportReviewPresence,
+  type ImportReviewReadiness,
   type ImportReviewSessionContext,
   type ImportReviewViewModel,
   type ImportReviewViewModelResult,
 } from "./import-review-view-model";
+
+export {
+  deriveImportReadiness,
+  NEGATIVE_CALCULATED_NET_LIMITATION_CODE,
+  NEGATIVE_CONTRIBUTION_MARGIN_LIMITATION_CODE,
+  partitionTrustFindings,
+  type ImportReadiness,
+  type ImportTrustFinding,
+  type ImportTrustSeverity,
+} from "./import-trust";

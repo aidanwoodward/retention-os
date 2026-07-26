@@ -6,7 +6,7 @@
  *
  * **Unknown columns:** lenient — extra headers produce a warning per unknown header name and are ignored.
  *
- * **Partial rows:** rows with validation errors are skipped and listed in `errors`; valid rows are still imported and aggregated.
+ * **Fail-closed (5V-A):** any row validation error empties the spend model — valid rows are not kept alongside fatals.
  */
 
 import {
@@ -313,9 +313,18 @@ function aggregateRows(rows: readonly ValidatedRow[], warnings: CsvImportIssue[]
   return out;
 }
 
-/** Full pipeline: parse, validate, aggregate — preview-safe, no I/O, no persistence. */
+/** Full pipeline: parse, validate, aggregate — preview-safe, no I/O, no persistence. Fail-closed on any error. */
 export function importMarketingSpendCsvFromText(text: string): MarketingSpendCsvImportResult {
   const { validatedRows, errors, warnings, rawRowCount } = parseMarketingSpendCsvText(text);
+  if (errors.length > 0) {
+    return {
+      marketingSpend: [],
+      errors,
+      warnings,
+      summary: buildSummary(rawRowCount, [], errors, warnings),
+    };
+  }
+
   const aggregateWarnings: CsvImportIssue[] = [...warnings];
   const marketingSpend =
     validatedRows.length > 0 ? aggregateRows(validatedRows, aggregateWarnings) : [];

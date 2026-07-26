@@ -11,17 +11,17 @@ function formatIsoDate(iso: string | undefined): string {
   }
 }
 
-function confidenceBadge(confidence: ImportReviewViewModel["confidence"]) {
-  if (confidence === "ready") {
+function readinessBadge(readiness: ImportReviewViewModel["readiness"]) {
+  if (readiness === "ready") {
     return (
       <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-200">
-        Ready to review
+        Ready
       </span>
     );
   }
   return (
     <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-950 ring-1 ring-amber-200">
-      Review warnings
+      Accepted with limitations
     </span>
   );
 }
@@ -88,7 +88,7 @@ export function ImportedDatasetReviewPanel({
           <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-200">
             {viewModel.formatLabel}
           </span>
-          {confidenceBadge(viewModel.confidence)}
+          {readinessBadge(viewModel.readiness)}
         </div>
         {fileName ? (
           <p className="text-sm text-zinc-600">
@@ -195,22 +195,32 @@ export function ImportedDatasetReviewPanel({
         : null}
       </section>
 
-      {viewModel.caveats.length > 0 ? (
+      {viewModel.limitations.length > 0 ? (
         <section className="space-y-3 border-b border-zinc-200/80 py-5">
-          <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Warnings and caveats</h3>
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Limitations</h3>
           <ul className="space-y-2 text-sm">
-            {viewModel.caveats.map((c, i) => (
-              <li key={`${c.code ?? "msg"}-${i}`} className="rounded-md border border-amber-100/90 bg-amber-50/60 px-3 py-2 text-amber-950">
-                {c.code ? (
-                  <span className="font-mono text-[11px] text-amber-900">{c.code}</span>
-                ) : null}
+            {viewModel.limitations.map((c, i) => (
+              <li key={`lim-${c.code ?? "msg"}-${i}`} className="rounded-md border border-amber-100/90 bg-amber-50/60 px-3 py-2 text-amber-950">
+                {c.code ? <span className="font-mono text-[11px] text-amber-900">{c.code}</span> : null}
                 <p className={c.code ? "mt-1 leading-relaxed" : "leading-relaxed"}>{c.message}</p>
               </li>
             ))}
           </ul>
-          {viewModel.canSave ? (
-            <p className="text-xs text-zinc-600">These warnings do not block saving - confirm only if you accept them.</p>
-          ) : null}
+          <p className="text-xs text-zinc-600">Limitations do not block saving — confirm only if you accept the constrained analysis.</p>
+        </section>
+      ) : null}
+
+      {viewModel.notices.length > 0 ? (
+        <section className="space-y-3 border-b border-zinc-200/80 py-5">
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Notices</h3>
+          <ul className="space-y-2 text-sm">
+            {viewModel.notices.map((c, i) => (
+              <li key={`note-${c.code ?? "msg"}-${i}`} className="rounded-md border border-zinc-200/90 bg-zinc-50/80 px-3 py-2 text-zinc-800">
+                {c.code ? <span className="font-mono text-[11px] text-zinc-600">{c.code}</span> : null}
+                <p className={c.code ? "mt-1 leading-relaxed" : "leading-relaxed"}>{c.message}</p>
+              </li>
+            ))}
+          </ul>
         </section>
       ) : null}
 

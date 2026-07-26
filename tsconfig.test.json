@@ -46,6 +46,8 @@
     "lib/import/metric-preview.ts",
     "lib/import/import-review-view-model.ts",
     "lib/import/import-review-view-model.test.ts",
+    "lib/import/import-trust.ts",
+    "lib/import/import-trust.test.ts",
     "lib/import/shopify/**/*.ts",
     "lib/data-source/dataset-types.ts",
     "lib/data-source/dataset-helpers.ts",

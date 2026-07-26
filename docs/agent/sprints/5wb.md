@@ -2,7 +2,7 @@
 
 ## Status
 
-`IMPLEMENTING`
+`AWAITING_FOUNDER_MERGE_APPROVAL`
 
 ## Final plan and scope
 
@@ -51,7 +51,7 @@ Without a fixture adapter locked to the 5W-A contract, production Shopify connec
 - [x] Metric parity via existing engines
 - [x] lint / typecheck / test / build / `git diff --check`
 - [x] Independent final-diff review APPROVE
-- [ ] PR targets `restart-retentionos-mvp`
+- [x] PR targets `restart-retentionos-mvp`
 
 ### Files expected to change
 
@@ -124,13 +124,15 @@ CSV builds `lineItems` in spreadsheet row order; GraphQL fixtures preserve edge 
 
 ### PR
 
-- URL: (pending)
+- URL: https://github.com/aidanwoodward/retention-os/pull/31
 - Base: `restart-retentionos-mvp`
-- Head SHA: (pending)
+- Head SHA: (freeze commit follows)
 
 ### Checks
 
-- `gh pr checks --watch`: (pending)
+- `gh pr checks --watch`: pass (CI validate + Vercel)
+- CI validate: pass
+- Vercel: pass
 
 ## Notes
 

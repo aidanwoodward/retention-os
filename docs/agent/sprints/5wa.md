@@ -92,7 +92,9 @@ Without an evidence-backed Shopify field/capability contract, fixture adapters a
 
 ## Implementation summary
 
-Documentation-only research sprint. Authored `docs/SHOPIFY_FIELD_CAPABILITY_CONTRACT.md` as API SoT (GraphQL Admin `2026-07`): field contract, deterministic revenue construction, identity/privacy/historical-access rules, feasibility matrices, schema delta proposals, 5W-B fixture acceptance with worked reconciliation cases, roadmap and founder escalations. Cross-linked `IMPORT_TRUST.md` and CSV contract without superseding CSV authority or changing runtime behaviour.
+Documentation-only research sprint. Authored `docs/SHOPIFY_FIELD_CAPABILITY_CONTRACT.md` as API SoT (GraphQL Admin `2026-07`).
+
+**Gate 2 revision (founder reject of head `74e7ece`):** documentation-only locks applied — edited orders fail closed + `Order.edited` provenance (pre-6D edit-aware revenue); guest orders not synthetic customers (Unidentified bucket + identity coverage); tax-inclusive blocked (pre-6D normalisation); financial-status include/provisional/exclude buckets; R7–R12 + F16–F19; feasibility/filter/schema/roadmap/founder tables updated. CSV cross-links unchanged in authority.
 
 ## Implementation-review verdict
 
@@ -100,27 +102,27 @@ Documentation-only research sprint. Authored `docs/SHOPIFY_FIELD_CAPABILITY_CONT
 - reviewer_mode: `fresh_task`
 - builder_context_used: false
 - automation_sla_met: true
-- notes: Fresh Task final-diff review. Docs-only under `docs/`. Spot-checked official Shopify citations (60-day/`read_all_orders`, guest customer null, shopMoney, unitCost + View product costs, PCD levels, compliance webhooks, bulk limits). CSV lane preserved; scaffolding and schema deltas non-production; locked clarifications present.
+- notes: Fresh Task after Gate 2 reject revision. Cleared residual §6.4 guest-id and tax-strip contradictions. Founder locks 1–6 verified; docs-only (`SHOPIFY_FIELD_CAPABILITY_CONTRACT.md`, `5wa.md`).
 
 ## Validation and PR/check evidence
 
 ### Local validation
 
 - Commands run: `git diff --stat` / `git diff --name-only` (docs-only scope check)
-- Result: pass — only `docs/IMPORT_TRUST.md`, `docs/RETENTIONOS_SHOPIFY_CSV_CONTRACT.md`, `docs/SHOPIFY_FIELD_CAPABILITY_CONTRACT.md`, `docs/agent/sprints/5wa.md`
+- Result: pass — only `docs/SHOPIFY_FIELD_CAPABILITY_CONTRACT.md`, `docs/agent/sprints/5wa.md`
 
 ### PR
 
 - URL: https://github.com/aidanwoodward/retention-os/pull/30
 - Base: `restart-retentionos-mvp`
-- Head SHA: `437e250f5212efebc26e0280d72f127fc09e2aed` (pre-freeze commit; freeze commit follows)
+- Head SHA: pending freeze after push
 
 ### Checks
 
-- `gh pr checks --watch`: pass
-- CI validate: pass
-- Vercel: pass
+- `gh pr checks --watch`: pending
+- CI validate: pending
+- Vercel: pending
 
 ## Notes
 
-Gate 2 approval and DONE are **not** written here after PR freeze.
+Founder rejected merge at `74e7ece` pending substantive contract locks above. Gate 2 approval and DONE are **not** written here after PR freeze.

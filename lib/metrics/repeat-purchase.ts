@@ -1,5 +1,5 @@
 import type { Customer } from "../types";
-import type { Order } from "../types/order";
+import { isIdentifiedOrder, type Order } from "../types/order";
 import { median, safeDivide } from "./utils";
 
 export interface RepeatPurchaseRateResult {
@@ -15,7 +15,7 @@ function ordersPerCustomer(customers: readonly Customer[], orders: readonly Orde
     counts.set(c.id, 0);
   }
   for (const o of orders) {
-    if (!counts.has(o.customerId)) {
+    if (!isIdentifiedOrder(o) || !counts.has(o.customerId)) {
       continue;
     }
     counts.set(o.customerId, (counts.get(o.customerId) ?? 0) + 1);
@@ -69,7 +69,9 @@ export interface FirstToSecondConversionResult {
 const MS_PER_DAY = 86_400_000;
 
 function sortedOrdersForCustomer(customerId: string, orders: readonly Order[]): Order[] {
-  return orders.filter((o) => o.customerId === customerId).sort((a, b) => a.orderedAt.localeCompare(b.orderedAt));
+  return orders
+    .filter((o) => isIdentifiedOrder(o) && o.customerId === customerId)
+    .sort((a, b) => a.orderedAt.localeCompare(b.orderedAt));
 }
 
 /**

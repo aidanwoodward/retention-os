@@ -1,5 +1,5 @@
 import type { Customer, LTVPoint, MarginAssumptions } from "../types";
-import type { Order } from "../types/order";
+import { isIdentifiedOrder, type Order } from "../types/order";
 import {
   addMonthsToMonthKey,
   calendarMonthIndexFromKey,
@@ -45,6 +45,9 @@ export function calculateLTVByCohort(
     ordersByCustomer.set(c.id, []);
   }
   for (const o of orders) {
+    if (!isIdentifiedOrder(o)) {
+      continue;
+    }
     const bucket = ordersByCustomer.get(o.customerId);
     if (bucket) {
       bucket.push(o);
@@ -67,7 +70,7 @@ export function calculateLTVByCohort(
 
   let globalMaxOrderMonthIdx = 0;
   for (const o of orders) {
-    if (!knownIds.has(o.customerId)) {
+    if (!isIdentifiedOrder(o) || !knownIds.has(o.customerId)) {
       continue;
     }
     globalMaxOrderMonthIdx = Math.max(

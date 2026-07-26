@@ -598,7 +598,9 @@ export function normaliseCombinedOrderCsv(
   orderList.sort((a, b) => (a.orderedAt < b.orderedAt ? -1 : a.orderedAt > b.orderedAt ? 1 : 0));
 
   const customerIds = new Set<string>();
-  for (const o of orderList) customerIds.add(o.customerId);
+  for (const o of orderList) {
+    if (o.customerId != null) customerIds.add(o.customerId);
+  }
 
   for (const cid of customerIds) {
     const custOrders = orderList

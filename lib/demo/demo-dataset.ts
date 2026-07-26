@@ -38,6 +38,7 @@ function createDemoRand(seed: number): DemoRand {
 function enrichLastOrderAt(customers: readonly Customer[], orders: readonly Order[]): Customer[] {
   const lastMap = new Map<string, string>();
   for (const o of orders) {
+    if (o.customerId == null) continue;
     const cur = lastMap.get(o.customerId);
     if (!cur || o.orderedAt > cur) {
       lastMap.set(o.customerId, o.orderedAt);

@@ -1,5 +1,6 @@
 export type { Customer, CustomerId } from "./customer";
 export type { Order, OrderId, OrderLineItem, OrderLineItemId } from "./order";
+export { isIdentifiedOrder } from "./order";
 export type { Product, ProductId } from "./product";
 export type { Channel, ChannelKey, MarketingSpend } from "./marketing";
 export type { Cohort, RetentionPoint } from "./cohort";

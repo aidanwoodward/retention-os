@@ -1,8 +1,12 @@
 # RetentionOS — Shopify Orders CSV Ingestion Contract
 
-**Sprint:** 4I-A  
-**Status:** Contract + fixture only — no adapter, UI, or runtime changes in this sprint.  
-**Audience:** Engineering and product partners implementing the Shopify → canonical pipeline.
+**Sprint:** 4I-A (adapter implemented in later 4I work; this file remains the CSV-path contract)  
+**Status:** **Authoritative for the currently implemented Shopify Orders CSV path.** Not superseded by Sprint 5W-A.  
+**Audience:** Engineering and product partners implementing or maintaining the Shopify CSV → canonical pipeline.
+
+**Related (API / future connect — separate lane):**
+
+- [`SHOPIFY_FIELD_CAPABILITY_CONTRACT.md`](SHOPIFY_FIELD_CAPABILITY_CONTRACT.md) — GraphQL Admin API `2026-07` field/capability SoT for 5W-B fixtures and 6D production. Documents CSV↔API divergences; does **not** change CSV runtime behaviour by documentation alone.
 
 **Companions:**
 

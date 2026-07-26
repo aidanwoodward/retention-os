@@ -1,6 +1,8 @@
 # RetentionOS — Import trust framework (Sprint 5V-A)
 
-Source-agnostic rules for CSV import honesty. Applies to currently supported orders and marketing-spend CSV paths without changing Shopify-specific semantics (deferred to 5W-A).
+Source-agnostic rules for CSV import honesty. Applies to currently supported orders and marketing-spend CSV paths without changing Shopify-specific semantics at ingest time.
+
+Shopify API field semantics, revenue construction, privacy minimisation, and CSV/API divergence are defined in [`SHOPIFY_FIELD_CAPABILITY_CONTRACT.md`](SHOPIFY_FIELD_CAPABILITY_CONTRACT.md) (Sprint 5W-A). That document does **not** change current CSV adapter behaviour.
 
 ## Severities
 
@@ -37,6 +39,8 @@ Source-agnostic rules for CSV import honesty. Applies to currently supported ord
 
 Only from existing user-authorised session margin or marketing-spend assumptions — labelled **Estimated** on review.
 
-## Out of scope here (5W-A)
+## Shopify semantics (resolved for planning in 5W-A)
 
-Shopify Id vs Name, Financial Status, cancellations/payment status, multi-currency/FX, refund basis, CSV/API field parity, blank discount/refund coercion policy.
+Topics formerly deferred here (Id vs Name, Financial Status, cancellations/payment, multi-currency/FX, refund basis, CSV/API field parity, blank discount/refund coercion) are specified for the **future API path** in [`SHOPIFY_FIELD_CAPABILITY_CONTRACT.md`](SHOPIFY_FIELD_CAPABILITY_CONTRACT.md).
+
+**Still out of scope for this trust framework file:** changing CSV runtime behaviour, implementing Shopify OAuth/sync, or altering metric formulas.

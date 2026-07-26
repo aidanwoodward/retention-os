@@ -1,5 +1,5 @@
 /**
- * Pure view model for the post-parse imported dataset review checkpoint (Sprint 5A).
+ * Pure view model for the post-parse imported dataset review checkpoint (Sprint 5A / 5V-A).
  * No React, no browser APIs — composes existing import summaries and metric completeness logic.
  */
 
@@ -11,9 +11,18 @@ import type { MarginAssumptions } from "../types";
 import type { OrdersCsvImportFormat } from "./detect-orders-csv-format";
 import { ordersCsvFormatLabel } from "./detect-orders-csv-format";
 import type { CombineOrderCsvImportResult, CsvImportIssue } from "./import-types";
+import {
+  deriveImportReadiness,
+  NEGATIVE_CONTRIBUTION_MARGIN_LIMITATION_CODE,
+  partitionTrustFindings,
+  type ImportReadiness,
+  type ImportTrustFinding,
+} from "./import-trust";
 import { buildImportedCsvMetricPreview } from "./metric-preview";
 
-export type ImportReviewConfidence = "ready" | "review_warnings";
+/** @deprecated Use ImportReadiness — kept as alias for transitional call sites. */
+export type ImportReviewConfidence = ImportReadiness;
+export type ImportReviewReadiness = ImportReadiness;
 export type ImportReviewPresence = "detected" | "none";
 export type ImportReviewMetricStatus = "unlocked" | "partial" | "locked";
 
@@ -35,7 +44,7 @@ export interface ImportReviewMetricRow {
 export interface ImportReviewCaveat {
   readonly code?: string;
   readonly message: string;
-  readonly severity: "warning" | "info";
+  readonly severity: "warning" | "info" | "limitation" | "notice";
 }
 
 export interface ImportReviewSessionContext {
@@ -60,7 +69,10 @@ export interface ImportReviewViewModel {
   readonly canSave: true;
   readonly formatLabel: string;
   readonly uploadFormat: RetentionOSUploadFormat;
-  readonly confidence: ImportReviewConfidence;
+  /** Dataset readiness (5V-A). Notices alone do not prevent `ready`. */
+  readonly readiness: ImportReviewReadiness;
+  /** Alias of `readiness` for existing UI bindings. */
+  readonly confidence: ImportReviewReadiness;
   readonly statusHeadline: string;
   readonly statusDetail: string;
   readonly dateRange: { readonly firstOrderAt?: string; readonly lastOrderAt?: string };
@@ -82,21 +94,21 @@ export interface ImportReviewViewModel {
     readonly caveat?: string;
   };
   readonly metrics: readonly ImportReviewMetricRow[];
+  readonly limitations: readonly ImportTrustFinding[];
+  readonly notices: readonly ImportTrustFinding[];
   readonly caveats: readonly ImportReviewCaveat[];
 }
 
 export interface ImportReviewBlockedView {
   readonly kind: "blocked";
   readonly canSave: false;
+  readonly readiness: "blocked";
   readonly formatLabel: string;
   readonly reason: string;
   readonly errors: readonly CsvImportIssue[];
 }
 
 export type ImportReviewViewModelResult = ImportReviewViewModel | ImportReviewBlockedView;
-
-const MIN_CUSTOMERS_FOR_READY = 5;
-const MIN_ORDERS_FOR_READY = 10;
 
 const SHOPIFY_EMAIL_CAVEAT =
   "Customer identity uses email from the Shopify export. Email changes, guest checkout, and shared inboxes can split or merge cohorts.";
@@ -129,29 +141,6 @@ function countOrdersWhere(orders: CombineOrderCsvImportResult["orders"], pred: (
   return n;
 }
 
-function dedupeCaveats(
-  importerWarnings: readonly CsvImportIssue[],
-  metricPreviewWarnings: readonly string[],
-): ImportReviewCaveat[] {
-  const seen = new Set<string>();
-  const out: ImportReviewCaveat[] = [];
-
-  for (const w of importerWarnings) {
-    const key = w.code || w.message;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push({ code: w.code, message: w.message, severity: "warning" });
-  }
-
-  for (const message of metricPreviewWarnings) {
-    if (seen.has(message)) continue;
-    seen.add(message);
-    out.push({ message, severity: "warning" });
-  }
-
-  return out;
-}
-
 function applySessionMarginForLabeling(
   built: Extract<ReturnType<typeof buildImportedRetentionOSDataset>, { ok: true }>,
   sessionContext?: ImportReviewSessionContext,
@@ -173,7 +162,8 @@ function applySessionMarginForLabeling(
 function buildCoreMetricRows(
   hasPopulation: boolean,
   completeness: ReturnType<typeof buildDashboardDataCompletenessView>,
-  sessionContext?: ImportReviewSessionContext,
+  sessionContext: ImportReviewSessionContext | undefined,
+  hasNegativeContributionMargin: boolean,
 ): ImportReviewMetricRow[] {
   const cohortStatus: ImportReviewMetricStatus = hasPopulation ? "unlocked" : "locked";
   const cohortDetail = hasPopulation
@@ -193,6 +183,19 @@ function buildCoreMetricRows(
     : hasCsvSpend
       ? "Marketing spend CSV is saved in this browser session — acquisition metrics unlock after save."
       : "Estimated marketing spend assumption saved in this browser session — acquisition metrics unlock after save.";
+
+  let contributionStatus: ImportReviewMetricStatus = marginRow?.status ?? "locked";
+  let contributionDetail =
+    marginRow?.detail ??
+    "Contribution LTV unavailable - add order-level contribution margin or save margin assumptions on /data.";
+
+  if (hasNegativeContributionMargin) {
+    contributionStatus = contributionStatus === "locked" ? "locked" : "partial";
+    contributionDetail =
+      "Limited — negative order contribution_margin is accepted, but the engine floors negative contribution to 0, which can overstate contribution LTV, contribution LTV:CAC, and payback.";
+  } else if (sessionContext?.hasSavedMarginAssumptions && contributionStatus === "partial") {
+    contributionDetail = `Estimated — ${contributionDetail}`;
+  }
 
   return [
     { id: "cohorts", label: "Cohorts", status: cohortStatus, detail: cohortDetail },
@@ -221,42 +224,56 @@ function buildCoreMetricRows(
     {
       id: "acquisition",
       label: "Acquisition",
-      status: acquisitionUnlocked ? "unlocked" : "locked",
+      status: acquisitionUnlocked ? (hasCsvSpend ? "unlocked" : "partial") : "locked",
       detail: acquisitionDetail,
     },
     {
       id: "contribution_ltv",
       label: "Contribution LTV",
-      status: marginRow?.status ?? "locked",
-      detail: marginRow?.detail ?? "Contribution LTV unavailable - add order-level contribution margin or save margin assumptions on /data.",
+      status: contributionStatus,
+      detail: contributionDetail,
     },
   ];
 }
 
-function deriveConfidence(
-  importerWarnings: readonly CsvImportIssue[],
-  metricPreviewWarnings: readonly string[],
-  customerCount: number,
-  orderCount: number,
-): ImportReviewConfidence {
-  if (importerWarnings.length > 0 || metricPreviewWarnings.length > 0) return "review_warnings";
-  if (customerCount < MIN_CUSTOMERS_FOR_READY || orderCount < MIN_ORDERS_FOR_READY) return "review_warnings";
-  return "ready";
+function metricLimitationsFromRows(metrics: readonly ImportReviewMetricRow[]): ImportTrustFinding[] {
+  const out: ImportTrustFinding[] = [];
+  for (const m of metrics) {
+    if (m.status === "unlocked") continue;
+    out.push({
+      severity: "limitation",
+      code: `METRIC_${m.id.toUpperCase()}`,
+      message: `${m.label}: ${m.detail}`,
+    });
+  }
+  return out;
+}
+
+function dedupeFindings(findings: readonly ImportTrustFinding[]): ImportTrustFinding[] {
+  const seen = new Set<string>();
+  const out: ImportTrustFinding[] = [];
+  for (const f of findings) {
+    const key = `${f.severity}|${f.code ?? ""}|${f.message}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(f);
+  }
+  return out;
 }
 
 function statusCopy(
-  confidence: ImportReviewConfidence,
+  readiness: ImportReviewReadiness,
   counts: ImportReviewViewModel["counts"],
 ): { headline: string; detail: string } {
-  if (confidence === "ready") {
+  if (readiness === "ready") {
     return {
       headline: "Import looks good - review before saving",
-      detail: `${counts.orders.toLocaleString()} orders across ${counts.customers.toLocaleString()} customers with no importer warnings. Confirm the assumptions below, then save.`,
+      detail: `${counts.orders.toLocaleString()} orders across ${counts.customers.toLocaleString()} customers with no source or metric limitations. Confirm the assumptions below, then save.`,
     };
   }
   return {
-    headline: "Import parsed - review warnings before saving",
-    detail: `${counts.orders.toLocaleString()} orders across ${counts.customers.toLocaleString()} customers imported. Warnings below do not block save but may affect metric trust.`,
+    headline: "Import accepted with limitations",
+    detail: `${counts.orders.toLocaleString()} orders across ${counts.customers.toLocaleString()} customers imported. Limitations below do not block save but constrain which metrics are trustworthy.`,
   };
 }
 
@@ -274,6 +291,28 @@ function customerIdentityForFormat(format: RetentionOSUploadFormat): ImportRevie
   };
 }
 
+function caveatsFromFindings(
+  limitations: readonly ImportTrustFinding[],
+  notices: readonly ImportTrustFinding[],
+): ImportReviewCaveat[] {
+  const out: ImportReviewCaveat[] = [];
+  for (const f of limitations) {
+    out.push({
+      code: f.code,
+      message: f.message,
+      severity: "limitation",
+    });
+  }
+  for (const f of notices) {
+    out.push({
+      code: f.code,
+      message: f.message,
+      severity: "notice",
+    });
+  }
+  return out;
+}
+
 /** Build founder-readable review state between parse and session save. */
 export function buildImportReviewViewModel(
   input: BuildImportReviewViewModelInput,
@@ -286,6 +325,7 @@ export function buildImportReviewViewModel(
     return {
       kind: "blocked",
       canSave: false,
+      readiness: "blocked",
       formatLabel,
       reason:
         format === "unsupported"
@@ -299,6 +339,7 @@ export function buildImportReviewViewModel(
     return {
       kind: "blocked",
       canSave: false,
+      readiness: "blocked",
       formatLabel,
       reason: "No data rows - the file parsed but produced no orders.",
       errors: result.errors,
@@ -309,6 +350,7 @@ export function buildImportReviewViewModel(
     return {
       kind: "blocked",
       canSave: false,
+      readiness: "blocked",
       formatLabel,
       reason: "Unknown upload format.",
       errors: result.errors,
@@ -322,6 +364,7 @@ export function buildImportReviewViewModel(
     return {
       kind: "blocked",
       canSave: false,
+      readiness: "blocked",
       formatLabel,
       reason: "Dataset build failed despite zero import errors.",
       errors: result.errors,
@@ -336,9 +379,44 @@ export function buildImportReviewViewModel(
   const refundOrderCount = countOrdersWhere(orders, (o) => o.refunds > 0);
   const hasPopulation = customers.length > 0 && orders.length > 0;
 
-  const caveats = dedupeCaveats(warnings, metricPreview.warnings);
-  const confidence = deriveConfidence(warnings, metricPreview.warnings, summary.customerCount, summary.orderCount);
-  const { headline, detail } = statusCopy(confidence, {
+  const hasNegativeContributionMargin =
+    warnings.some((w) => w.code === NEGATIVE_CONTRIBUTION_MARGIN_LIMITATION_CODE) ||
+    orders.some((o) => o.contributionMargin != null && o.contributionMargin < 0);
+
+  const metrics = buildCoreMetricRows(
+    hasPopulation,
+    completeness,
+    sessionContext,
+    hasNegativeContributionMargin,
+  );
+
+  const partitioned = partitionTrustFindings(warnings);
+  // Metric-preview sample-size strings are informational notices only — not dataset readiness gates.
+  const previewNotices: ImportTrustFinding[] = metricPreview.warnings.map((message) => ({
+    severity: "notice" as const,
+    message,
+  }));
+
+  const identityNotices: ImportTrustFinding[] = [];
+  if (uploadFormat === "shopify_orders") {
+    identityNotices.push({
+      severity: "notice",
+      code: "SHOPIFY_EMAIL_IDENTITY",
+      message: SHOPIFY_EMAIL_CAVEAT,
+    });
+  }
+
+  const sourceLimitations = partitioned.limitations;
+  const metricLimitations = metricLimitationsFromRows(metrics);
+  const limitations = dedupeFindings([...sourceLimitations, ...metricLimitations]);
+  const notices = dedupeFindings([...partitioned.notices, ...previewNotices, ...identityNotices]);
+
+  const readiness = deriveImportReadiness({
+    blocked: false,
+    hasLimitations: limitations.length > 0,
+  });
+
+  const { headline, detail } = statusCopy(readiness, {
     orders: summary.orderCount,
     customers: summary.customerCount,
     products: summary.productCount,
@@ -350,7 +428,8 @@ export function buildImportReviewViewModel(
     canSave: true,
     formatLabel,
     uploadFormat,
-    confidence,
+    readiness,
+    confidence: readiness,
     statusHeadline: headline,
     statusDetail: detail,
     dateRange: {
@@ -382,7 +461,9 @@ export function buildImportReviewViewModel(
       },
     },
     customerIdentity: customerIdentityForFormat(uploadFormat),
-    metrics: buildCoreMetricRows(hasPopulation, completeness, sessionContext),
-    caveats,
+    metrics,
+    limitations,
+    notices,
+    caveats: caveatsFromFindings(limitations, notices),
   };
 }

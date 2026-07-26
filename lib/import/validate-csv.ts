@@ -27,6 +27,24 @@ export function pushWarning(
   warnings.push({ severity: "warning", code, message, row });
 }
 
+export function pushLimitation(
+  warnings: CsvImportIssue[],
+  code: string,
+  message: string,
+  row?: number,
+): void {
+  warnings.push({ severity: "limitation", code, message, row });
+}
+
+export function pushNotice(
+  warnings: CsvImportIssue[],
+  code: string,
+  message: string,
+  row?: number,
+): void {
+  warnings.push({ severity: "notice", code, message, row });
+}
+
 /** Strip currency noise; returns NaN if not parseable. */
 export function parseMoneyCell(raw: string): number {
   const s = raw.trim().replace(/^\$/, "").replace(/,/g, "");

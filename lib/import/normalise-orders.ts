@@ -17,12 +17,19 @@ import type {
   RawOrderLineCsvRow,
 } from "./import-types";
 import {
+  NEGATIVE_CALCULATED_NET_LIMITATION_CODE,
+  NEGATIVE_CALCULATED_NET_MESSAGE,
+  NEGATIVE_CONTRIBUTION_MARGIN_LIMITATION_CODE,
+  NEGATIVE_CONTRIBUTION_MARGIN_MESSAGE,
+} from "./import-trust";
+import {
   MONEY_EPSILON,
   moneyClose,
   parseMoneyCell,
   parseOrderedAtIso,
   parseQuantityCell,
   pushError,
+  pushLimitation,
   pushWarning,
 } from "./validate-csv";
 
@@ -310,11 +317,18 @@ function validateAndCoerceRow(
   const cmRaw = raw.contribution_margin.trim();
   if (cmRaw !== "") {
     const cm = parseMoneyCell(raw.contribution_margin);
-    if (Number.isNaN(cm)) {
+    if (Number.isNaN(cm) || !Number.isFinite(cm)) {
       pushError(errors, "INVALID_CONTRIBUTION_MARGIN", `Invalid contribution_margin "${raw.contribution_margin}".`, row);
       return null;
     }
     contributionMargin = cm;
+    if (cm < 0) {
+      pushLimitation(warnings, NEGATIVE_CONTRIBUTION_MARGIN_LIMITATION_CODE, NEGATIVE_CONTRIBUTION_MARGIN_MESSAGE, row);
+    }
+  }
+
+  if (grossRevenue + MONEY_EPSILON < discounts + refunds) {
+    pushLimitation(warnings, NEGATIVE_CALCULATED_NET_LIMITATION_CODE, NEGATIVE_CALCULATED_NET_MESSAGE, row);
   }
 
   const channelRaw = raw.channel.trim();
@@ -325,12 +339,13 @@ function validateAndCoerceRow(
 
   const impliedLine = quantity * unitPrice;
   if (!moneyClose(impliedLine, lineTotal, MONEY_EPSILON) && quantity > 0 && unitPrice > 0) {
-    pushWarning(
-      warnings,
+    pushError(
+      errors,
       "LINE_TOTAL_VS_QTY_PRICE",
       `line_total (${lineTotal}) differs from quantity × unit_price (${impliedLine.toFixed(2)}) beyond tolerance.`,
       row,
     );
+    return null;
   }
 
   return {

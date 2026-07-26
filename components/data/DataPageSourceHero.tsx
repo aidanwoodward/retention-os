@@ -1,8 +1,11 @@
 "use client";
 
-import { clearUploadedRetentionOSDataset } from "@/lib/data-source";
+import type { ReactNode } from "react";
+import { deleteUploadedDatasetAndUseDemo } from "@/lib/data-source";
+import type { CommandCentreDatasetSelection } from "@/lib/data-source/client-selected-source";
 import type { RetentionOSDatasetSummary } from "@/lib/data-source";
 import { UploadedSessionDatasetDl } from "@/components/data/UploadedSessionDatasetSnapshot";
+import { DatasetSourceUnavailablePanel } from "@/components/mvp/DatasetSourceUnavailablePanel";
 
 export type DataPageDemoLedgerSnapshot = Readonly<{
   demoBrandName: string;
@@ -23,20 +26,64 @@ export type DataPageDemoLedgerSnapshot = Readonly<{
 
 export function DataPageSourceHero({
   demo,
+  selection,
   uploadSummary,
   onUploadCleared,
 }: {
   demo: DataPageDemoLedgerSnapshot;
+  /** Shared resolve path — drives lost_upload honesty (not session-summary alone). */
+  selection: CommandCentreDatasetSelection;
   uploadSummary: RetentionOSDatasetSummary | null;
   /** Clear storage + reconcile parent CSV preview state via session epoch bump */
   readonly onUploadCleared: () => void;
 }) {
-  const hasUpload = uploadSummary != null;
-
   const revert = () => {
-    clearUploadedRetentionOSDataset();
+    deleteUploadedDatasetAndUseDemo();
     onUploadCleared();
   };
+
+  if (selection.status === "pending") {
+    return (
+      <section className="overflow-hidden rounded-xl border border-zinc-200/90 bg-white shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06)] ring-1 ring-black/[0.02]">
+        <div className="border-b border-zinc-200/90 bg-gradient-to-r from-slate-900 via-zinc-900 to-zinc-950 px-5 py-4 sm:px-6">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400">Data source control centre</p>
+          <h2 className="mt-2 text-xl font-semibold tracking-tight text-white sm:text-2xl">Resolving active dataset…</h2>
+        </div>
+        <div className="px-5 py-5 sm:px-6">
+          <DatasetSourceUnavailablePanel selection={selection} />
+        </div>
+      </section>
+    );
+  }
+
+  if (selection.status === "lost_upload") {
+    return (
+      <section className="overflow-hidden rounded-xl border border-zinc-200/90 bg-white shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06)] ring-1 ring-black/[0.02]">
+        <div className="border-b border-zinc-200/90 bg-gradient-to-r from-slate-900 via-zinc-900 to-zinc-950 px-5 py-4 sm:px-6">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400">Data source control centre</p>
+          <h2 className="mt-2 text-xl font-semibold tracking-tight text-white sm:text-2xl">
+            Uploaded session lost — re-upload required
+          </h2>
+        </div>
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-zinc-100 bg-amber-50/80 px-5 py-4 sm:px-6">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-800/90">Current active source</p>
+            <p className="mt-2 text-lg font-semibold text-zinc-950">
+              Intent: uploaded · payload unavailable
+            </p>
+          </div>
+          <span className="inline-flex shrink-0 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-950 ring-1 ring-amber-700/25">
+            Session lost
+          </span>
+        </div>
+        <div className="bg-white px-5 py-5 sm:px-6 sm:py-6">
+          <DatasetSourceUnavailablePanel selection={selection} onRecoveredToDemo={onUploadCleared} />
+        </div>
+      </section>
+    );
+  }
+
+  const hasUpload = selection.status === "uploaded" && uploadSummary != null;
 
   return (
     <section className="overflow-hidden rounded-xl border border-zinc-200/90 bg-white shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06)] ring-1 ring-black/[0.02]">
@@ -96,6 +143,7 @@ function UploadedModePanel({
         <ul className="mt-2 list-inside list-disc space-y-1 text-amber-950/95">
           <li>Saved only in this browser tab — not synced to the cloud or shared across devices.</li>
           <li>Refreshing this tab keeps your upload until you clear it or close the tab.</li>
+          <li>Closing the tab clears the CSV payload; RetentionOS will show uploaded session lost until you re-upload or switch to demo.</li>
           <li>Reverting immediately switches Dashboard, Cohorts, Retention, LTV, Acquisition, Products, and Insights back to the demo dataset.</li>
         </ul>
       </div>
@@ -109,7 +157,7 @@ function UploadedModePanel({
           <div className="rounded-lg border border-zinc-200/90 bg-zinc-50/90 px-4 py-4">
             <p className="text-sm font-semibold text-zinc-900">Revert to demo dataset</p>
             <p className="mt-1.5 text-sm leading-relaxed text-zinc-700">
-              This removes the session CSV snapshot for this tab. All KPI pages will reload their source selection on navigation and align with{" "}
+              This removes the session CSV snapshot for this tab and resets durable source intent to demo. All KPI pages will align with{" "}
               <span className="font-mono text-[11px]">getDemoDataset()</span> / <strong className="font-medium">{demoBrandName}</strong>. No
               server data is wiped — there is nothing persisted remotely for this MVP path.
             </p>
@@ -138,54 +186,36 @@ function DemoModePanel({ demo }: { demo: DataPageDemoLedgerSnapshot }) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-sky-200/80 bg-sky-50/50 px-4 py-3 text-sm leading-relaxed text-sky-950 ring-1 ring-sky-900/10">
-        <p className="font-semibold">Demo-source mode</p>
-        <p className="mt-2 text-sky-950/95">
-          The KPI spine consumes one deterministic MVP demo fixture audited through{" "}
-          <span className="font-mono text-[11px]">runDemoMetricSanityCheck()</span>: repeatable, intentional, not live storefront telemetry yet. CSV
-          uploads below reuse the exact same calculator stack for this browser session only.
+      <div className="rounded-lg border border-sky-200/90 bg-sky-50/70 px-4 py-3 text-sm leading-relaxed text-sky-950 ring-1 ring-sky-900/10">
+        <p className="font-semibold">{demo.demoBrandName}</p>
+        <p className="mt-1.5 text-sky-950/90">{demo.demoBrandTagline}</p>
+        <p className="mt-2 text-sky-950/90">
+          Fixture ledger below is the audit trail for demo mode. Upload a Shopify Orders CSV to analyse your own shop in this tab.
         </p>
       </div>
 
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Canonical demo lineage</p>
-        <p className="mt-2 text-xl font-semibold text-zinc-900">{demo.demoBrandName}</p>
-        <p className="mt-1 text-sm text-zinc-700">{demo.demoBrandTagline}</p>
-        <p className="mt-3 text-xs text-zinc-600">
-          Provenance tag:{" "}
-          <code className="rounded-md border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[11px]">{demo.sourceLabelDemo}</code> · Simulation
-          calendar window UTC through{" "}
-          <span className="font-mono tabular-nums text-[13px] text-zinc-900">{demo.windowEndFormatted}</span>.
-        </p>
-      </div>
-
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Fixture breadth (canonical demo)</p>
-        <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <LedgerStat label="Customers" value={demo.customerCount.toLocaleString()} />
-          <LedgerStat label="Orders" value={demo.orderCount.toLocaleString()} />
-          <LedgerStat label="Line items (all orders)" value={demo.orderLineItemCount.toLocaleString()} />
-          <LedgerStat label="Products (catalog slice)" value={demo.productCount.toLocaleString()} />
-          <LedgerStat label="Marketing spend rows" value={demo.marketingSpendRows.toLocaleString()} />
-          <LedgerStat label="Cohort months tracked" value={demo.cohortMonthCount.toLocaleString()} />
-          <LedgerStat label="First cohort month" value={demo.firstCohort ?? "—"} monospace={false} />
-          <LedgerStat label="Last cohort month" value={demo.lastCohort ?? "—"} monospace={false} />
-        </dl>
-      </div>
-
-      <p className="text-sm leading-relaxed text-zinc-700">
-        <strong className="font-medium text-zinc-900">Largest sampled cohort:</strong> {largest}. Full fidelity tables remain in{" "}
-        <span className="font-semibold text-zinc-900">Fixture counts</span> below for audit exports.
-      </p>
+      <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3 lg:grid-cols-4">
+        <DemoStat label="Source label" value={demo.sourceLabelDemo} />
+        <DemoStat label="Window end" value={demo.windowEndFormatted} />
+        <DemoStat label="Customers" value={demo.customerCount.toLocaleString()} />
+        <DemoStat label="Orders" value={demo.orderCount.toLocaleString()} />
+        <DemoStat label="Line items" value={demo.orderLineItemCount.toLocaleString()} />
+        <DemoStat label="Products" value={demo.productCount.toLocaleString()} />
+        <DemoStat label="Marketing spend rows" value={String(demo.marketingSpendRows)} />
+        <DemoStat label="Cohort months" value={String(demo.cohortMonthCount)} />
+        <DemoStat label="First cohort" value={demo.firstCohort ?? "—"} />
+        <DemoStat label="Last cohort" value={demo.lastCohort ?? "—"} />
+        <DemoStat label="Largest cohort" value={largest} />
+      </dl>
     </div>
   );
 }
 
-function LedgerStat({ label, value, monospace = true }: { label: string; value: string; monospace?: boolean }) {
+function DemoStat({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="rounded-lg border border-zinc-100 bg-zinc-50/80 p-3.5 ring-1 ring-black/[0.02]">
-      <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">{label}</dt>
-      <dd className={`mt-2 text-lg font-semibold text-zinc-900 ${monospace ? "font-mono tabular-nums" : ""}`}>{value}</dd>
+    <div className="rounded-lg border border-zinc-200/90 bg-zinc-50/80 px-3 py-2.5">
+      <dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-500">{label}</dt>
+      <dd className="mt-1 text-sm font-medium text-zinc-900">{value}</dd>
     </div>
   );
 }

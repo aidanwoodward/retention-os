@@ -1,18 +1,16 @@
 "use client";
 
-import { useLayoutEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
+import { DatasetSourceUnavailablePanel } from "@/components/mvp/DatasetSourceUnavailablePanel";
 import { MetricSourceBanner } from "@/components/mvp/MetricSourceBanner";
 import { KpiMetricLabel } from "@/components/ui/kpi-metric-label";
 import type { MetricDataQuality, MetricId } from "@/lib/metrics/metric-definitions";
 import { DashboardCommandCentreHero } from "@/components/dashboard/DashboardCommandCentreHero";
 import { DashboardSpinePanels } from "@/components/dashboard/DashboardSpinePanels";
-import {
-  buildDemoCommandCentreSelection,
-  resolveCommandCentreDatasetSource,
-  type CommandCentreDatasetSelection,
-} from "@/lib/data-source/client-selected-source";
+import { frameSourceFromSelection } from "@/lib/data-source/client-selected-source";
+import { useCommandCentreDatasetSelection } from "@/lib/data-source/use-command-centre-dataset-selection";
 import { buildDashboardExecutiveViewModelFromDataset } from "@/lib/metrics/dashboard-view-model";
 
 function formatMoney(amount: number | null | undefined): string {
@@ -40,14 +38,12 @@ const kpiSecondary =
   "rounded-lg border border-zinc-200/70 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)] ring-1 ring-black/[0.02]";
 
 export default function DashboardExecutive() {
-  const [selection, setSelection] = useState<CommandCentreDatasetSelection>(() => buildDemoCommandCentreSelection());
+  const selection = useCommandCentreDatasetSelection();
 
-  useLayoutEffect(() => {
-    setSelection(resolveCommandCentreDatasetSource());
-  }, []);
-
-  const vm = useMemo(() => buildDashboardExecutiveViewModelFromDataset(selection.dataset), [selection.dataset]);
-  const { summary, hero, acquisition, productQuality, dataCompleteness } = vm;
+  const vm = useMemo(() => {
+    if (!selection.metricsAllowed) return null;
+    return buildDashboardExecutiveViewModelFromDataset(selection.dataset);
+  }, [selection]);
 
   return (
     <CommandCentrePageFrame
@@ -55,9 +51,13 @@ export default function DashboardExecutive() {
       maxWidth="6xl"
       bannerKind="metrics"
       metricsBannerSlot={<MetricSourceBanner routeId="dashboard" selection={selection} />}
-      activeMetricDatasetSource={selection.isUploaded ? "uploaded_csv" : "demo"}
+      activeMetricDatasetSource={frameSourceFromSelection(selection)}
     >
-      <DashboardCommandCentreHero hero={hero} />
+      {selection.status === "pending" || selection.status === "lost_upload" ? (
+        <DatasetSourceUnavailablePanel selection={selection} />
+      ) : vm != null ? (
+        <>
+      <DashboardCommandCentreHero hero={vm.hero} />
 
       <div>
         <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Executive KPIs</h2>
@@ -69,7 +69,7 @@ export default function DashboardExecutive() {
             metricId="repeat_purchase_rate"
             title="All-time repeat purchase rate"
             sub="Customers with ≥2 qualifying orders"
-            value={formatPct(summary.allTimeRepeatPurchaseRate)}
+            value={formatPct(vm.summary.allTimeRepeatPurchaseRate)}
           />
           <MetricCard
             className={kpiPrimary}
@@ -77,7 +77,7 @@ export default function DashboardExecutive() {
             metricId="first_to_second_conversion"
             title="First→second within 90 days"
             sub="Vs first qualifying order timestamp"
-            value={formatPct(summary.firstToSecondWithin90DaysRate)}
+            value={formatPct(vm.summary.firstToSecondWithin90DaysRate)}
           />
           <MetricCard
             className={kpiPrimary}
@@ -85,7 +85,7 @@ export default function DashboardExecutive() {
             metricId="revenue_ltv"
             title="Avg terminal net revenue LTV"
             sub="Across cohort staircase tails"
-            value={formatMoney(summary.avgTerminalNetRevenueLtvAcrossCohorts)}
+            value={formatMoney(vm.summary.avgTerminalNetRevenueLtvAcrossCohorts)}
           />
           <MetricCard
             className={kpiPrimary}
@@ -93,28 +93,28 @@ export default function DashboardExecutive() {
             metricId="contribution_ltv"
             title="Avg terminal contribution LTV"
             sub="Where margin model applies"
-            value={formatMoney(summary.avgTerminalContributionLtvAcrossCohorts)}
+            value={formatMoney(vm.summary.avgTerminalContributionLtvAcrossCohorts)}
           />
         </div>
 
         <h3 className="mt-8 text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Portfolio fundamentals</h3>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
-          <MetricCard className={kpiSecondary} title="Customers" value={summary.totalCustomers.toLocaleString()} />
+          <MetricCard className={kpiSecondary} title="Customers" value={vm.summary.totalCustomers.toLocaleString()} />
           <MetricCard
             className={kpiSecondary}
             metricId="net_revenue"
             title="Total net revenue"
             sub="Gross minus discounts & refunds"
-            value={formatMoney(summary.totalNetRevenue)}
+            value={formatMoney(vm.summary.totalNetRevenue)}
           />
-          <MetricCard className={kpiSecondary} title="Cohort months (first-order)" value={String(summary.cohortCount)} />
+          <MetricCard className={kpiSecondary} title="Cohort months (first-order)" value={String(vm.summary.cohortCount)} />
         </div>
       </div>
 
       <DashboardSpinePanels
-        acquisition={acquisition}
-        productQuality={productQuality}
-        dataCompleteness={dataCompleteness}
+        acquisition={vm.acquisition}
+        productQuality={vm.productQuality}
+        dataCompleteness={vm.dataCompleteness}
         isUploaded={selection.isUploaded}
       />
 
@@ -127,6 +127,8 @@ export default function DashboardExecutive() {
           <NavCard href="/data" title="Data & sources" description="Upload orders, set spend and margin assumptions." />
         </div>
       </section>
+        </>
+      ) : null}
     </CommandCentrePageFrame>
   );
 }

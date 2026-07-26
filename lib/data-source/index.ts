@@ -32,12 +32,41 @@ export {
   type ImportedDatasetBuildSuccess,
 } from "./imported-source";
 
+/** Prefer lifecycle coordinator for writes/clears; low-level save/clear remain for tests/legacy. */
 export {
   clearUploadedRetentionOSDataset,
+  clearUploadedRetentionOSDatasetBlobOnly,
   getUploadedDatasetSessionSummary,
   loadUploadedRetentionOSDataset,
   saveUploadedRetentionOSDataset,
 } from "./browser-session";
+
+export {
+  ACTIVE_SOURCE_CONTROL_KEY,
+  ACTIVE_SOURCE_CONTROL_SCHEMA_VERSION,
+  buildControlFromUploadedDataset,
+  buildDemoActiveSourceControl,
+  loadActiveSourceControl,
+  parseActiveSourceControlLoad,
+  resetActiveSourceControlToDemo,
+  saveActiveSourceControl,
+  type ActiveSourceControlLoadResult,
+  type ActiveSourceControlRecord,
+  type ActiveSourceIntent,
+} from "./active-source-control";
+
+export {
+  activateOrReplaceUploadedDataset,
+  clearAllUploadedSessionOverlays,
+  clearAllUploadedSessionState,
+  clearOrphanUploadedSessionWhenDemoControl,
+  deleteUploadedDatasetAndUseDemo,
+  ensureDemoControlRecord,
+  refreshUploadedDataset,
+  syncActiveSourceControlFromUploadedDataset,
+  useDemoDataset,
+  type ActivateUploadedDatasetResult,
+} from "./dataset-lifecycle";
 
 export {
   applyUploadedSessionMarginAssumptions,
@@ -74,6 +103,10 @@ export { synthesizeMarketingSpendFromAssumption } from "./synthesize-marketing-s
 
 export {
   buildDemoCommandCentreSelection,
+  buildPendingCommandCentreSelection,
   resolveCommandCentreDatasetSource,
+  resolveCommandCentreSelectionFromState,
+  frameSourceFromSelection,
   type CommandCentreDatasetSelection,
+  type CommandCentreSourceStatus,
 } from "./client-selected-source";

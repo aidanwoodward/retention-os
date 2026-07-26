@@ -1,16 +1,14 @@
 "use client";
 
-import { useLayoutEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
+import { DatasetSourceUnavailablePanel } from "@/components/mvp/DatasetSourceUnavailablePanel";
 import { DiagnosisContinueSection } from "@/components/mvp/DiagnosisContinueSection";
 import { MetricSourceBanner } from "@/components/mvp/MetricSourceBanner";
 import { KpiMetricLabel } from "@/components/ui/kpi-metric-label";
 import type { MetricId } from "@/lib/metrics/metric-definitions";
-import {
-  buildDemoCommandCentreSelection,
-  resolveCommandCentreDatasetSource,
-  type CommandCentreDatasetSelection,
-} from "@/lib/data-source/client-selected-source";
+import { frameSourceFromSelection } from "@/lib/data-source/client-selected-source";
+import { useCommandCentreDatasetSelection } from "@/lib/data-source/use-command-centre-dataset-selection";
 import { buildLTVPageViewModelFromDataset } from "@/lib/metrics/ltv-view-model";
 import type { LTVCohortTableRowView } from "@/lib/metrics/ltv-view-model";
 
@@ -101,14 +99,12 @@ function CohortLTVTable({ rows }: { rows: LTVCohortTableRowView[] }) {
 }
 
 export default function LTVPage() {
-  const [selection, setSelection] = useState<CommandCentreDatasetSelection>(() => buildDemoCommandCentreSelection());
+  const selection = useCommandCentreDatasetSelection();
 
-  useLayoutEffect(() => {
-    setSelection(resolveCommandCentreDatasetSource());
-  }, []);
-
-  const vm = useMemo(() => buildLTVPageViewModelFromDataset(selection.dataset), [selection.dataset]);
-  const { summary, cohortRows } = vm;
+  const vm = useMemo(() => {
+    if (!selection.metricsAllowed) return null;
+    return buildLTVPageViewModelFromDataset(selection.dataset);
+  }, [selection]);
 
   return (
     <CommandCentrePageFrame
@@ -116,8 +112,12 @@ export default function LTVPage() {
       maxWidth="1600"
       bannerKind="metrics"
       metricsBannerSlot={<MetricSourceBanner routeId="ltv" selection={selection} />}
-      activeMetricDatasetSource={selection.isUploaded ? "uploaded_csv" : "demo"}
+      activeMetricDatasetSource={frameSourceFromSelection(selection)}
     >
+      {selection.status === "pending" || selection.status === "lost_upload" ? (
+        <DatasetSourceUnavailablePanel selection={selection} />
+      ) : vm != null ? (
+        <>
       <div className="space-y-6">
         <div>
           <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Staircase tails & cohort quality</h2>
@@ -125,30 +125,30 @@ export default function LTVPage() {
             <Kpi
               title="Avg terminal net revenue LTV"
               sub="Mean across cohort staircase terminals"
-              value={formatMoney(summary.avgTerminalNetRevenueLtvAcrossCohorts)}
+              value={formatMoney(vm.summary.avgTerminalNetRevenueLtvAcrossCohorts)}
               metricId="revenue_ltv"
             />
             <Kpi
               title="Avg terminal contribution LTV"
               sub="Where margin model applies"
-              value={formatMoney(summary.avgTerminalContributionLtvAcrossCohorts)}
+              value={formatMoney(vm.summary.avgTerminalContributionLtvAcrossCohorts)}
               metricId="contribution_ltv"
             />
             <Kpi
               title="Strongest net revenue LTV cohort"
-              value={summary.bestNetRevenueLtvCohort ? summary.bestNetRevenueLtvCohort.cohortPeriod : "—"}
+              value={vm.summary.bestNetRevenueLtvCohort ? vm.summary.bestNetRevenueLtvCohort.cohortPeriod : "—"}
               sub={
-                summary.bestNetRevenueLtvCohort
-                  ? formatMoney(summary.bestNetRevenueLtvCohort.terminalNetRevenueLtv)
+                vm.summary.bestNetRevenueLtvCohort
+                  ? formatMoney(vm.summary.bestNetRevenueLtvCohort.terminalNetRevenueLtv)
                   : undefined
               }
             />
             <Kpi
               title="Weakest net revenue LTV cohort"
-              value={summary.weakestNetRevenueLtvCohort ? summary.weakestNetRevenueLtvCohort.cohortPeriod : "—"}
+              value={vm.summary.weakestNetRevenueLtvCohort ? vm.summary.weakestNetRevenueLtvCohort.cohortPeriod : "—"}
               sub={
-                summary.weakestNetRevenueLtvCohort
-                  ? formatMoney(summary.weakestNetRevenueLtvCohort.terminalNetRevenueLtv)
+                vm.summary.weakestNetRevenueLtvCohort
+                  ? formatMoney(vm.summary.weakestNetRevenueLtvCohort.terminalNetRevenueLtv)
                   : undefined
               }
             />
@@ -158,9 +158,9 @@ export default function LTVPage() {
         <div>
           <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Portfolio context</h2>
           <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Kpi title="First-order cohort months" value={String(summary.totalCohorts)} />
-            <Kpi title="Customers" value={summary.totalCustomers.toLocaleString()} />
-            <Kpi title="All-time repeat purchase rate" sub="Customers with ≥2 orders" value={formatPct(summary.repeatPurchaseRate)} />
+            <Kpi title="First-order cohort months" value={String(vm.summary.totalCohorts)} />
+            <Kpi title="Customers" value={vm.summary.totalCustomers.toLocaleString()} />
+            <Kpi title="All-time repeat purchase rate" sub="Customers with ≥2 orders" value={formatPct(vm.summary.repeatPurchaseRate)} />
           </div>
         </div>
       </div>
@@ -172,7 +172,7 @@ export default function LTVPage() {
           the latest observed staircase month in the active dataset window — use strongest vs weakest rows above when judging
           acquisition-quality variance alongside net revenue versus contribution ladders.
         </p>
-        <CohortLTVTable rows={cohortRows} />
+        <CohortLTVTable rows={vm.cohortRows} />
       </div>
 
       <DiagnosisContinueSection
@@ -181,6 +181,8 @@ export default function LTVPage() {
           { href: "/insights", label: "Diagnostic Insights" },
         ]}
       />
+        </>
+      ) : null}
     </CommandCentrePageFrame>
   );
 }

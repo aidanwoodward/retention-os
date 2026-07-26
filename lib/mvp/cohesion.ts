@@ -108,14 +108,24 @@ export function getMvpPageCopy(routeId: MvpRouteId): MvpPageCopy {
   return MVP_PAGE_COPY[routeId];
 }
 
-/** Command-centre routes: adjust “What you’re looking at” when the active dataset is a session upload. */
+/** Command-centre routes: adjust “What you’re looking at” for the active dataset status. */
 export function getMvpPageCopyForActiveSource(
   routeId: "dashboard" | "cohorts" | "retention" | "ltv" | "acquisition" | "products" | "insights",
-  source: "demo" | "uploaded_csv",
+  source: "demo" | "uploaded_csv" | "pending" | "lost_upload",
 ): MvpPageCopy {
   const base = MVP_PAGE_COPY[routeId];
   if (source === "demo") {
     return base;
+  }
+  if (source === "pending") {
+    return { ...base, lookingAt: "Resolving the active dataset for this browser tab…" };
+  }
+  if (source === "lost_upload") {
+    return {
+      ...base,
+      lookingAt:
+        "Your uploaded session was lost (CSV payloads are tab-scoped). Demo metrics are not shown in place of your data — re-upload on Data or explicitly use demo.",
+    };
   }
   type SourceAwareRoute = "dashboard" | "cohorts" | "retention" | "ltv" | "acquisition" | "products" | "insights";
   const lookingAt: Record<SourceAwareRoute, string> = {

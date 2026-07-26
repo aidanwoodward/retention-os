@@ -1,13 +1,11 @@
 "use client";
 
-import { useLayoutEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
+import { DatasetSourceUnavailablePanel } from "@/components/mvp/DatasetSourceUnavailablePanel";
 import { MetricSourceBanner } from "@/components/mvp/MetricSourceBanner";
-import {
-  buildDemoCommandCentreSelection,
-  resolveCommandCentreDatasetSource,
-  type CommandCentreDatasetSelection,
-} from "@/lib/data-source/client-selected-source";
+import { frameSourceFromSelection } from "@/lib/data-source/client-selected-source";
+import { useCommandCentreDatasetSelection } from "@/lib/data-source/use-command-centre-dataset-selection";
 import {
   buildCohortMatrixFromDataset,
   buildCohortsPageViewModelFromDataset,
@@ -171,19 +169,17 @@ function CohortEconomicsTable({ rows }: { rows: CohortMonthTableRowView[] }) {
 }
 
 export default function CohortsPage() {
-  const [selection, setSelection] = useState<CommandCentreDatasetSelection>(() => buildDemoCommandCentreSelection());
+  const selection = useCommandCentreDatasetSelection();
   const [matrixMetric, setMatrixMetric] = useState<CohortMatrixUiMetric>("retention_rate");
 
-  useLayoutEffect(() => {
-    setSelection(resolveCommandCentreDatasetSource());
-  }, []);
-
-  const vm = useMemo(() => buildCohortsPageViewModelFromDataset(selection.dataset), [selection.dataset]);
-  const cohortMatrix = useMemo(
-    () => buildCohortMatrixFromDataset(selection.dataset, { metric: matrixMetric }),
-    [selection.dataset, matrixMetric],
-  );
-  const { summary, cohortRows } = vm;
+  const vm = useMemo(() => {
+    if (!selection.metricsAllowed) return null;
+    return buildCohortsPageViewModelFromDataset(selection.dataset);
+  }, [selection]);
+  const cohortMatrix = useMemo(() => {
+    if (!selection.metricsAllowed) return null;
+    return buildCohortMatrixFromDataset(selection.dataset, { metric: matrixMetric });
+  }, [selection, matrixMetric]);
 
   return (
     <CommandCentrePageFrame
@@ -191,19 +187,23 @@ export default function CohortsPage() {
       maxWidth="7xl"
       bannerKind="metrics"
       metricsBannerSlot={<MetricSourceBanner routeId="cohorts" selection={selection} />}
-      activeMetricDatasetSource={selection.isUploaded ? "uploaded_csv" : "demo"}
+      activeMetricDatasetSource={frameSourceFromSelection(selection)}
     >
+      {selection.status === "pending" || selection.status === "lost_upload" ? (
+        <DatasetSourceUnavailablePanel selection={selection} />
+      ) : vm != null && cohortMatrix != null ? (
+        <>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <Kpi title="Cohort months" value={String(summary.cohortCount)} />
-        <Kpi title="Customers" value={summary.totalCustomers.toLocaleString()} />
+        <Kpi title="Cohort months" value={String(vm.summary.cohortCount)} />
+        <Kpi title="Customers" value={vm.summary.totalCustomers.toLocaleString()} />
         <Kpi
           title="Largest cohort"
-          value={`${summary.largestCohort.cohortPeriod}`}
-          sub={`${summary.largestCohort.cohortSize.toLocaleString()} customers`}
+          value={`${vm.summary.largestCohort.cohortPeriod}`}
+          sub={`${vm.summary.largestCohort.cohortSize.toLocaleString()} customers`}
         />
-        <Kpi title="All-time repeat rate" value={formatPct(summary.repeatPurchaseRate)} />
-        <Kpi title="First→second (90d)" value={formatPct(summary.firstToSecondWithin90DaysRate)} />
-        <Kpi title="Aggregate net revenue" value={formatMoney(summary.aggregateNetRevenue)} />
+        <Kpi title="All-time repeat rate" value={formatPct(vm.summary.repeatPurchaseRate)} />
+        <Kpi title="First→second (90d)" value={formatPct(vm.summary.firstToSecondWithin90DaysRate)} />
+        <Kpi title="Aggregate net revenue" value={formatMoney(vm.summary.aggregateNetRevenue)} />
       </div>
 
       <div>
@@ -254,8 +254,10 @@ export default function CohortsPage() {
           <strong>average net revenue per cohort customer</strong> through each cohort&apos;s latest observed month on the staircase.
           Month +n active columns are cohort customers with ≥1 order in acquisition month&nbsp;+&nbsp;n (calendar UTC).
         </p>
-        <CohortEconomicsTable rows={cohortRows} />
+        <CohortEconomicsTable rows={vm.cohortRows} />
       </div>
+        </>
+      ) : null}
     </CommandCentrePageFrame>
   );
 }

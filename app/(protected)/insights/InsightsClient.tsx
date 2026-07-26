@@ -1,14 +1,12 @@
 "use client";
 
-import { useLayoutEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
+import { DatasetSourceUnavailablePanel } from "@/components/mvp/DatasetSourceUnavailablePanel";
 import { MetricSourceBanner } from "@/components/mvp/MetricSourceBanner";
-import {
-  buildDemoCommandCentreSelection,
-  resolveCommandCentreDatasetSource,
-  type CommandCentreDatasetSelection,
-} from "@/lib/data-source/client-selected-source";
+import { frameSourceFromSelection } from "@/lib/data-source/client-selected-source";
+import { useCommandCentreDatasetSelection } from "@/lib/data-source/use-command-centre-dataset-selection";
 import { buildInsightsPageViewModelFromDataset, type RevenueDurabilityStatus } from "@/lib/insights";
 import type { InsightSeverity } from "@/lib/types/insight";
 
@@ -57,13 +55,12 @@ function severityBadgeClass(severity: InsightSeverity): string {
 }
 
 export default function InsightsClient() {
-  const [selection, setSelection] = useState<CommandCentreDatasetSelection>(() => buildDemoCommandCentreSelection());
+  const selection = useCommandCentreDatasetSelection();
 
-  useLayoutEffect(() => {
-    setSelection(resolveCommandCentreDatasetSource());
-  }, []);
-
-  const vm = useMemo(() => buildInsightsPageViewModelFromDataset(selection.dataset), [selection.dataset]);
+  const vm = useMemo(() => {
+    if (!selection.metricsAllowed) return null;
+    return buildInsightsPageViewModelFromDataset(selection.dataset);
+  }, [selection]);
 
   const navDashboardDescription =
     selection.isUploaded ? "Executive KPIs, posture hero, and observations driven by your session CSV snapshot." :
@@ -75,8 +72,12 @@ export default function InsightsClient() {
       maxWidth="6xl"
       bannerKind="insights"
       insightsBannerSlot={<MetricSourceBanner routeId="insights" selection={selection} />}
-      activeMetricDatasetSource={selection.isUploaded ? "uploaded_csv" : "demo"}
+      activeMetricDatasetSource={frameSourceFromSelection(selection)}
     >
+      {selection.status === "pending" || selection.status === "lost_upload" ? (
+        <DatasetSourceUnavailablePanel selection={selection} />
+      ) : vm != null ? (
+        <>
       <section className={`rounded-xl border px-5 py-5 shadow-sm sm:px-6 sm:py-6 ${durabilityShellClass(vm.durabilityStatus)}`}>
         <h2 className="text-sm font-semibold text-zinc-900">Revenue durability posture (rules snapshot)</h2>
         <p className="mt-1.5 text-sm text-zinc-700">
@@ -172,6 +173,8 @@ export default function InsightsClient() {
           <NavCard href="/ltv" title="LTV ladders" description="Staircase averages for net revenue vs contribution." />
         </div>
       </section>
+        </>
+      ) : null}
     </CommandCentrePageFrame>
   );
 }

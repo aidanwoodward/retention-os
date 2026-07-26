@@ -19,6 +19,7 @@ import {
   getUploadedMarketingSpendAssumptionSummary,
   getUploadedMarketingSpendSessionSummary,
 } from "@/lib/data-source";
+import { useCommandCentreDatasetSelection } from "@/lib/data-source/use-command-centre-dataset-selection";
 import type { DataPageViewModel } from "@/lib/metrics";
 
 function formatPct(fraction: number, digits = 0): string {
@@ -56,9 +57,10 @@ export function DataPageBody({
   demoDatasetSourceLabel: string;
 }) {
   const [uploadSummary, refreshSessionDataset] = useDataPageSessionSummary();
-  const hasUpload = uploadSummary != null;
   const demoSnapshot = buildDemoSnapshot(vm, windowEndFormatted, demoDatasetSourceLabel);
   const [sessionEpoch, setSessionEpoch] = useState(0);
+  const selection = useCommandCentreDatasetSelection(undefined, sessionEpoch);
+  const hasUpload = selection.status === "uploaded" && uploadSummary != null;
 
   const reconcileSessionSlices = useCallback(() => {
     refreshSessionDataset();
@@ -83,12 +85,22 @@ export function DataPageBody({
 
   return (
     <>
-      <DataPageSourceHero demo={demoSnapshot} uploadSummary={uploadSummary} onUploadCleared={reconcileSessionSlices} />
+      <DataPageSourceHero
+        demo={demoSnapshot}
+        selection={selection}
+        uploadSummary={uploadSummary}
+        onUploadCleared={reconcileSessionSlices}
+      />
 
       {hasUpload ?
         <p className="rounded-lg border border-amber-200/90 bg-amber-50/80 px-3 py-2 text-xs leading-relaxed text-amber-950">
-          <span className="font-semibold">Browser tab only</span> — your upload and assumptions are not saved to the cloud. Revert above to return to
-          demo data.
+          <span className="font-semibold">Browser tab only</span> — your upload and assumptions are not saved to the cloud. Closing the tab
+          clears the CSV payload (re-upload required). Revert above to return to demo data.
+        </p>
+      : selection.status === "lost_upload" ?
+        <p className="rounded-lg border border-amber-200/90 bg-amber-50/80 px-3 py-2 text-xs leading-relaxed text-amber-950">
+          <span className="font-semibold">Uploaded session lost</span> — demo metrics are not shown in place of your data. Re-upload below or
+          explicitly use the demo dataset.
         </p>
       : null}
 

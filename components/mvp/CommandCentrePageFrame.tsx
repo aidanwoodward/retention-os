@@ -39,7 +39,7 @@ export interface CommandCentrePageFrameProps {
    * For dashboard / cohorts / retention / ltv / acquisition / products / insights: switches the white context card “What you’re looking at”
    * so it does not claim the demo fixture when `uploaded_csv` is active.
    */
-  readonly activeMetricDatasetSource?: "demo" | "uploaded_csv";
+  readonly activeMetricDatasetSource?: "demo" | "uploaded_csv" | "pending" | "lost_upload";
   /** When true, shows actionable next steps below the two-column intro (default: only on /data). */
   readonly showNextSteps?: boolean;
 }

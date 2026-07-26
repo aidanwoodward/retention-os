@@ -11,7 +11,7 @@ import type {
 import { getDatasetSummary } from "./dataset-helpers";
 import { applyUploadedSessionMarginAssumptions, clearUploadedMarginAssumptions } from "./margin-session";
 import { clearUploadedMarketingSpendAssumption } from "./marketing-spend-assumption-session";
-import { applyUploadedSessionMarketingSpend } from "./marketing-spend-session";
+import { applyUploadedSessionMarketingSpend, clearUploadedMarketingSpend } from "./marketing-spend-session";
 
 const STORAGE_KEY = "retentionos:uploadedDataset:v1";
 
@@ -174,16 +174,26 @@ export function loadUploadedRetentionOSDataset(): RetentionOSDataset | null {
   return parseStoredDatasetJson(raw);
 }
 
-/** Remove the session-stored uploaded dataset. No-op on the server. */
-export function clearUploadedRetentionOSDataset(): void {
+/** Remove only the uploaded dataset blob (overlays untouched). Prefer lifecycle coordinator for product flows. */
+export function clearUploadedRetentionOSDatasetBlobOnly(): void {
   if (!isBrowser()) return;
-  clearUploadedMarginAssumptions();
-  clearUploadedMarketingSpendAssumption();
   try {
     window.sessionStorage.removeItem(STORAGE_KEY);
   } catch {
     /* ignore */
   }
+}
+
+/**
+ * Remove the session-stored uploaded dataset and all related overlays (margin, spend CSV, spend %).
+ * Prefer `deleteUploadedDatasetAndUseDemo` from `dataset-lifecycle` so durable control is reset too.
+ */
+export function clearUploadedRetentionOSDataset(): void {
+  if (!isBrowser()) return;
+  clearUploadedMarginAssumptions();
+  clearUploadedMarketingSpendAssumption();
+  clearUploadedMarketingSpend();
+  clearUploadedRetentionOSDatasetBlobOnly();
 }
 
 /** Summary for trust UI — null when nothing valid is in session. */

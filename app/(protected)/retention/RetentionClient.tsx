@@ -2,15 +2,13 @@
 
 import * as React from "react";
 import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
+import { DatasetSourceUnavailablePanel } from "@/components/mvp/DatasetSourceUnavailablePanel";
 import { DiagnosisContinueSection } from "@/components/mvp/DiagnosisContinueSection";
 import { MetricSourceBanner } from "@/components/mvp/MetricSourceBanner";
 import { KpiMetricLabel } from "@/components/ui/kpi-metric-label";
 import type { MetricId } from "@/lib/metrics/metric-definitions";
-import {
-  buildDemoCommandCentreSelection,
-  resolveCommandCentreDatasetSource,
-  type CommandCentreDatasetSelection,
-} from "@/lib/data-source/client-selected-source";
+import { frameSourceFromSelection } from "@/lib/data-source/client-selected-source";
+import { useCommandCentreDatasetSelection } from "@/lib/data-source/use-command-centre-dataset-selection";
 import { buildRetentionPageViewModelFromDataset } from "@/lib/metrics/retention-view-model";
 import type { RetentionCohortTableRowView } from "@/lib/metrics/retention-view-model";
 
@@ -76,14 +74,12 @@ function RetentionCohortTable({ rows }: { rows: RetentionCohortTableRowView[] })
 }
 
 export default function RetentionClient() {
-  const [selection, setSelection] = React.useState<CommandCentreDatasetSelection>(() => buildDemoCommandCentreSelection());
+  const selection = useCommandCentreDatasetSelection();
 
-  React.useLayoutEffect(() => {
-    setSelection(resolveCommandCentreDatasetSource());
-  }, []);
-
-  const vm = React.useMemo(() => buildRetentionPageViewModelFromDataset(selection.dataset), [selection.dataset]);
-  const { summary, cohortRows } = vm;
+  const vm = React.useMemo(() => {
+    if (!selection.metricsAllowed) return null;
+    return buildRetentionPageViewModelFromDataset(selection.dataset);
+  }, [selection]);
 
   return (
     <CommandCentrePageFrame
@@ -91,32 +87,36 @@ export default function RetentionClient() {
       maxWidth="7xl"
       bannerKind="metrics"
       metricsBannerSlot={<MetricSourceBanner routeId="retention" selection={selection} />}
-      activeMetricDatasetSource={selection.isUploaded ? "uploaded_csv" : "demo"}
+      activeMetricDatasetSource={frameSourceFromSelection(selection)}
     >
+      {selection.status === "pending" || selection.status === "lost_upload" ? (
+        <DatasetSourceUnavailablePanel selection={selection} />
+      ) : vm != null ? (
+        <>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi title="Customers" value={summary.totalCustomers.toLocaleString()} />
+        <Kpi title="Customers" value={vm.summary.totalCustomers.toLocaleString()} />
         <Kpi
           title="All-time repeat purchase rate"
           sub="Share with 2+ orders"
-          value={formatPct(summary.allTimeRepeatPurchaseRate)}
+          value={formatPct(vm.summary.allTimeRepeatPurchaseRate)}
           metricId="repeat_purchase_rate"
         />
         <Kpi
           title="First-to-second within 90 days"
           sub="Second order ≤90 days after first"
-          value={formatPct(summary.firstToSecondWithin90DaysRate)}
+          value={formatPct(vm.summary.firstToSecondWithin90DaysRate)}
           metricId="first_to_second_conversion"
         />
-        <Kpi title="Avg days first → second" value={formatDays(summary.averageDaysToSecondOrder)} />
-        <Kpi title="Median days first → second" value={formatDays(summary.medianDaysToSecondOrder)} />
+        <Kpi title="Avg days first → second" value={formatDays(vm.summary.averageDaysToSecondOrder)} />
+        <Kpi title="Median days first → second" value={formatDays(vm.summary.medianDaysToSecondOrder)} />
         <Kpi
           title="Avg Month +1 active rate"
           sub="Across cohorts with data"
-          value={formatPct(summary.averageMonthPlus1ActiveRate)}
+          value={formatPct(vm.summary.averageMonthPlus1ActiveRate)}
           metricId="cohort_retention"
         />
-        <Kpi title="Avg Month +2 active rate" value={formatPct(summary.averageMonthPlus2ActiveRate)} metricId="cohort_retention" />
-        <Kpi title="Avg Month +3 active rate" value={formatPct(summary.averageMonthPlus3ActiveRate)} metricId="cohort_retention" />
+        <Kpi title="Avg Month +2 active rate" value={formatPct(vm.summary.averageMonthPlus2ActiveRate)} metricId="cohort_retention" />
+        <Kpi title="Avg Month +3 active rate" value={formatPct(vm.summary.averageMonthPlus3ActiveRate)} metricId="cohort_retention" />
       </div>
 
       <p className="rounded-lg border border-zinc-200/90 bg-white px-4 py-3.5 text-sm leading-relaxed text-zinc-700 shadow-sm ring-1 ring-black/[0.02]">
@@ -133,7 +133,7 @@ export default function RetentionClient() {
           calendar month (see metric engine definitions). Month +6 appears when the active dataset timeline includes that horizon for a
           cohort.
         </p>
-        <RetentionCohortTable rows={cohortRows} />
+        <RetentionCohortTable rows={vm.cohortRows} />
       </div>
 
       <DiagnosisContinueSection
@@ -142,6 +142,8 @@ export default function RetentionClient() {
           { href: "/insights", label: "Diagnostic Insights" },
         ]}
       />
+        </>
+      ) : null}
     </CommandCentrePageFrame>
   );
 }

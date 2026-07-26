@@ -2,13 +2,13 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
+  activateOrReplaceUploadedDataset,
   buildImportedRetentionOSDataset,
-  clearUploadedRetentionOSDataset,
+  deleteUploadedDatasetAndUseDemo,
   getUploadedDatasetSessionSummary,
   getUploadedMarginAssumptionsSummary,
   getUploadedMarketingSpendAssumptionSummary,
   getUploadedMarketingSpendSessionSummary,
-  saveUploadedRetentionOSDataset,
   type RetentionOSDatasetSummary,
 } from "@/lib/data-source";
 import {
@@ -64,7 +64,7 @@ export function CsvImportPreview({
   }, []);
 
   const onClearStoredUpload = useCallback(() => {
-    clearUploadedRetentionOSDataset();
+    deleteUploadedDatasetAndUseDemo();
     setSessionSummary(null);
     setSessionSaveError(null);
     setSessionSaveToast(null);
@@ -111,7 +111,11 @@ export function CsvImportPreview({
       return;
     }
     try {
-      saveUploadedRetentionOSDataset(built.dataset);
+      const activated = activateOrReplaceUploadedDataset(built.dataset);
+      if (!activated.ok) {
+        setSessionSaveError(activated.error);
+        return;
+      }
     } catch (e) {
       const msg =
         e instanceof Error

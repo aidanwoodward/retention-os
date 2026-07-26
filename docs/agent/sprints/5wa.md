@@ -111,15 +111,15 @@ Documentation-only research sprint. Authored `docs/SHOPIFY_FIELD_CAPABILITY_CONT
 
 ### PR
 
-- URL: pending
+- URL: https://github.com/aidanwoodward/retention-os/pull/30
 - Base: `restart-retentionos-mvp`
-- Head SHA: pending
+- Head SHA: `437e250f5212efebc26e0280d72f127fc09e2aed` (pre-freeze commit; freeze commit follows)
 
 ### Checks
 
-- `gh pr checks --watch`: pending
-- CI validate: pending
-- Vercel: pending
+- `gh pr checks --watch`: pass
+- CI validate: pass
+- Vercel: pass
 
 ## Notes
 

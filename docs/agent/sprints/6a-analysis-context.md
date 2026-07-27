@@ -123,7 +123,7 @@ Later MET and page work (share %, new/returning, matrix depth) must not overload
 
 - URL: https://github.com/aidanwoodward/retention-os/pull/34
 - Base: `restart-retentionos-mvp`
-- Head SHA: _(set to freeze tip after commit)_
+- Head SHA: `6d4cb28c52e4da814fe262b77b10325b5e2cee15` (Gate 2 frozen PR tip)
 
 ### Checks
 

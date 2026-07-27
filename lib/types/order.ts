@@ -24,10 +24,13 @@ export interface OrderLineItem {
  *
  * `grossRevenue` should reflect pre-tax, top-line order value commonly used with Shopify `total_price`
  * semantics; deductions are explicit for elasticity and reconciliation.
+ *
+ * `customerId` is `null` for valid orders with no identifiable Shopify customer (guest / unidentified).
+ * CSV import paths continue to produce non-null customer ids.
  */
 export interface Order {
   id: OrderId;
-  customerId: CustomerId;
+  customerId: CustomerId | null;
   /** Order placement timestamp (ISO 8601) — aligns customers on a unified timeline with spend. */
   orderedAt: string;
   /** Pre-refund/top-line monetary value for cohort revenue totals and durability trends. */
@@ -44,4 +47,9 @@ export interface Order {
   /** Channel label for repeat traffic or attributable order tagging (distinct from customer's acquisitionChannel). */
   channel?: string;
   lineItems: OrderLineItem[];
+}
+
+/** True when the order has an identifiable customer id (not guest / unidentified). */
+export function isIdentifiedOrder(order: Order): order is Order & { customerId: CustomerId } {
+  return order.customerId != null;
 }

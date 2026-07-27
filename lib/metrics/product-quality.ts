@@ -7,7 +7,7 @@
 
 import type { RetentionOSDataset } from "../data-source/dataset-types";
 import type { Customer } from "../types/customer";
-import type { Order } from "../types/order";
+import { isIdentifiedOrder, type Order } from "../types/order";
 import type { Product } from "../types/product";
 import type { MarginAssumptions } from "../types/scenario";
 import {
@@ -89,7 +89,7 @@ interface CustomerEconomics {
 
 function sortedOrdersForCustomer(customerId: string, orders: readonly Order[]): Order[] {
   return orders
-    .filter((o) => o.customerId === customerId)
+    .filter((o) => isIdentifiedOrder(o) && o.customerId === customerId)
     .sort((a, b) => {
       if (a.orderedAt < b.orderedAt) return -1;
       if (a.orderedAt > b.orderedAt) return 1;
@@ -172,7 +172,7 @@ function segmentDragRates(
   const idSet = new Set(segmentCustomerIds);
 
   for (const o of orders) {
-    if (!idSet.has(o.customerId)) continue;
+    if (!isIdentifiedOrder(o) || !idSet.has(o.customerId)) continue;
     gross += o.grossRevenue;
     discounts += o.discounts;
     refunds += o.refunds;

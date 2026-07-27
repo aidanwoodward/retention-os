@@ -1,5 +1,5 @@
 import type { Cohort, Customer, MarginAssumptions } from "../types";
-import type { Order } from "../types/order";
+import { isIdentifiedOrder, type Order } from "../types/order";
 import { netOrderRevenue, orderContribution, utcMonthKeyFromIso } from "./utils";
 
 /**
@@ -50,6 +50,9 @@ export function calculateCohorts(
   const contribution = new Map<string, number>();
 
   for (const o of orders) {
+    if (!isIdentifiedOrder(o)) {
+      continue;
+    }
     const cohortPeriod = cohortPeriodByCustomer.get(o.customerId);
     if (!cohortPeriod) {
       continue;

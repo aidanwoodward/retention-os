@@ -1,6 +1,6 @@
 import type { RetentionOSDataset } from "../data-source";
 import type { Customer, LTVPoint, MarginAssumptions } from "../types";
-import type { Order } from "../types/order";
+import { isIdentifiedOrder, type Order } from "../types/order";
 import {
   addMonthsToMonthKey,
   calendarMonthIndexFromKey,
@@ -84,6 +84,7 @@ function cumulativeAvgOrdersPerCustomerByCohort(
     ordersByCustomer.set(c.id, []);
   }
   for (const o of orders) {
+    if (!isIdentifiedOrder(o)) continue;
     const bucket = ordersByCustomer.get(o.customerId);
     if (bucket) bucket.push(o);
   }
@@ -101,7 +102,7 @@ function cumulativeAvgOrdersPerCustomerByCohort(
 
   let globalMaxOrderMonthIdx = 0;
   for (const o of orders) {
-    if (!knownIds.has(o.customerId)) continue;
+    if (!isIdentifiedOrder(o) || !knownIds.has(o.customerId)) continue;
     globalMaxOrderMonthIdx = Math.max(globalMaxOrderMonthIdx, calendarMonthIndexFromKey(utcMonthKeyFromIso(o.orderedAt)));
   }
 

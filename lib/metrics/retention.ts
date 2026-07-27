@@ -1,5 +1,5 @@
 import type { Customer, RetentionPoint } from "../types";
-import type { Order } from "../types/order";
+import { isIdentifiedOrder, type Order } from "../types/order";
 import {
   addMonthsToMonthKey,
   calendarMonthIndexFromKey,
@@ -27,7 +27,7 @@ function customerCohortPeriod(c: Customer): string {
 function monthKeysForOrders(orders: readonly Order[], knownCustomerIds: ReadonlySet<string>): Map<string, Set<string>> {
   const map = new Map<string, Set<string>>();
   for (const o of orders) {
-    if (!knownCustomerIds.has(o.customerId)) {
+    if (!isIdentifiedOrder(o) || !knownCustomerIds.has(o.customerId)) {
       continue;
     }
     const mk = utcMonthKeyFromIso(o.orderedAt);
@@ -63,7 +63,7 @@ export function calculateRetentionByCohort(
 
   let globalMaxOrderMonthIdx = 0;
   for (const o of orders) {
-    if (!knownIds.has(o.customerId)) {
+    if (!isIdentifiedOrder(o) || !knownIds.has(o.customerId)) {
       continue;
     }
     const mk = utcMonthKeyFromIso(o.orderedAt);
@@ -108,7 +108,7 @@ export function calculateRetentionByCohort(
       }
 
       for (const o of orders) {
-        if (!knownIds.has(o.customerId)) {
+        if (!isIdentifiedOrder(o) || !knownIds.has(o.customerId)) {
           continue;
         }
         if (cohortPeriodByCustomerId.get(o.customerId) !== cohortPeriod) {

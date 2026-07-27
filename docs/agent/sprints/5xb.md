@@ -115,7 +115,7 @@ Documentation-only. Authored `docs/PRODUCT_RECONCILIATION_BACKLOG.md` as durable
 
 - URL: https://github.com/aidanwoodward/retention-os/pull/32
 - Base: `restart-retentionos-mvp`
-- Head SHA: `485489bdcf63f9106994eb6e0255c6729834d609` (`485489b`)
+- Head SHA: `32afee36bdb49403b5c2c0ce65e5c7cc2ff488e3` (`32afee3`) — Gate 2 frozen PR tip (CI + Vercel green)
 
 ### Checks
 

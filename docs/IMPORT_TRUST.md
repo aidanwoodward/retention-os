@@ -4,6 +4,8 @@ Source-agnostic rules for CSV import honesty. Applies to currently supported ord
 
 Shopify API field semantics, revenue construction, privacy minimisation, and CSV/API divergence are defined in [`SHOPIFY_FIELD_CAPABILITY_CONTRACT.md`](SHOPIFY_FIELD_CAPABILITY_CONTRACT.md) (Sprint 5W-A). That document does **not** change current CSV adapter behaviour.
 
+Approved-analysis sequencing and honesty requirements for later shared filters / provenance: [`PRODUCT_RECONCILIATION_BACKLOG.md`](PRODUCT_RECONCILIATION_BACKLOG.md) (Sprint 5X-B).
+
 ## Severities
 
 | Severity | Meaning | Save / activate |

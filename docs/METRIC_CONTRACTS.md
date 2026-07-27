@@ -387,3 +387,5 @@ Primary builders: `buildDashboardExecutiveViewModelFromDataset`, `dashboard-exec
 ## Maintenance
 
 When calculator behaviour changes in a later sprint, update the matching section here and verify `metric-contract-index.ts` linkage. Do not duplicate full formula prose into TypeScript.
+
+**Product backlog / sequencing (not formula contracts):** founder-approved analysis reconciliation and MET/6A/6B/6C sequencing live in [`PRODUCT_RECONCILIATION_BACKLOG.md`](PRODUCT_RECONCILIATION_BACKLOG.md) (Sprint 5X-B).

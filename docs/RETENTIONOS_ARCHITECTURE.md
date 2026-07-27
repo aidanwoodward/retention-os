@@ -379,7 +379,11 @@ Package usage statements below are **Confirmed**. **Investigate** is used only w
 
 Define a small hand-calculated fixture and expected outputs. Test canonical calculators, view models, and CSV preview parity against 5U-B contracts, including year-boundary UTC cohorts and missing margin, spend, or product data. Legacy SQL/API output is not the oracle.
 
-No wider roadmap is set here. Route/API behavior changes, migrations, dependency removal, and legacy deletion require separately approved sprints.
+### Sprint 5X-B — product reconciliation backlog
+
+Durable execution SoT for approved analyses and 6A/6B/6C / pre-6D sequencing: [`PRODUCT_RECONCILIATION_BACKLOG.md`](PRODUCT_RECONCILIATION_BACKLOG.md). Documentation only in 5X-B; no runtime changes.
+
+No wider roadmap is set here beyond that SoT. Route/API behavior changes, migrations, dependency removal, and legacy deletion require separately approved sprints.
 
 ## 11. Audit validation contract
 

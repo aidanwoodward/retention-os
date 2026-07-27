@@ -113,15 +113,15 @@ Documentation-only. Authored `docs/PRODUCT_RECONCILIATION_BACKLOG.md` as durable
 
 ### PR
 
-- URL: pending
+- URL: https://github.com/aidanwoodward/retention-os/pull/32
 - Base: `restart-retentionos-mvp`
-- Head SHA: pending
+- Head SHA: `86997c88253177c70debaba8b43a777452462949` (`86997c8`)
 
 ### Checks
 
-- `gh pr checks --watch`: pending
-- CI validate: pending
-- Vercel: pending
+- `gh pr checks --watch`: pass (CI validate + Vercel)
+- CI validate: pass
+- Vercel: pass
 
 ## Notes
 

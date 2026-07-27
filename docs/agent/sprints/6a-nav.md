@@ -2,7 +2,7 @@
 
 ## Status
 
-`IMPLEMENTING`
+`AWAITING_FOUNDER_MERGE_APPROVAL`
 
 ## Final plan and scope
 
@@ -121,13 +121,15 @@ Local validation completed (lint, typecheck, npm test 156 pass, build, `git diff
 
 ### PR
 
-- URL: (pending create)
+- URL: https://github.com/aidanwoodward/retention-os/pull/33
 - Base: `restart-retentionos-mvp`
-- Head SHA: (pending commit)
+- Head SHA: Gate 2 frozen tip confirmed in founder packet after push; implementation tip with green CI/Vercel: `18c979c288b2a40d9b5f082cc945d013fc975c51`
 
 ### Checks
 
-- `gh pr checks --watch`: (pending)
+- `gh pr checks --watch`: pass
+- CI validate: pass (https://github.com/aidanwoodward/retention-os/actions/runs/30309360568/job/90121133915)
+- Vercel: pass (https://vercel.com/aidan-woodwards-projects/retention-os/FmMjZgekv7XKqQJok4hpgZpKA1P7)
 
 ## Notes
 

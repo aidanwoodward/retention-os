@@ -605,13 +605,17 @@ Minimum representative Shopify **API-shaped** fixture cases (JSONL/GraphQL-like 
 
 ## 15. Roadmap implications
 
+Product-reconciliation execution backlog (analyses, 6A/6B/6C sequencing, multi-product attribution target): [`PRODUCT_RECONCILIATION_BACKLOG.md`](PRODUCT_RECONCILIATION_BACKLOG.md) (Sprint 5X-B).
+
 | Sprint | Implication from this contract |
 |--------|--------------------------------|
 | **5W-B** | Fixture adapter → `RetentionOSDataset` parity for §14 including R7–R12; fail closed on edited + tax-inclusive; Unidentified guest handling; no production OAuth |
-| **5X-B** | Reconciliation harness should use R1–R12 + CSV/API divergence table |
-| **6A** | Shared filters only **safe/conditional**; Unidentified + identity coverage mandatory where relevant |
+| **5X-B** | **Re-scoped (founder-approved):** durable product-reconciliation + implementation backlog SoT ([`PRODUCT_RECONCILIATION_BACKLOG.md`](PRODUCT_RECONCILIATION_BACKLOG.md)). Prior “reconciliation harness” obligation moved to **`PRE6D-HARNESS`** |
+| **6A** | Shared filters only **safe/conditional**; Unidentified + identity coverage mandatory where relevant; analysis context distinguishes reporting period / acquisition cohort period / maturity horizon |
 | **6B** | Page upgrades consume view models; do not re-derive Shopify money in React |
-| **Pre-6D blockers (required)** | (1) **Edit-aware revenue construction** for `Order.edited == true`; (2) **Tax-inclusive → tax-exclusive merchandise normalisation** verified; (3) encrypt tokens/dataset at rest; (4) `read_all_orders` approval path |
+| **6C** | Legacy deletion and consolidation **after** 6A/6B replacements. REST/Supabase Shopify scaffolding: quarantine / investigate / delete only when non-use and replacement proven; production-specific cleanup may **defer to 6D** — not blanket deletion |
+| **PRE6D-HARNESS** | Reconciliation harness **must** use R1–R12 + CSV/API divergence table (§13 / §14) |
+| **Pre-6D blockers (required)** | (1) **Edit-aware revenue construction** for `Order.edited == true`; (2) **Tax-inclusive → tax-exclusive merchandise normalisation** verified; (3) encrypt tokens/dataset at rest; (4) `read_all_orders` approval path; (5) **PRE6D-HARNESS** |
 | **6D** | GraphQL `2026-07` (revalidate), scopes, PCD Level 1, compliance webhooks, bulk backfill, incremental sync, dataset activation — only after pre-6D blockers cleared or explicitly deferred with honest limited mode |
 | **Later** | Markets; channel quality; historical COGS; Level-2 email **not** justified solely for guest merge |
 

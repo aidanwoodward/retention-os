@@ -7,6 +7,7 @@
 **Related (API / future connect — separate lane):**
 
 - [`SHOPIFY_FIELD_CAPABILITY_CONTRACT.md`](SHOPIFY_FIELD_CAPABILITY_CONTRACT.md) — GraphQL Admin API `2026-07` field/capability SoT for 5W-B fixtures and 6D production. Documents CSV↔API divergences; does **not** change CSV runtime behaviour by documentation alone.
+- [`PRODUCT_RECONCILIATION_BACKLOG.md`](PRODUCT_RECONCILIATION_BACKLOG.md) — product-analysis reconciliation and 6A/6B/6C / pre-6D sequencing (Sprint 5X-B; documentation only).
 
 **Companions:**
 

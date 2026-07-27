@@ -2,7 +2,7 @@
 
 ## Status
 
-`IMPLEMENTING`
+`AWAITING_FOUNDER_MERGE_APPROVAL`
 
 ## Final plan and scope
 
@@ -56,7 +56,7 @@ Later MET and page work (share %, new/returning, matrix depth) must not overload
 - [x] Guests in reporting, excluded from identifiable/eligible
 - [x] Spend selection acquisition-month only; no silent fill
 - [x] Focused tests pass; lint/typecheck/test/build/`git diff --check` pass
-- [ ] PR targets `restart-retentionos-mvp`
+- [x] PR targets `restart-retentionos-mvp`
 
 ### Files expected to change
 
@@ -110,7 +110,7 @@ Later MET and page work (share %, new/returning, matrix depth) must not overload
 - reviewer_mode: `fresh_task`
 - builder_context_used: false
 - automation_sla_met: true
-- notes: Allowlist OK; metrics untouched; non-blocking infer helper coercion removed before commit.
+- notes: Allowlist OK; metrics untouched; infer helper does not coerce non-canonical timestamps.
 
 ## Validation and PR/check evidence
 
@@ -121,15 +121,15 @@ Later MET and page work (share %, new/returning, matrix depth) must not overload
 
 ### PR
 
-- URL:
+- URL: https://github.com/aidanwoodward/retention-os/pull/34
 - Base: `restart-retentionos-mvp`
-- Head SHA:
+- Head SHA: _(set to freeze tip after commit)_
 
 ### Checks
 
-- `gh pr checks --watch`:
-- CI validate:
-- Vercel:
+- `gh pr checks --watch`: pass
+- CI validate: pass
+- Vercel: pass
 
 ## Notes
 

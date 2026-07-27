@@ -69,6 +69,7 @@
     "lib/metrics/index.ts",
     "lib/types/**/*.ts",
     "lib/demo/index.ts",
-    "lib/demo/**/*.ts"
+    "lib/demo/**/*.ts",
+    "lib/mvp/mvp-nav.test.ts"
   ]
 }

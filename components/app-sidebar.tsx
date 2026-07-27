@@ -13,7 +13,17 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { MVP_COMMAND_CENTRE_NAME, RETENTIONOS_MARK } from "@/lib/mvp/cohesion"
+import {
+  MVP_COMMAND_CENTRE_NAME,
+  MVP_NAV,
+  RETENTIONOS_MARK,
+} from "@/lib/mvp/cohesion"
+
+/** Analytical Core links — route/label/order truth from MVP_NAV only. */
+const coreItems = MVP_NAV.map(({ label, href }) => ({
+  title: label,
+  url: href,
+}))
 
 const data = {
   user: {
@@ -34,21 +44,13 @@ const data = {
       url: "#",
       icon: Home,
       isActive: true,
-      items: [
-        { title: "Dashboard", url: "/dashboard" },
-        { title: "Cohorts", url: "/cohorts" },
-        { title: "Retention", url: "/retention" },
-        { title: "LTV", url: "/ltv" },
-        { title: "Acquisition", url: "/acquisition" },
-        { title: "Products", url: "/products" },
-        { title: "Insights", url: "/insights" },
-        { title: "Data", url: "/data" },
-      ],
+      items: coreItems,
     },
     {
       title: "Account",
       url: "#",
       icon: User,
+      // Shell-level only — not part of MVP_NAV analytical spine.
       items: [{ title: "Settings", url: "/settings" }],
     },
   ],

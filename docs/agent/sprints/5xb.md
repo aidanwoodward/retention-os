@@ -115,7 +115,7 @@ Documentation-only. Authored `docs/PRODUCT_RECONCILIATION_BACKLOG.md` as durable
 
 - URL: https://github.com/aidanwoodward/retention-os/pull/32
 - Base: `restart-retentionos-mvp`
-- Head SHA: `86997c88253177c70debaba8b43a777452462949` (`86997c8`)
+- Head SHA: `b2a602611b49914d0d8daa6f75ae9664b9a19bdc` (`b2a6026`)
 
 ### Checks
 

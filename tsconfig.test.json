@@ -70,6 +70,8 @@
     "lib/types/**/*.ts",
     "lib/demo/index.ts",
     "lib/demo/**/*.ts",
-    "lib/mvp/mvp-nav.test.ts"
+    "lib/mvp/mvp-nav.test.ts",
+    "lib/mvp/cohesion.ts",
+    "lib/analysis-context/**/*.ts"
   ]
 }

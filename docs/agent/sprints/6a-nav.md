@@ -123,7 +123,7 @@ Local validation completed (lint, typecheck, npm test 156 pass, build, `git diff
 
 - URL: https://github.com/aidanwoodward/retention-os/pull/33
 - Base: `restart-retentionos-mvp`
-- Head SHA: `b33f88f18445a3d02d841926eaf2b7b7ef50bb17` (Gate 2 frozen PR tip)
+- Head SHA: `7c5e045fe92e18dba7819fddcb31ff30ddd341b5` (Gate 2 frozen PR tip)
 
 ### Checks
 

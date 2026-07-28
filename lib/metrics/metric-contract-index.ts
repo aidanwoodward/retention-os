@@ -18,6 +18,7 @@ export const CONTRACTED_METRIC_IDS = [
   "cohort_revenue_retention",
   "new_returning_mix",
   "aov_frequency",
+  "revenue_concentration",
   "revenue_ltv",
   "contribution_ltv",
   "cac",
@@ -207,6 +208,23 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
     uiRoutes: [],
     existingTests: [
       "lib/metrics/aov-frequency.test.ts",
+      "lib/metrics/golden-reconciliation.test.ts",
+      "lib/metrics/metric-definitions.test.ts",
+      "lib/metrics/metric-contract-index.test.ts",
+    ],
+  },
+  revenue_concentration: {
+    id: "revenue_concentration",
+    docAnchor: `${DOC}#revenue_concentration`,
+    engineEntrypoints: [
+      "lib/metrics/revenue-concentration.ts::calculateRevenueConcentration",
+      "lib/metrics/allocate-trusted-net-by-product.ts::allocateTrustedNetByProduct",
+    ],
+    // MET-CONCENTRATION: engine only — no current VM/route wiring (planned: products in 6B).
+    viewModelBuilders: [],
+    uiRoutes: [],
+    existingTests: [
+      "lib/metrics/revenue-concentration.test.ts",
       "lib/metrics/golden-reconciliation.test.ts",
       "lib/metrics/metric-definitions.test.ts",
       "lib/metrics/metric-contract-index.test.ts",

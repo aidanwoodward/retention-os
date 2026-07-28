@@ -125,7 +125,7 @@ Modify:
 
 - URL: https://github.com/aidanwoodward/retention-os/pull/40
 - Base: `restart-retentionos-mvp`
-- Head SHA: `950c9f09e4686f516a5e3b541e6dc401b4d55f00`
+- Head SHA: `ba14c5772805ca17113e0e0db76ec419b0eb6f63`
 
 ### Checks
 

@@ -123,15 +123,15 @@ Brands need period portfolio share by acquisition cohort (with absolute $ suppor
 
 ### PR
 
-- URL: (filled after create)
+- URL: https://github.com/aidanwoodward/retention-os/pull/35
 - Base: `restart-retentionos-mvp`
-- Head SHA: (filled after create)
+- Head SHA: (updated after freeze commit)
 
 ### Checks
 
-- `gh pr checks --watch`: (filled after watch)
-- CI validate:
-- Vercel:
+- `gh pr checks --watch`: pass (CI validate + Vercel)
+- CI validate: pass
+- Vercel: pass
 
 ## Notes
 

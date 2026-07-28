@@ -51,6 +51,11 @@ export {
 } from "./cohort-revenue-retention";
 
 export {
+  calculateNewReturningMix,
+  type NewReturningMixResult,
+} from "./new-returning";
+
+export {
   calculateRetentionByCohort,
   type RetentionByCohortSeries,
   type CalculateRetentionOptions,

@@ -16,6 +16,7 @@ export const CONTRACTED_METRIC_IDS = [
   "cohort_retention",
   "cohort_revenue_contribution",
   "cohort_revenue_retention",
+  "new_returning_mix",
   "revenue_ltv",
   "contribution_ltv",
   "cac",
@@ -177,6 +178,20 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
     uiRoutes: [],
     existingTests: [
       "lib/metrics/cohort-revenue-retention.test.ts",
+      "lib/metrics/golden-reconciliation.test.ts",
+      "lib/metrics/metric-definitions.test.ts",
+      "lib/metrics/metric-contract-index.test.ts",
+    ],
+  },
+  new_returning_mix: {
+    id: "new_returning_mix",
+    docAnchor: `${DOC}#new_returning_mix`,
+    engineEntrypoints: ["lib/metrics/new-returning.ts::calculateNewReturningMix"],
+    // MET-NEW-RETURN: engine only — no current VM/route wiring (planned: dashboard/retention in 6B).
+    viewModelBuilders: [],
+    uiRoutes: [],
+    existingTests: [
+      "lib/metrics/new-returning.test.ts",
       "lib/metrics/golden-reconciliation.test.ts",
       "lib/metrics/metric-definitions.test.ts",
       "lib/metrics/metric-contract-index.test.ts",

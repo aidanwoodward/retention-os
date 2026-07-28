@@ -28,6 +28,8 @@
     "lib/metrics/cohort-revenue-contribution.test.ts",
     "lib/metrics/cohort-revenue-retention.ts",
     "lib/metrics/cohort-revenue-retention.test.ts",
+    "lib/metrics/new-returning.ts",
+    "lib/metrics/new-returning.test.ts",
     "lib/metrics/retention.ts",
     "lib/metrics/ltv.ts",
     "lib/metrics/acquisition.ts",

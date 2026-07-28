@@ -18,6 +18,7 @@ import {
   GOLDEN_CAC,
   GOLDEN_COHORT_REVENUE_CONTRIBUTION_JAN_2025,
   GOLDEN_COHORT_REVENUE_RETENTION_ASOF_2025_05_01,
+  GOLDEN_NEW_RETURNING_MIX_JAN_2025,
   GOLDEN_COHORT_SIZES,
   GOLDEN_CONTRIBUTION_LTV,
   GOLDEN_CSV_PREVIEW,
@@ -40,6 +41,7 @@ import { buildAcquisitionPageViewModelFromDataset } from "./acquisition-view-mod
 import { calculateCohorts } from "./cohorts";
 import { calculateCohortRevenueContribution } from "./cohort-revenue-contribution";
 import { calculateCohortRevenueRetention } from "./cohort-revenue-retention";
+import { calculateNewReturningMix } from "./new-returning";
 import { calculateLTVByCohort } from "./ltv";
 import { calculateFirstProductCustomerQualityFromDataset } from "./product-quality";
 import {
@@ -405,5 +407,49 @@ describe("MET-REV-RETENTION golden — asOf 2025-05-01 cohort revenue retention"
         }
       }
     }
+  });
+});
+
+describe("MET-NEW-RETURN golden reconciliation — Jan 2025 new vs returning mix", () => {
+  it("matches hand-calculated January 2025 new/returning mix", () => {
+    const dataset = buildGoldenRetentionOSDataset();
+    const selection = buildAnalysisSelection(dataset, {
+      asOfDate: "2025-04-30T23:59:59.000Z",
+      reportingPeriod: {
+        startDate: "2025-01-01T00:00:00.000Z",
+        endDateExclusive: "2025-02-01T00:00:00.000Z",
+      },
+    });
+    const result = calculateNewReturningMix(selection);
+    const expected = GOLDEN_NEW_RETURNING_MIX_JAN_2025;
+
+    assert.equal(result.status, expected.status);
+    assert.equal(result.reportingOrderCount, expected.reportingOrderCount);
+    assert.equal(result.newCustomerCount, expected.newCustomerCount);
+    assert.equal(result.returningCustomerCount, expected.returningCustomerCount);
+    assert.equal(result.classifiedActiveCustomerCount, expected.classifiedActiveCustomerCount);
+    assertClose(result.newCustomerShare!, expected.newCustomerShare, "newCustomerShare");
+    assertClose(result.returningCustomerShare!, expected.returningCustomerShare, "returningCustomerShare");
+    assertClose(result.newRevenue, expected.newRevenue, "newRevenue");
+    assertClose(result.returningRevenue, expected.returningRevenue, "returningRevenue");
+    assertClose(result.unidentifiedRevenue, expected.unidentifiedRevenue, "unidentifiedRevenue");
+    assertClose(result.unresolvedRevenue, expected.unresolvedRevenue, "unresolvedRevenue");
+    assertClose(result.classifiedRevenue, expected.classifiedRevenue, "classifiedRevenue");
+    assertClose(result.totalReportingRevenue, expected.totalReportingRevenue, "totalReportingRevenue");
+    assertClose(
+      result.newRevenueShareOfClassifiedRevenue!,
+      expected.newRevenueShareOfClassifiedRevenue,
+      "newRevenueShareOfClassifiedRevenue",
+    );
+    assertClose(
+      result.returningRevenueShareOfClassifiedRevenue!,
+      expected.returningRevenueShareOfClassifiedRevenue,
+      "returningRevenueShareOfClassifiedRevenue",
+    );
+    assertClose(
+      result.revenueClassificationCoverage!,
+      expected.revenueClassificationCoverage,
+      "revenueClassificationCoverage",
+    );
   });
 });

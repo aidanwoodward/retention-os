@@ -288,6 +288,36 @@ M+4 period month is 2025-05: uniform `maxOffset` emits the column; target period
 - `status` = `available`
 - Dec-row cells M+0…M+4 and Jan-row cells M+0…M+3 are `complete`; Jan M+4 is `unavailable`
 
+## MET-NEW-RETURN — Jan 2025 reporting-period new vs returning mix
+
+Reporting period: `[2025-01-01T00:00:00.000Z, 2025-02-01T00:00:00.000Z)` (half-open).
+
+Jan reporting orders (hand nets):
+
+| Order | Customer | orderedAt | firstOrderAt | Role | Net |
+|-------|----------|-----------|--------------|------|----:|
+| o2 | c1 | 2025-01-10 | 2024-12-05 | returning customer; subsequent order | 80 |
+| o6 | c4 | 2025-01-05 | 2025-01-05 | new customer; canonical first | 100 |
+| o7 | c4 | 2025-01-25 | 2025-01-05 | same new customer; subsequent | 100 |
+| o8 | c5 | 2025-01-10 | 2025-01-10 | new customer; canonical first | 50 |
+| o9 | c6 | 2025-01-12 | 2025-01-12 | new customer; canonical first | 80 |
+
+Customer mix:
+
+- new: c4, c5, c6 → **3** (share **3/4**)
+- returning: c1 → **1** (share **1/4**)
+- classifiedActiveCustomerCount = **4**
+
+Revenue:
+
+- newRevenue = o6 + o8 + o9 = 100 + 50 + 80 = **230** (share of classified **230/410**)
+- returningRevenue = o2 + o7 = 80 + 100 = **180** (share of classified **180/410**)
+- classifiedRevenue = **410**
+- unidentifiedRevenue = **0**; unresolvedRevenue = **0**
+- totalReportingRevenue = **410**
+- revenueClassificationCoverage = **1**
+- reportingOrderCount = **5**; status = `available`
+
 ## Missing-data mutations
 
 | Mutation | Expected commercial behaviour |

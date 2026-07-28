@@ -145,6 +145,26 @@ export const GOLDEN_COHORT_REVENUE_CONTRIBUTION_JAN_2025 = {
   ],
 } as const;
 
+/** MET-NEW-RETURN — Jan 2025 reporting window over golden fixture (hand arithmetic). */
+export const GOLDEN_NEW_RETURNING_MIX_JAN_2025 = {
+  newCustomerCount: 3,
+  returningCustomerCount: 1,
+  classifiedActiveCustomerCount: 4,
+  newCustomerShare: 3 / 4,
+  returningCustomerShare: 1 / 4,
+  newRevenue: 230,
+  returningRevenue: 180,
+  unidentifiedRevenue: 0,
+  unresolvedRevenue: 0,
+  classifiedRevenue: 410,
+  totalReportingRevenue: 410,
+  newRevenueShareOfClassifiedRevenue: 230 / 410,
+  returningRevenueShareOfClassifiedRevenue: 180 / 410,
+  revenueClassificationCoverage: 1,
+  reportingOrderCount: 5,
+  status: "available" as const,
+} as const;
+
 /** MET-REV-RETENTION — asOf 2025-05-01 over golden fixture (hand arithmetic). */
 export const GOLDEN_COHORT_REVENUE_RETENTION_ASOF_2025_05_01 = {
   maxOffset: 4,

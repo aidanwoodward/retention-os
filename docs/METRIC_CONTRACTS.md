@@ -8,7 +8,7 @@
 
 This document is the source of truth for KPI formulas, inputs, treatments, missing-data behaviour, and UI mapping on the retained command-centre path. Quarantined legacy SQL/API surfaces are out of scope.
 
-**Contracted MetricId set (21):** index and tests assert this set exactly — not `ALL_METRIC_IDS` (excludes appendix-only `aov`).
+**Contracted MetricId set (22):** index and tests assert this set exactly — not `ALL_METRIC_IDS` (excludes appendix-only `aov`).
 
 **UTC calendar-month cohort contract (all cohort metrics):** Cohort month = UTC `YYYY-MM` of `Customer.firstOrderAt`. M+N is a calendar-month index offset, not an elapsed 30-day window. Qualifying orders are rows present in the selected dataset (no silent paid-order filter in the TS engine).
 
@@ -242,6 +242,22 @@ Each core contract uses these 13 fields:
 11. **UI locations:** None currently (engine-only). Planned later: `/dashboard` (6B).
 12. **Existing tests:** `aov-frequency.test.ts`; golden Jan 2025; `metric-contract-index.test.ts`.
 13. **Data quality:** `actual` when reporting orders exist; empty when no reporting activity; coverage communicates identity completeness.
+
+### revenue_concentration
+
+1. **Canonical name + MetricId:** Revenue concentration — `revenue_concentration`
+2. **Commercial question:** How dependent is selected-period trusted net revenue on a small number of products (and vendors when current product metadata supports attribution)? Category concentration is unavailable until an approved category field exists.
+3. **Formula:** Require `reportingPeriod` (else `RangeError`). `totalReportingRevenue = Σ netOrderRevenue(reportingOrders)`. For each order, allocate trusted order net proportionally by gross `lineTotal` weights (`allocateTrustedNetByProduct`): `allocatedNet_i = orderNet × lineTotal_i / totalValidLineTotal`. Aggregate by trimmed `productId`. Any negative or non-finite `lineTotal` on an order makes that order's entire positive net product-unattributed (do not zero-weight and redistribute). Missing `productId` share is unattributed. Variant fallback (`productId === variantId` with no Product record) is unattributed. Product shares and top-1/3/5 are over `productAttributedRevenue`. Coverage = attributed / total (null if total 0). Vendor: map attributed product revenue via current `Product.vendor` (trim, collapse whitespace, lowercase key); blank/missing → vendor-unattributed. Category always `unavailable`. Ignore `eligibleCustomerIds` / `acquisitionPeriod` / `maturityHorizonMonths`. Guests included. Does not call `calculateNewReturningMix` or `calculateAovFrequency`.
+4. **Raw + transformed inputs:** `AnalysisSelection.reportingOrders` and `fullDataset.products`. Duplicate `Product.id` → `RangeError`. Labels: catalog title, else lex-min line title, else `"Unknown product"`. Vendor display label: lex-min trimmed original among contributors to a normalised key.
+5. **Inclusion / exclusion / financial treatment:** Trusted order net via `netOrderRevenue`. Product amounts are **allocated product revenue** (order-level discounts/refunds spread by gross line weights) — not exact refund-to-product attribution. Shipping/tax/duties are not in net. Gift-card exclusion is import-time. No synthetic product IDs from title/SKU/index.
+6. **Time / cohort / identity / assumptions:** Selected-period only. Customer identity not required. Vendor uses **current** `Product.vendor` (no order-time snapshot; may restate if metadata changes). Name-collision risk for vendor (no vendor ID).
+7. **Output type / unit / rounding / display:** Composite `RevenueConcentrationResult` with product/vendor/category breakdowns (rows: key, label, revenue, shareOfAttributedRevenue). Engine does not round. No rank/order/unit/customer counts on rows.
+8. **Missing / partial / zero-denominator:** No reporting orders → `status: "empty"`. Zero total net → `available`, null coverage/top-N, no zero-revenue rows. Positive total with no product attribution → product `unavailable`, coverage 0. Partial coverage: shares over attributed only. Never NaN/Infinity.
+9. **Caveats:** Attribution coverage measures stable identity coverage, not allocation precision. Distinct from `product_quality` (first-product customer quality). No HHI/Gini/score/benchmarks. Engine-only until 6B Products.
+10. **Engine source:** `lib/metrics/revenue-concentration.ts::calculateRevenueConcentration` (+ `allocateTrustedNetByProduct`).
+11. **UI locations:** None currently (engine-only). Planned later: `/products` (6B).
+12. **Existing tests:** `revenue-concentration.test.ts`; golden Jan 2025; `metric-contract-index.test.ts`.
+13. **Data quality:** `partial` with attributable product identity; category unavailable by contract; vendor conditional on `Product.vendor`.
 
 ### revenue_ltv
 

@@ -20,6 +20,7 @@ import {
   GOLDEN_COHORT_REVENUE_RETENTION_ASOF_2025_05_01,
   GOLDEN_NEW_RETURNING_MIX_JAN_2025,
   GOLDEN_AOV_FREQUENCY_JAN_2025,
+  GOLDEN_REVENUE_CONCENTRATION_JAN_2025,
   GOLDEN_COHORT_SIZES,
   GOLDEN_CONTRIBUTION_LTV,
   GOLDEN_CSV_PREVIEW,
@@ -44,6 +45,7 @@ import { calculateCohortRevenueContribution } from "./cohort-revenue-contributio
 import { calculateCohortRevenueRetention } from "./cohort-revenue-retention";
 import { calculateNewReturningMix } from "./new-returning";
 import { calculateAovFrequency } from "./aov-frequency";
+import { calculateRevenueConcentration } from "./revenue-concentration";
 import { calculateLTVByCohort } from "./ltv";
 import { calculateFirstProductCustomerQualityFromDataset } from "./product-quality";
 import {
@@ -500,5 +502,67 @@ describe("MET-AOV-FREQ golden reconciliation — Jan 2025 AOV and frequency", ()
       expected.classifiedRevenue,
       "decomposition 4 x 1.25 x 82",
     );
+  });
+});
+
+describe("MET-CONCENTRATION golden reconciliation — Jan 2025 revenue concentration", () => {
+  it("matches hand-calculated January 2025 product concentration", () => {
+    const dataset = buildGoldenRetentionOSDataset();
+    const selection = buildAnalysisSelection(dataset, {
+      asOfDate: "2025-04-30T23:59:59.000Z",
+      reportingPeriod: {
+        startDate: "2025-01-01T00:00:00.000Z",
+        endDateExclusive: "2025-02-01T00:00:00.000Z",
+      },
+    });
+    const result = calculateRevenueConcentration(selection);
+    const expected = GOLDEN_REVENUE_CONCENTRATION_JAN_2025;
+
+    assert.equal(result.status, expected.status);
+    assert.equal(result.reportingOrderCount, expected.reportingOrderCount);
+    assertClose(result.totalReportingRevenue, expected.totalReportingRevenue, "totalReportingRevenue");
+
+    assert.equal(result.product.status, expected.product.status);
+    assertClose(result.product.attributedRevenue, expected.product.attributedRevenue, "product attributed");
+    assertClose(
+      result.product.unattributedRevenue,
+      expected.product.unattributedRevenue,
+      "product unattributed",
+    );
+    assertClose(
+      result.product.attributionCoverage!,
+      expected.product.attributionCoverage,
+      "product coverage",
+    );
+    assertClose(
+      result.product.top1ShareOfAttributedRevenue!,
+      expected.product.top1ShareOfAttributedRevenue,
+      "top1",
+    );
+    assertClose(
+      result.product.top3ShareOfAttributedRevenue!,
+      expected.product.top3ShareOfAttributedRevenue,
+      "top3",
+    );
+    assertClose(
+      result.product.top5ShareOfAttributedRevenue!,
+      expected.product.top5ShareOfAttributedRevenue,
+      "top5",
+    );
+    assert.equal(result.product.attributedEntityCount, expected.product.attributedEntityCount);
+    assert.equal(result.product.rows.length, expected.product.rows.length);
+    for (let i = 0; i < expected.product.rows.length; i++) {
+      const row = result.product.rows[i]!;
+      const exp = expected.product.rows[i]!;
+      assert.equal(row.key, exp.key, `row ${i} key`);
+      assert.equal(row.label, exp.label, `row ${i} label`);
+      assertClose(row.revenue, exp.revenue, `row ${i} revenue`);
+      assertClose(row.shareOfAttributedRevenue!, exp.shareOfAttributedRevenue, `row ${i} share`);
+    }
+
+    assert.equal(result.vendor.status, expected.vendor.status);
+    assert.equal(result.vendor.rows.length, 0);
+    assert.equal(result.category.status, expected.category.status);
+    assert.equal(result.category.rows.length, 0);
   });
 });

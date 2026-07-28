@@ -357,6 +357,34 @@ Residuals / coverage:
 - customerIdentityRevenueCoverage = **1**
 - status = `available`
 
+## MET-CONCENTRATION — Jan 2025 reporting-period revenue concentration
+
+Reporting period: `[2025-01-01T00:00:00.000Z, 2025-02-01T00:00:00.000Z)` (half-open).
+
+Jan reporting orders (single-line; allocated product revenue equals order net):
+
+| Order | Product | Net |
+|-------|---------|----:|
+| o2 | prod_a | 80 |
+| o6 | prod_a | 100 |
+| o7 | prod_a | 100 |
+| o8 | prod_b | 50 |
+| o9 | prod_a | 80 |
+
+Product totals:
+
+- prod_a = 80 + 100 + 100 + 80 = **360** (Serum A)
+- prod_b = **50** (Oil B)
+- productAttributedRevenue = **410**
+- productUnattributedRevenue = **0**
+- productAttributionCoverage = **1**
+- top1ShareOfAttributedRevenue = 360 / 410
+- top3ShareOfAttributedRevenue = **1** (only two products)
+- top5ShareOfAttributedRevenue = **1**
+- vendor.status = `unavailable` (golden products have no vendor)
+- category.status = `unavailable` (no canonical category field)
+- reportingOrderCount = **5**; status = `available`
+
 ## Missing-data mutations
 
 | Mutation | Expected commercial behaviour |

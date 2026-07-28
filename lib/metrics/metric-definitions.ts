@@ -18,6 +18,7 @@ export type MetricId =
   | "cohort_revenue_retention"
   | "new_returning_mix"
   | "aov_frequency"
+  | "revenue_concentration"
   | "revenue_ltv"
   | "contribution_ltv"
   | "cac"
@@ -75,6 +76,7 @@ export const ALL_METRIC_IDS: readonly MetricId[] = [
   "cohort_revenue_retention",
   "new_returning_mix",
   "aov_frequency",
+  "revenue_concentration",
   "revenue_ltv",
   "contribution_ltv",
   "cac",
@@ -254,6 +256,22 @@ export const METRIC_DEFINITIONS: Readonly<Record<MetricId, MetricDefinition>> = 
     caveat:
       "Do not equate totalReportingRevenue to customers x frequency x portfolioAOV when identity residuals exist. Engine-only until 6B",
     defaultDataQuality: "actual",
+  },
+
+  revenue_concentration: {
+    id: "revenue_concentration",
+    name: "Revenue concentration",
+    meaning:
+      "How dependent selected-period trusted net revenue is on leading products, and conditionally vendors, with category unavailable until taxonomy exists",
+    retentionOsBasis:
+      "calculateRevenueConcentration over reportingOrders: allocated product revenue via proportional lineTotal weights of netOrderRevenue; top-1/3/5 shares of attributed revenue; vendor from current Product.vendor when present; category always unavailable",
+    caveat:
+      "Product amounts are deterministically allocated, not exact line-level net. Attribution coverage measures identity coverage, not allocation precision. Vendor uses current product metadata and may restate if Product.vendor changes",
+    defaultDataQuality: "partial",
+    dataQualityNotes: {
+      partial: "Requires line items with stable product identifiers for product concentration",
+      unavailable: "Locked without reporting activity or without attributable product identity",
+    },
   },
 
   revenue_ltv: {

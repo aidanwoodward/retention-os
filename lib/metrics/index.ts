@@ -61,6 +61,20 @@ export {
 } from "./aov-frequency";
 
 export {
+  allocateTrustedNetByProduct,
+  ALLOCATION_EPSILON,
+  type TrustedNetProductAllocation,
+} from "./allocate-trusted-net-by-product";
+
+export {
+  calculateRevenueConcentration,
+  type RevenueConcentrationBreakdown,
+  type RevenueConcentrationDimension,
+  type RevenueConcentrationResult,
+  type RevenueConcentrationRow,
+} from "./revenue-concentration";
+
+export {
   calculateRetentionByCohort,
   type RetentionByCohortSeries,
   type CalculateRetentionOptions,

@@ -185,6 +185,43 @@ export const GOLDEN_AOV_FREQUENCY_JAN_2025 = {
   status: "available" as const,
 } as const;
 
+/** MET-CONCENTRATION — Jan 2025 reporting period (hand arithmetic; allocated product revenue). */
+export const GOLDEN_REVENUE_CONCENTRATION_JAN_2025 = {
+  totalReportingRevenue: 410,
+  reportingOrderCount: 5,
+  status: "available" as const,
+  product: {
+    status: "available" as const,
+    attributedRevenue: 410,
+    unattributedRevenue: 0,
+    attributionCoverage: 1,
+    top1ShareOfAttributedRevenue: 360 / 410,
+    top3ShareOfAttributedRevenue: 1,
+    top5ShareOfAttributedRevenue: 1,
+    attributedEntityCount: 2,
+    rows: [
+      {
+        key: "prod_a",
+        label: "Serum A",
+        revenue: 360,
+        shareOfAttributedRevenue: 360 / 410,
+      },
+      {
+        key: "prod_b",
+        label: "Oil B",
+        revenue: 50,
+        shareOfAttributedRevenue: 50 / 410,
+      },
+    ],
+  },
+  vendor: {
+    status: "unavailable" as const,
+  },
+  category: {
+    status: "unavailable" as const,
+  },
+} as const;
+
 /** MET-REV-RETENTION — asOf 2025-05-01 over golden fixture (hand arithmetic). */
 export const GOLDEN_COHORT_REVENUE_RETENTION_ASOF_2025_05_01 = {
   maxOffset: 4,

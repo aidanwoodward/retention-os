@@ -125,7 +125,7 @@ Brands need period portfolio share by acquisition cohort (with absolute $ suppor
 
 - URL: https://github.com/aidanwoodward/retention-os/pull/35
 - Base: `restart-retentionos-mvp`
-- Head SHA: `c7e6f42251f834a5f7968116097bf86aba1b338e`
+- Head SHA: `d1166768` (frozen)
 
 ### Checks
 

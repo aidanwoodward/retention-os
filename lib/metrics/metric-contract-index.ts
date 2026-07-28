@@ -17,6 +17,7 @@ export const CONTRACTED_METRIC_IDS = [
   "cohort_revenue_contribution",
   "cohort_revenue_retention",
   "new_returning_mix",
+  "aov_frequency",
   "revenue_ltv",
   "contribution_ltv",
   "cac",
@@ -192,6 +193,20 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
     uiRoutes: [],
     existingTests: [
       "lib/metrics/new-returning.test.ts",
+      "lib/metrics/golden-reconciliation.test.ts",
+      "lib/metrics/metric-definitions.test.ts",
+      "lib/metrics/metric-contract-index.test.ts",
+    ],
+  },
+  aov_frequency: {
+    id: "aov_frequency",
+    docAnchor: `${DOC}#aov_frequency`,
+    engineEntrypoints: ["lib/metrics/aov-frequency.ts::calculateAovFrequency"],
+    // MET-AOV-FREQ: engine only — no current VM/route wiring (planned: dashboard in 6B).
+    viewModelBuilders: [],
+    uiRoutes: [],
+    existingTests: [
+      "lib/metrics/aov-frequency.test.ts",
       "lib/metrics/golden-reconciliation.test.ts",
       "lib/metrics/metric-definitions.test.ts",
       "lib/metrics/metric-contract-index.test.ts",

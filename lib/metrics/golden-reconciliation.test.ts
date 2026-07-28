@@ -19,6 +19,7 @@ import {
   GOLDEN_COHORT_REVENUE_CONTRIBUTION_JAN_2025,
   GOLDEN_COHORT_REVENUE_RETENTION_ASOF_2025_05_01,
   GOLDEN_NEW_RETURNING_MIX_JAN_2025,
+  GOLDEN_AOV_FREQUENCY_JAN_2025,
   GOLDEN_COHORT_SIZES,
   GOLDEN_CONTRIBUTION_LTV,
   GOLDEN_CSV_PREVIEW,
@@ -42,6 +43,7 @@ import { calculateCohorts } from "./cohorts";
 import { calculateCohortRevenueContribution } from "./cohort-revenue-contribution";
 import { calculateCohortRevenueRetention } from "./cohort-revenue-retention";
 import { calculateNewReturningMix } from "./new-returning";
+import { calculateAovFrequency } from "./aov-frequency";
 import { calculateLTVByCohort } from "./ltv";
 import { calculateFirstProductCustomerQualityFromDataset } from "./product-quality";
 import {
@@ -450,6 +452,53 @@ describe("MET-NEW-RETURN golden reconciliation — Jan 2025 new vs returning mix
       result.revenueClassificationCoverage!,
       expected.revenueClassificationCoverage,
       "revenueClassificationCoverage",
+    );
+  });
+});
+
+describe("MET-AOV-FREQ golden reconciliation — Jan 2025 AOV and frequency", () => {
+  it("matches hand-calculated January 2025 AOV/frequency decomposition", () => {
+    const dataset = buildGoldenRetentionOSDataset();
+    const selection = buildAnalysisSelection(dataset, {
+      asOfDate: "2025-04-30T23:59:59.000Z",
+      reportingPeriod: {
+        startDate: "2025-01-01T00:00:00.000Z",
+        endDateExclusive: "2025-02-01T00:00:00.000Z",
+      },
+    });
+    const result = calculateAovFrequency(selection);
+    const expected = GOLDEN_AOV_FREQUENCY_JAN_2025;
+
+    assert.equal(result.status, expected.status);
+    assert.equal(result.reportingOrderCount, expected.reportingOrderCount);
+    assert.equal(result.activeCustomerCount, expected.activeCustomerCount);
+    assert.equal(result.classifiedOrderCount, expected.classifiedOrderCount);
+    assert.equal(result.unidentifiedOrderCount, expected.unidentifiedOrderCount);
+    assert.equal(result.unresolvedOrderCount, expected.unresolvedOrderCount);
+    assertClose(result.totalReportingRevenue, expected.totalReportingRevenue, "totalReportingRevenue");
+    assertClose(result.portfolioAverageOrderValue!, expected.portfolioAverageOrderValue, "portfolioAOV");
+    assertClose(result.classifiedRevenue, expected.classifiedRevenue, "classifiedRevenue");
+    assertClose(result.ordersPerActiveCustomer!, expected.ordersPerActiveCustomer, "ordersPerActiveCustomer");
+    assertClose(result.classifiedAverageOrderValue!, expected.classifiedAverageOrderValue, "classifiedAOV");
+    assertClose(result.revenuePerActiveCustomer!, expected.revenuePerActiveCustomer, "revenuePerActiveCustomer");
+    assertClose(result.unidentifiedRevenue, expected.unidentifiedRevenue, "unidentifiedRevenue");
+    assertClose(result.unresolvedRevenue, expected.unresolvedRevenue, "unresolvedRevenue");
+    assertClose(
+      result.customerIdentityOrderCoverage!,
+      expected.customerIdentityOrderCoverage,
+      "orderCoverage",
+    );
+    assertClose(
+      result.customerIdentityRevenueCoverage!,
+      expected.customerIdentityRevenueCoverage,
+      "revenueCoverage",
+    );
+    assertClose(
+      result.activeCustomerCount *
+        result.ordersPerActiveCustomer! *
+        result.classifiedAverageOrderValue!,
+      expected.classifiedRevenue,
+      "decomposition 4 x 1.25 x 82",
     );
   });
 });

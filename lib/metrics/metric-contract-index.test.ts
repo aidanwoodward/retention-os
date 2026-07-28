@@ -10,9 +10,9 @@ import {
 } from "./metric-contract-index";
 
 describe("metric-contract-index", () => {
-  it("covers exactly 20 contracted MetricIds", () => {
-    assert.equal(CONTRACTED_METRIC_IDS.length, 20);
-    assert.equal(Object.keys(METRIC_CONTRACT_INDEX).length, 20);
+  it("covers exactly 21 contracted MetricIds", () => {
+    assert.equal(CONTRACTED_METRIC_IDS.length, 21);
+    assert.equal(Object.keys(METRIC_CONTRACT_INDEX).length, 21);
   });
 
   it("indexes every contracted id with required linkage fields", () => {

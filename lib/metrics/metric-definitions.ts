@@ -17,6 +17,7 @@ export type MetricId =
   | "cohort_revenue_contribution"
   | "cohort_revenue_retention"
   | "new_returning_mix"
+  | "aov_frequency"
   | "revenue_ltv"
   | "contribution_ltv"
   | "cac"
@@ -73,6 +74,7 @@ export const ALL_METRIC_IDS: readonly MetricId[] = [
   "cohort_revenue_contribution",
   "cohort_revenue_retention",
   "new_returning_mix",
+  "aov_frequency",
   "revenue_ltv",
   "contribution_ltv",
   "cac",
@@ -151,18 +153,20 @@ export const METRIC_DEFINITIONS: Readonly<Record<MetricId, MetricDefinition>> = 
   aov: {
     id: "aov",
     name: "Average order value (AOV)",
-    meaning: "Average merchandise value per order before post-order adjustments",
+    meaning:
+      "Primary commercial portfolio AOV: average trusted net merchandise revenue per selected-period trusted order",
     shopifyDefinition:
-      "(Gross sales - discounts) / number of orders, excluding post-order adjustments such as returns and order edits",
+      "External Shopify-style AOV often uses (gross sales - discounts) / orders and may exclude returns; that is not the RetentionOS contract",
     shopifySourceUrls: [
       SHOPIFY_HELP.salesReports,
       SHOPIFY_HELP.analyticsFields,
       SHOPIFY_HELP.marketingPerformance,
     ],
     retentionOsBasis:
-      "Not computed in the metric engine this sprint. Target basis when added: (sum line-derived gross - sum discounts) / order count, not Total sales / orders",
-    caveat: "Legacy API routes may use total_price-based AOV; MVP command-centre does not display AOV yet",
-    defaultDataQuality: "unavailable",
+      "portfolioAverageOrderValue from calculateAovFrequency: sum netOrderRevenue(reportingOrders) / reportingOrderCount (includes refunds via net floor; zero-net orders remain in the denominator)",
+    caveat:
+      "Appendix-only MetricId - contracted composite is aov_frequency. Do not confuse with classifiedAverageOrderValue used only for customer-resolved decomposition. Legacy APIs may still use total_price",
+    defaultDataQuality: "actual",
   },
 
   repeat_purchase_rate: {
@@ -230,6 +234,25 @@ export const METRIC_DEFINITIONS: Readonly<Record<MetricId, MetricDefinition>> = 
       "calculateNewReturningMix(selection): customer class from firstOrderAt vs reportingPeriod; new revenue = net of canonical first order only; returning = later orders; residuals unidentified/unresolved. Mix shares over classifiedRevenue; coverage = classified/total",
     caveat:
       "Only the canonical first order is new revenue - same-period repeats are returning. Guest/unresolved are trust residuals, not commercial customer categories. Engine-only until 6B",
+    defaultDataQuality: "actual",
+  },
+
+  aov_frequency: {
+    id: "aov_frequency",
+    name: "Customer count x frequency x AOV",
+    meaning:
+      "Selected-period decomposition of customer-resolved revenue into active customers, orders per active customer, and classified AOV, with portfolio AOV as the primary commercial order average",
+    shopifyDefinition:
+      "External Shopify AOV definitions may use gross-minus-discounts and different guest treatment; RetentionOS portfolio AOV uses trusted net including refunds",
+    shopifySourceUrls: [
+      SHOPIFY_HELP.salesReports,
+      SHOPIFY_HELP.analyticsFields,
+      SHOPIFY_HELP.marketingPerformance,
+    ],
+    retentionOsBasis:
+      "calculateAovFrequency(selection): portfolioAOV = totalReportingRevenue / reportingOrderCount; classifiedRevenue = activeCustomerCount x ordersPerActiveCustomer x classifiedAverageOrderValue for customer-resolved orders only; guest/unresolved are residuals",
+    caveat:
+      "Do not equate totalReportingRevenue to customers x frequency x portfolioAOV when identity residuals exist. Engine-only until 6B",
     defaultDataQuality: "actual",
   },
 

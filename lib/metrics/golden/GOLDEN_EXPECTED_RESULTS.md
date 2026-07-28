@@ -318,6 +318,45 @@ Revenue:
 - revenueClassificationCoverage = **1**
 - reportingOrderCount = **5**; status = `available`
 
+## MET-AOV-FREQ — Jan 2025 reporting-period customer count × frequency × AOV
+
+Reporting period: `[2025-01-01T00:00:00.000Z, 2025-02-01T00:00:00.000Z)` (half-open).
+
+Jan reporting orders (hand nets via `netOrderRevenue`):
+
+| Order | Customer | Net |
+|-------|----------|----:|
+| o2 | c1 | 80 |
+| o6 | c4 | 100 |
+| o7 | c4 | 100 |
+| o8 | c5 | 50 |
+| o9 | c6 | 80 |
+
+Portfolio:
+
+- totalReportingRevenue = 80 + 100 + 100 + 50 + 80 = **410**
+- reportingOrderCount = **5**
+- portfolioAverageOrderValue = 410 / 5 = **82** (primary commercial AOV)
+
+Customer-resolved (all Jan orders resolve; no guests / unresolved):
+
+- activeCustomerCount = {c1, c4, c5, c6} = **4**
+- classifiedOrderCount = **5**
+- classifiedRevenue = **410**
+- ordersPerActiveCustomer = 5 / 4 = **1.25**
+- classifiedAverageOrderValue = 410 / 5 = **82**
+- revenuePerActiveCustomer = 410 / 4 = **102.5**
+
+Decomposition check: `4 × 1.25 × 82 = 410`.
+
+Residuals / coverage:
+
+- unidentifiedOrderCount = **0**; unidentifiedRevenue = **0**
+- unresolvedOrderCount = **0**; unresolvedRevenue = **0**
+- customerIdentityOrderCoverage = **1**
+- customerIdentityRevenueCoverage = **1**
+- status = `available`
+
 ## Missing-data mutations
 
 | Mutation | Expected commercial behaviour |

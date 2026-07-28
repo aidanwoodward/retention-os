@@ -375,16 +375,16 @@ Each core contract uses these 13 fields:
 
 1. **Canonical name + MetricId:** Product quality — `product_quality`
 2. **Commercial question:** Which first products create durable, repeating, economically healthy customers?
-3. **Formula:** Segment customers by first line item on chronological first order (`deriveFirstProductIdForCustomer`). Per segment: repeat rate, F2S (default 90d), third-purchase rate, avg revenue/contribution LTV, discount/refund drag. Signal `strong|watch|weak|insufficient_data` using `MIN_CUSTOMERS_FOR_SIGNAL=5`, `MATERIAL_DELTA=0.1`, `HIGH_DRAG=0.15` vs portfolio baselines.
-4. **Raw + transformed inputs:** Orders with `lineItems.productId`, product catalog titles; optional margin assumptions for contribution.
-5. **Inclusion / exclusion / financial treatment:** First-product attribution only — not full basket. Unassigned customers counted separately.
-6. **Time / cohort / identity / assumptions:** All-time snapshot economics per segment. F2S window default 90d.
-7. **Output type / unit / rounding / display:** Table of rates/currency + categorical signal. UI Locked without line items.
+3. **Formula:** Attribute each customer via `deriveFirstProductAttribution` on the canonical first order (`orderedAt` ASC, then order `id` `localeCompare(..., "en")`; validate `firstOrderAt`; history gap → unknown; optional helper `asOfDate` — **product quality omits asOfDate and is all-time**). Product rows include only `attributionStatus === "single_product"`. Per segment: repeat rate, F2S (default 90d), third-purchase rate, avg revenue/contribution LTV, discount/refund drag. Signal `strong|watch|weak|insufficient_data` using `MIN_CUSTOMERS_FOR_SIGNAL=5`, `MATERIAL_DELTA=0.1`, `HIGH_DRAG=0.15` vs portfolio baselines. Residuals: `multiProductCustomerCount` (valid multi-product first baskets) and `unknownFirstProductCustomerCount` (insufficient/unreliable evidence); `unassignedCustomerCount = multi + unknown`.
+4. **Raw + transformed inputs:** Orders with `lineItems.productId` / `variantId`, product catalog titles for labels only; optional margin assumptions for contribution. Engine does **not** read imported `Customer.firstProductId` (denormalised interim; may still reflect former first-line behaviour).
+5. **Inclusion / exclusion / financial treatment:** Every first-order line must have reliable canonical product identity (non-empty trimmed `productId`, not variant-fallback). Reliable zero-value lines participate. Any unresolved/unreliable line (including zero-value) → unknown. Present negative/non-finite `lineTotal` → unknown. Variant-fallback fail-closed (may be stricter than `revenue_concentration`). Fully refunded / zero-net first orders remain chronological first. Multi-product and unknown excluded from product-specific rows but counted separately — multi-product is not “bad data”.
+6. **Time / cohort / identity / assumptions:** All-time snapshot economics per segment. F2S window default 90d. Helper supports optional `asOfDate`; current product-quality path does not pass it.
+7. **Output type / unit / rounding / display:** Table of rates/currency + categorical signal. UI Locked without line items. Engine residual counts are not separate visible UI KPIs in this sprint.
 8. **Missing / partial / zero-denominator:** No line-item coverage → locked / insufficient. Segments &lt;5 customers → `insufficient_data` (not weak). Contribution null without path.
-9. **Caveats:** Not product sales volume. Not channel quality.
-10. **Engine source:** `lib/metrics/product-quality.ts::calculateFirstProductCustomerQuality` (+ `FromDataset`).
+9. **Caveats:** Not product sales volume. Not channel quality. CSV may still treat gift-like merchandise as ordinary products when no gift-card indicator exists; GraphQL excludes gift-card lines at import.
+10. **Engine source:** `lib/metrics/first-product-attribution.ts::deriveFirstProductAttribution`; `lib/metrics/product-quality.ts::calculateFirstProductCustomerQuality` (+ `FromDataset`).
 11. **UI locations:** `/products`, `/dashboard` (Entry-product signal / spine).
-12. **Existing tests:** `product-quality.test.ts`; `dashboard-view-model.test.ts`.
+12. **Existing tests:** `first-product-attribution.test.ts`; `product-quality.test.ts`; `dashboard-view-model.test.ts`; GraphQL metric parity (F06 multi_product).
 13. **Data quality:** `partial` with line items; `unavailable` without.
 
 ### revenue_durability_posture

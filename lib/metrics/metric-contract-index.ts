@@ -347,6 +347,7 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
     id: "product_quality",
     docAnchor: `${DOC}#product_quality`,
     engineEntrypoints: [
+      "lib/metrics/first-product-attribution.ts::deriveFirstProductAttribution",
       "lib/metrics/product-quality.ts::calculateFirstProductCustomerQuality",
       "lib/metrics/product-quality.ts::calculateFirstProductCustomerQualityFromDataset",
     ],
@@ -357,6 +358,7 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
     ],
     uiRoutes: ["/products", "/dashboard"],
     existingTests: [
+      "lib/metrics/first-product-attribution.test.ts",
       "lib/metrics/product-quality.test.ts",
       "lib/metrics/dashboard-view-model.test.ts",
       "lib/metrics/golden-reconciliation.test.ts",

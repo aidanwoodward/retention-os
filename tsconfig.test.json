@@ -19,6 +19,8 @@
     "lib/metrics/metric-contract-index.test.ts",
     "lib/metrics/revenue-durability-status.ts",
     "lib/metrics/revenue-durability-status.test.ts",
+    "lib/metrics/first-product-attribution.ts",
+    "lib/metrics/first-product-attribution.test.ts",
     "lib/metrics/product-quality.ts",
     "lib/metrics/product-quality.test.ts",
     "lib/metrics/repeat-purchase.ts",

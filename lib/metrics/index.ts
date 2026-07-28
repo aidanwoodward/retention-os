@@ -203,7 +203,6 @@ export {
 export {
   calculateFirstProductCustomerQuality,
   calculateFirstProductCustomerQualityFromDataset,
-  deriveFirstProductIdForCustomer,
   MIN_CUSTOMERS_FOR_SIGNAL,
   MATERIAL_DELTA,
   HIGH_DRAG,
@@ -212,6 +211,13 @@ export {
   type FirstProductQualityRow,
   type ProductQualitySignal,
 } from "./product-quality";
+
+export {
+  deriveFirstProductAttribution,
+  isVariantFallbackProductIdentity,
+  type FirstProductAttribution,
+  type FirstProductAttributionOptions,
+} from "./first-product-attribution";
 
 export {
   buildProductsPageViewModel,

@@ -77,17 +77,21 @@ describe("Shopify GraphQL → metric engine parity", () => {
     );
   });
 
-  it("first-product quality: F06 Cream is first product (lineItems[0] rule)", () => {
+  it("first-product quality: F06 multi_product — no Cream quality row (engine SoT)", () => {
     const adapted = adaptShopifyGraphqlOrdersFixture({ orders: fixtureF06() });
     const dataset = buildFixtureRetentionOSDataset(adapted.entities!, GRAPHQL_FIXTURE_TEST_META);
+    // Denormalised import field may still reflect former first-line Cream — documented drift only.
     assert.equal(
       adapted.entities!.customers[0]!.firstProductId,
       `shopify:product:${PROD_CREAM}`,
     );
     const result = calculateFirstProductCustomerQualityFromDataset(dataset);
     const cream = result.rows.find((r) => r.productId === `shopify:product:${PROD_CREAM}`);
-    assert.ok(cream);
-    assert.equal(cream!.customerCount, 1);
+    assert.equal(cream, undefined);
+    assert.equal(result.multiProductCustomerCount, 1);
+    assert.equal(result.unknownFirstProductCustomerCount, 0);
+    assert.equal(result.unassignedCustomerCount, 1);
+    assert.equal(result.rows.length, 0);
   });
 
   it("CAC / payback only when manual spend supplied; guests not in identifiable denominator", () => {

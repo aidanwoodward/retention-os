@@ -199,7 +199,7 @@ function SummarySection({ summary }: { summary: ProductsPageSummaryView }) {
         <SummaryKpi
           title="Unassigned customers"
           value={summary.unassignedCustomerCount.toLocaleString()}
-          sub="No identifiable first-product anchor"
+          sub="Multi-product or unknown first-product attribution"
         />
       </div>
     </div>
@@ -300,8 +300,8 @@ export function FirstProductQualityPanel({ vm }: { vm: ProductsPageViewModel }) 
           <KpiMetricLabel metricId="product_quality">First-product customer quality</KpiMetricLabel>
         </h2>
         <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-600">
-          Each row groups customers by the product on their first order line — repeat behaviour, LTV, and drag reflect
-          downstream customer economics, not SKU sales volume.
+          Each row groups customers by a single-product canonical first order — repeat behaviour, LTV, and drag reflect
+          downstream customer economics, not SKU sales volume. Multi-product and unknown first baskets are excluded.
         </p>
         <div className="mt-3 rounded-lg border border-zinc-200/90 bg-zinc-50/90 px-4 py-3 text-sm leading-relaxed text-zinc-800">
           <p>{attributionCaveat}</p>
@@ -341,7 +341,7 @@ export function FirstProductQualityPanel({ vm }: { vm: ProductsPageViewModel }) 
 function EngineWarningsList({ warnings }: { warnings: readonly string[] }) {
   const filtered = warnings.filter(
     (w) =>
-      !w.startsWith("First product is the first line item") &&
+      !w.startsWith("First product attribution uses single_product") &&
       !w.startsWith("Discount and refund drag are order-level"),
   );
   if (filtered.length === 0) return null;

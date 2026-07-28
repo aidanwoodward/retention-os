@@ -378,9 +378,9 @@ export const METRIC_DEFINITIONS: Readonly<Record<MetricId, MetricDefinition>> = 
     name: "Product quality",
     meaning: "Whether customers acquired through a first product show durable repeat, conversion, and LTV signals",
     retentionOsBasis:
-      "Segments by first line item on chronological first order; compares repeat, F2S, and LTV vs portfolio baselines (`calculateFirstProductCustomerQuality`)",
+      "Segments by deriveFirstProductAttribution single_product only on the customer's canonical first order (orderedAt ASC, order id localeCompare en tie-break; all-time - no asOfDate). Compares repeat, F2S, and LTV vs portfolio baselines (`calculateFirstProductCustomerQuality`)",
     caveat:
-      "First-product attribution only, not full basket or multi-product journeys. Segments below minimum customer count are insufficient data, not weak/strong verdicts",
+      "Multi-product and unknown first-product customers are excluded from product rows but counted separately. Variant-fallback and unresolved lines (including zero-value) force unknown. Imported Customer.firstProductId is denormalised interim data, not engine SoT. Segments below minimum customer count are insufficient data, not weak/strong verdicts",
     defaultDataQuality: "partial",
     dataQualityNotes: {
       partial: "Requires line items with product identifiers",

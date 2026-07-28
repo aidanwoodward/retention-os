@@ -132,7 +132,7 @@ Commercial (1–7); population/scope (8–12); integrity (13–19); asOf boundar
 
 - URL: https://github.com/aidanwoodward/retention-os/pull/36
 - Base: `restart-retentionos-mvp`
-- Head SHA: `369b6c65ad8a9d6b44d96637d4598fb101e651b4` (pre-freeze tip; Gate 2 authoritative after evidence commit)
+- Head SHA: `d77398743ae79df83d3486514db6368092447679` (Gate 2 freeze tip)
 
 ### Checks
 

@@ -123,7 +123,7 @@ Brands need to know how active customers, order frequency, and AOV combine to pr
 
 - URL: https://github.com/aidanwoodward/retention-os/pull/38
 - Base: `restart-retentionos-mvp` @ `f633d201e939a2970a0f7950a6c7c03a43b0cbf1`
-- Head SHA: (updated after freeze commit)
+- Head SHA: `0761b762e24a98bc0736422c8d193bf3c1431cd7`
 
 ### Checks
 

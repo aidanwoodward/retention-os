@@ -5,7 +5,7 @@
 
 import type { MetricId } from "./metric-definitions";
 
-/** Contracted MetricIds for Sprint 5U-B (excludes appendix-only `aov`). */
+/** Contracted MetricIds (excludes appendix-only `aov`). */
 export const CONTRACTED_METRIC_IDS = [
   "gross_revenue",
   "discounts",
@@ -14,6 +14,7 @@ export const CONTRACTED_METRIC_IDS = [
   "repeat_purchase_rate",
   "first_to_second_conversion",
   "cohort_retention",
+  "cohort_revenue_contribution",
   "revenue_ltv",
   "contribution_ltv",
   "cac",
@@ -146,6 +147,22 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
       "lib/metrics/dashboard-view-model.test.ts",
       "lib/metrics/revenue-durability-status.test.ts",
       "lib/metrics/golden-reconciliation.test.ts",
+    ],
+  },
+  cohort_revenue_contribution: {
+    id: "cohort_revenue_contribution",
+    docAnchor: `${DOC}#cohort_revenue_contribution`,
+    engineEntrypoints: [
+      "lib/metrics/cohort-revenue-contribution.ts::calculateCohortRevenueContribution",
+    ],
+    // MET-SHARE: engine only — no current VM/route wiring (planned: /cohorts, /dashboard in 6B).
+    viewModelBuilders: [],
+    uiRoutes: [],
+    existingTests: [
+      "lib/metrics/cohort-revenue-contribution.test.ts",
+      "lib/metrics/golden-reconciliation.test.ts",
+      "lib/metrics/metric-definitions.test.ts",
+      "lib/metrics/metric-contract-index.test.ts",
     ],
   },
   revenue_ltv: {

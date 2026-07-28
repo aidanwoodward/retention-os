@@ -115,3 +115,32 @@ export const GOLDEN_CSV_PREVIEW = {
   contributionLTVAvailable: false,
   latestAverageContributionLTV: null,
 } as const;
+
+/** MET-SHARE — Jan 2025 reporting window over golden fixture (hand arithmetic). */
+export const GOLDEN_COHORT_REVENUE_CONTRIBUTION_JAN_2025 = {
+  totalReportingRevenue: 410,
+  reportingOrderCount: 5,
+  selectedCohortRevenue: 410,
+  selectedCohortShareOfReportingRevenue: 1,
+  cohortResolvedRevenue: 410,
+  cohortAttributionCoverage: 1,
+  status: "available" as const,
+  rows: [
+    {
+      kind: "cohort" as const,
+      cohortMonthKey: "2024-12",
+      revenue: 80,
+      shareOfReportingRevenue: 80 / 410,
+      orderCount: 1,
+      customerCount: 1,
+    },
+    {
+      kind: "cohort" as const,
+      cohortMonthKey: "2025-01",
+      revenue: 330,
+      shareOfReportingRevenue: 330 / 410,
+      orderCount: 4,
+      customerCount: 3,
+    },
+  ],
+} as const;

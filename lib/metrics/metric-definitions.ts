@@ -14,6 +14,7 @@ export type MetricId =
   | "repeat_purchase_rate"
   | "first_to_second_conversion"
   | "cohort_retention"
+  | "cohort_revenue_contribution"
   | "revenue_ltv"
   | "contribution_ltv"
   | "cac"
@@ -67,6 +68,7 @@ export const ALL_METRIC_IDS: readonly MetricId[] = [
   "repeat_purchase_rate",
   "first_to_second_conversion",
   "cohort_retention",
+  "cohort_revenue_contribution",
   "revenue_ltv",
   "contribution_ltv",
   "cac",
@@ -184,6 +186,18 @@ export const METRIC_DEFINITIONS: Readonly<Record<MetricId, MetricDefinition>> = 
     retentionOsBasis:
       "Active customers in offset month / cohort size, where cohort month M is UTC month of first order (`calculateRetentionByCohort`)",
     caveat: "Calendar-month breadth, not interchangeable with first-to-second journey timing",
+    defaultDataQuality: "actual",
+  },
+
+  cohort_revenue_contribution: {
+    id: "cohort_revenue_contribution",
+    name: "Acquisition cohort revenue contribution",
+    meaning:
+      "Each acquisition cohort's share of selected reporting-period trusted net revenue, with absolute support and explicit identity/scope residuals",
+    retentionOsBasis:
+      "Sum netOrderRevenue(reportingOrders) attributed by utcMonthKeyFromIso(customer.firstOrderAt); residuals unidentified_customer / outside_selected_acquisition_period / unresolved_customer (calculateCohortRevenueContribution). Not cumulative LTV",
+    caveat:
+      "Period portfolio share, not cohort LTV. Guest and unresolved revenue stay in the denominator via residual rows. Planned UI destinations: /cohorts and /dashboard (not wired in MET-SHARE)",
     defaultDataQuality: "actual",
   },
 

@@ -37,6 +37,13 @@ export {
 export { calculateCohorts, type CohortSummary } from "./cohorts";
 
 export {
+  calculateCohortRevenueContribution,
+  type CohortRevenueContributionResidualKind,
+  type CohortRevenueContributionResult,
+  type CohortRevenueContributionRow,
+} from "./cohort-revenue-contribution";
+
+export {
   calculateRetentionByCohort,
   type RetentionByCohortSeries,
   type CalculateRetentionOptions,

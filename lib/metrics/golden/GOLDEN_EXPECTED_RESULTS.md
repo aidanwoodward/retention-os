@@ -226,6 +226,31 @@ Preview does **not** apply MarginAssumptions (no order `contributionMargin`).
 
 Unlocked path: `summary.blendedCac === 55`.
 
+## MET-SHARE — Jan 2025 reporting-period cohort revenue contribution
+
+Reporting period: `[2025-01-01T00:00:00.000Z, 2025-02-01T00:00:00.000Z)` (half-open).
+Acquisition scope: `all`.
+`asOfDate`: `2025-04-30T23:59:59.000Z`.
+
+Reporting orders (trusted nets):
+
+| order | customer | cohort | net |
+|-------|----------|--------|----:|
+| o2 | c1 | 2024-12 | 80 |
+| o6 | c4 | 2025-01 | 100 |
+| o7 | c4 | 2025-01 | 100 |
+| o8 | c5 | 2025-01 | 50 |
+| o9 | c6 | 2025-01 | 80 |
+
+- `totalReportingRevenue` = **410**
+- Cohort `2024-12` revenue = **80**; share = **80/410**
+- Cohort `2025-01` revenue = **330**; share = **330/410**
+- `selectedCohortRevenue` = **410**; `selectedCohortShareOfReportingRevenue` = **1**
+- `cohortResolvedRevenue` = **410**; `cohortAttributionCoverage` = **1**
+- Residuals: none (no guests / outside / unresolved in fixture)
+- `status` = `available`
+- `reportingOrderCount` = **5**
+
 ## Missing-data mutations
 
 | Mutation | Expected commercial behaviour |

@@ -118,15 +118,15 @@ Brands need to know how much of selected-period activity and revenue is from new
 
 ### PR
 
-- URL: (filled after create)
+- URL: https://github.com/aidanwoodward/retention-os/pull/37
 - Base: `restart-retentionos-mvp`
-- Head SHA: (filled after push)
+- Head SHA: (updated after freeze commit)
 
 ### Checks
 
-- `gh pr checks --watch`: (filled after watch)
-- CI validate:
-- Vercel:
+- `gh pr checks --watch`: pass
+- CI validate: pass (https://github.com/aidanwoodward/retention-os/actions/runs/30359774307/job/90276390584)
+- Vercel: pass
 
 ## Notes
 

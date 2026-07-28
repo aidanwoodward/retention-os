@@ -1,6 +1,10 @@
 /**
  * Single source of truth for Revenue Durability posture (Healthy / Mixed / Watch).
  * MVP vote heuristic — not a formal composite durability index.
+ *
+ * `avgMonthPlus1ActiveRate` must be a maturity-safe completed-only unweighted mean
+ * (see `averageCompletedCohortRetentionAtOffset`). Null omits the Month+1 vote;
+ * zero is a real completed rate and is evaluated against thresholds.
  */
 
 export type RevenueDurabilityStatus = "Healthy" | "Mixed" | "Watch";
@@ -13,7 +17,7 @@ export const REPEAT_PURCHASE_HEALTHY = 0.37;
 export const FIRST_TO_SECOND_90_WATCH = 0.24;
 export const FIRST_TO_SECOND_90_HEALTHY = 0.31;
 
-/** Fraction: mean cohort Month +1 active rate across cohorts that have offset +1 data. */
+/** Fraction: unweighted mean of completed cohort Month +1 active rates. */
 export const MONTH_PLUS_1_ACTIVE_WATCH = 0.065;
 export const MONTH_PLUS_1_ACTIVE_HEALTHY = 0.092;
 

@@ -367,7 +367,10 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
   revenue_durability_posture: {
     id: "revenue_durability_posture",
     docAnchor: `${DOC}#revenue_durability_posture`,
-    engineEntrypoints: ["lib/metrics/revenue-durability-status.ts::evaluateRevenueDurabilityStatus"],
+    engineEntrypoints: [
+      "lib/metrics/revenue-durability-status.ts::evaluateRevenueDurabilityStatus",
+      "lib/metrics/completed-cohort-retention.ts::averageCompletedCohortRetentionAtOffset",
+    ],
     viewModelBuilders: [
       "buildDashboardExecutiveViewModelFromDataset",
       "buildInsightsPageViewModelFromDataset",

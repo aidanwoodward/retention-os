@@ -163,13 +163,13 @@ Each core contract uses these 13 fields:
 3. **Formula:** `activeCustomers / cohortSize` for offset `k`, where active means ≥1 order in UTC month `addMonthsToMonthKey(M, k)`.
 4. **Raw + transformed inputs:** Customers + orders → cohort membership + order month sets → rates per offset.
 5. **Inclusion / exclusion / financial treatment:** Denominator = full acquisition cohort size. Revenue in period uses `netOrderRevenue` but rate is activity-based.
-6. **Time / cohort / identity / assumptions:** UTC calendar-month offsets. `maxOffset` optional cap. No margin/spend assumptions for the rate.
+6. **Time / cohort / identity / assumptions:** UTC calendar-month offsets. `maxOffset` optional cap. No margin/spend assumptions for the rate. The classic engine does **not** apply AnalysisSelection or maturity filtering when emitting points.
 7. **Output type / unit / rounding / display:** Fraction `[0,1]`. Matrix may show `"·"` for unavailable future cells; UI percent.
-8. **Missing / partial / zero-denominator:** `safeDivide` → `0` if cohortSize were 0. Offsets beyond data not emitted (implied max from latest order month). Average Month+N across cohorts returns `null` when no cohorts have that offset (`retention-view-model`).
-9. **Caveats:** Calendar breadth ≠ 90-day journey metric. Fractional engine rates vs legacy SQL percents (quarantined).
-10. **Engine source:** `lib/metrics/retention.ts::calculateRetentionByCohort`.
+8. **Missing / partial / zero-denominator:** `safeDivide` → `0` if cohortSize were 0. Offsets beyond data not emitted (implied max from latest order month). Executive / diagnostic **averages** of Month+N across cohorts use `averageCompletedCohortRetentionAtOffset` (completed-only unweighted mean; `null` when no completed cohorts) — distinct from raw series emission.
+9. **Caveats:** Calendar breadth ≠ 90-day journey metric. Fractional engine rates vs legacy SQL percents (quarantined). Do not read executive Month+N averages as raw point-presence means.
+10. **Engine source:** `lib/metrics/retention.ts::calculateRetentionByCohort`; executive aggregates: `lib/metrics/completed-cohort-retention.ts::averageCompletedCohortRetentionAtOffset`.
 11. **UI locations:** `/retention`, `/cohorts` (matrix `retention_rate`), `/dashboard`, `/insights`.
-12. **Existing tests:** `demo-sanity-check.test.ts`; dashboard/durability (Month+1 average).
+12. **Existing tests:** `demo-sanity-check.test.ts`; dashboard/durability (Month+1 average); `completed-cohort-retention.test.ts`.
 13. **Data quality:** `actual` when order history supports the offset; partial when young cohorts lack mature offsets.
 
 ### cohort_revenue_contribution
@@ -391,16 +391,16 @@ Each core contract uses these 13 fields:
 
 1. **Canonical name + MetricId:** Revenue durability posture — `revenue_durability_posture`
 2. **Commercial question:** Is portfolio retention economics Healthy, Mixed, or Watch right now?
-3. **Formula:** Vote heuristic on inputs: repeat rate, F2S90, avg Month+1 active (`null` skips that vote), LTV cohort spread USD (`null` skips). Thresholds in `revenue-durability-status.ts`. Returns `Healthy` | `Mixed` | `Watch`. **Not a 0–100 score.**
-4. **Raw + transformed inputs:** Outputs of repeat, F2S, retention averages, terminal LTV spread from dashboard/insights builders.
-5. **Inclusion / exclusion / financial treatment:** Informal posture only — not finance-grade durability.
-6. **Time / cohort / identity / assumptions:** Uses portfolio snapshot metrics; spread null when not meaningful.
+3. **Formula:** Vote heuristic on inputs: repeat rate, F2S90, avg Month+1 active (`null` skips that vote), LTV cohort spread USD (`null` skips). Month+1 is the **unweighted** arithmetic mean of **fully completed** cohort Month+1 active rates (`averageCompletedCohortRetentionAtOffset` at offset 1): sum(completed rates) / count(completed cohorts). Completed genuine zeros are included. Partial and unavailable cohorts are excluded. No completed cohorts → `null` (omit Month+1 vote; do not substitute zero, neutral, or benchmark). Thresholds in `revenue-durability-status.ts`. Returns `Healthy` | `Mixed` | `Watch`. **Not a 0–100 score.**
+4. **Raw + transformed inputs:** Outputs of repeat, F2S, completed-only retention averages, terminal LTV spread from dashboard/insights builders. Explicit `asOfDate` preferred where available; otherwise the latest observation instant proven by available canonical order data (`inferConservativeAsOfDateFromDataset`). Inference may understate maturity and must not overstate it.
+5. **Inclusion / exclusion / financial treatment:** Informal posture only — not finance-grade durability. Equal cohort weight for Month+1 (not customer-count-weighted portfolio retention).
+6. **Time / cohort / identity / assumptions:** Uses portfolio snapshot metrics; spread null when not meaningful. Diagnostic retention-timing M+1/M+2/M+3 comparisons also use completed-only averages at the requested offsets; immature values suppress the affected comparison.
 7. **Output type / unit / rounding / display:** Enum label string. Hero displays posture wording.
 8. **Missing / partial / zero-denominator:** Null Month+1 or spread omit those votes (do not count as zero). Underlying rates may still be engine zeros on empty data.
-9. **Caveats:** Not `RevenueDurabilityScore` composite. Do not invent numeric durability.
-10. **Engine source:** `lib/metrics/revenue-durability-status.ts::evaluateRevenueDurabilityStatus`.
+9. **Caveats:** Not `RevenueDurabilityScore` composite. Do not invent numeric durability. Thresholds and other posture components remain unchanged in MET-RDS-MATURITY.
+10. **Engine source:** `lib/metrics/revenue-durability-status.ts::evaluateRevenueDurabilityStatus`; Month+1 aggregate `lib/metrics/completed-cohort-retention.ts::averageCompletedCohortRetentionAtOffset`.
 11. **UI locations:** `/dashboard` hero; `/insights` (durability notes / metricRefs).
-12. **Existing tests:** `revenue-durability-status.test.ts`; `dashboard-view-model.test.ts`.
+12. **Existing tests:** `revenue-durability-status.test.ts`; `dashboard-view-model.test.ts`; `completed-cohort-retention.test.ts`.
 13. **Data quality:** `actual` when input metrics exist; commercially interpret empty-dataset zeros cautiously (Appendix C).
 
 ### marketing_spend_assumption

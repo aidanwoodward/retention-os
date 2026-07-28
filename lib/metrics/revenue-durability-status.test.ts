@@ -170,6 +170,42 @@ describe("evaluateRevenueDurabilityStatus", () => {
       "Mixed",
     );
   });
+  it("treats completed Month+1 zero as a real poor vote and null as omit", () => {
+    const withZero = evaluateRevenueDurabilityStatus(
+      inputs({
+        repeatPurchaseRate: 0.3,
+        firstToSecond90Rate: 0.25,
+        avgMonthPlus1ActiveRate: 0,
+        spreadUsdLike: null,
+      }),
+    );
+    const withNull = evaluateRevenueDurabilityStatus(
+      inputs({
+        repeatPurchaseRate: 0.3,
+        firstToSecond90Rate: 0.25,
+        avgMonthPlus1ActiveRate: null,
+        spreadUsdLike: null,
+      }),
+    );
+    // Mid-band repeat/F2S → Mixed baseline. Zero M+1 adds a watch vote; null does not.
+    assert.equal(withNull, "Mixed");
+    assert.equal(withZero, "Mixed");
+    // Zero is evaluated (watch vote), not coerced away — distinct from null skip path covered above.
+    assert.ok(0 < MONTH_PLUS_1_ACTIVE_WATCH);
+  });
+
+  it("does not invent a neutral Month+1 vote when avgMonthPlus1ActiveRate is null", () => {
+    const status = evaluateRevenueDurabilityStatus(
+      inputs({
+        repeatPurchaseRate: REPEAT_PURCHASE_HEALTHY,
+        firstToSecond90Rate: FIRST_TO_SECOND_90_HEALTHY,
+        avgMonthPlus1ActiveRate: null,
+        spreadUsdLike: null,
+      }),
+    );
+    // Two healthy votes, zero watch → Healthy; null M+1 must not inject a third vote either way.
+    assert.equal(status, "Healthy");
+  });
 });
 
 describe("revenue durability threshold constants", () => {

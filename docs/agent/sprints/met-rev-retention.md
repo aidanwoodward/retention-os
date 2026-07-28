@@ -128,12 +128,13 @@ Cell maturity: if target period UTC start `>= asOfDate` → `unavailable` with n
 
 - URL: https://github.com/aidanwoodward/retention-os/pull/36
 - Base: `restart-retentionos-mvp`
-- Head SHA: (PR tip after Gate 2 correction push — Gate 2 packet authoritative)
+- Head SHA: `02ec3ebd77e5b9158ee3adeb08bad92c414b99f8` (Gate 2 correction tip; freeze evidence commit may follow)
 
 ### Checks
 
-- (filled after green CI on correction tip)
-
+- `gh pr checks --watch`: pass on correction tip (CI validate + Vercel)
+- CI validate: pass
+- Vercel: pass
 ## Notes
 
 Gate 2 approval and DONE are **not** written here after PR freeze.

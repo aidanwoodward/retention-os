@@ -130,13 +130,15 @@ Commercial (1–7); population/scope (8–12); integrity (13–19); asOf boundar
 
 ### PR
 
-- URL: (filled after create)
+- URL: https://github.com/aidanwoodward/retention-os/pull/36
 - Base: `restart-retentionos-mvp`
-- Head SHA: (filled after freeze)
+- Head SHA: `369b6c65ad8a9d6b44d96637d4598fb101e651b4` (pre-freeze tip; Gate 2 authoritative after evidence commit)
 
 ### Checks
 
-- (filled after `gh pr checks --watch`)
+- `gh pr checks --watch`: pass (CI validate + Vercel)
+- CI validate: pass
+- Vercel: pass
 
 ## Notes
 

@@ -8,7 +8,7 @@
 
 This document is the source of truth for KPI formulas, inputs, treatments, missing-data behaviour, and UI mapping on the retained command-centre path. Quarantined legacy SQL/API surfaces are out of scope.
 
-**Contracted MetricId set (18):** index and tests assert this set exactly — not `ALL_METRIC_IDS` (excludes `aov`).
+**Contracted MetricId set (19):** index and tests assert this set exactly — not `ALL_METRIC_IDS` (excludes `aov`).
 
 **UTC calendar-month cohort contract (all cohort metrics):** Cohort month = UTC `YYYY-MM` of `Customer.firstOrderAt`. M+N is a calendar-month index offset, not an elapsed 30-day window. Qualifying orders are rows present in the selected dataset (no silent paid-order filter in the TS engine).
 
@@ -194,6 +194,22 @@ Each core contract uses these 13 fields:
 11. **UI locations:** None currently (engine-only). Planned later: `/cohorts`, `/dashboard` (6B).
 12. **Existing tests:** `cohort-revenue-contribution.test.ts`; golden Jan 2025 period share; `metric-contract-index.test.ts`.
 13. **Data quality:** `actual` when reporting orders exist; empty when no reporting activity.
+
+### cohort_revenue_retention
+
+1. **Canonical name + MetricId:** Cohort revenue retention — `cohort_revenue_retention`
+2. **Commercial question:** For customers acquired in cohort month C, how much trusted net revenue did that cohort generate in Month+N, and what percentage is that of Month+0 revenue?
+3. **Formula:** `periodRevenue(C, N) = Σ netOrderRevenue(order)` for observed eligible cohort customers where order month equals C+N. `revenueRetention(C, N) = periodRevenue(C, N) / periodRevenue(C, 0)` when Month+0 revenue is positive and Month+N is `complete` or `partial`; otherwise `null`.
+4. **Raw + transformed inputs:** `AnalysisSelection` from `buildAnalysisSelection`. Uses `fullDataset` + `eligibleCustomerIds` + `context.asOfDate` + optional `maturityHorizonMonths`. Reuses `netOrderRevenue` and `getMonthlyCohortMaturityStatus`. Does **not** read `reportingOrders`, `identifiableReportingOrders`, or `reportingOrdersForEligibleCustomers`.
+5. **Inclusion / exclusion / financial treatment:** Trusted net merchandise via `netOrderRevenue`. Guests (`customerId === null`) excluded without error. Identified orders with `orderedAt < asOfDate` must resolve to a canonical customer and satisfy `orderedAt >= firstOrderAt` or throw `RangeError` **before** acquisition filtering. Eligible membership applies only after integrity validation. Customers/orders at or after `asOfDate` are excluded from observation.
+6. **Time / cohort / identity / assumptions:** UTC calendar-month offsets from canonical `firstOrderAt`. `asOfDate` is an exclusive observation boundary (canonical UTC instant comparisons). A cell is `partial` only when some observation time exists between the target-period start and exclusive `asOfDate`; if `targetPeriodStart >= asOfDate`, the cell is `unavailable` with null numerics (even when uniform `maxOffset` extends a younger cohort to that column). When `maturityHorizonMonths` is set, `maxOffset` equals that inclusive cap (unavailable cells may appear). When absent, `maxOffset` ends at the latest UTC month with any instant strictly before `asOfDate` (month-start asOf uses the preceding month — no wholly future column). `reportingPeriod` is irrelevant.
+7. **Output type / unit / rounding / display:** Fractional retention rates (may exceed 100%) + period currency. Engine does not round. Future matrix presentation (not wired here): complete → value; partial → observed value with subtle styling/tooltip; unavailable/future → em dash `—`; completed genuine zero → `0%` (not a dash). Do not render the words "Unavailable" or "Not yet reached" in the matrix.
+8. **Missing / partial / zero-denominator:** `unavailable` → null numerics (never synthetic zero). `complete`/`partial` with no activity → revenue/order/customer counts 0; rate 0 when Month+0 > 0. Zero Month+0 → null rates. No observed eligible customers → `status: "empty"`, `rows: []`. Historical data-gap provenance is out of scope — zero revenue is not inferred as a gap.
+9. **Caveats:** Period-based — **not** cumulative revenue LTV and **not** customer activity retention. Distinct from `cohort_revenue_contribution` (reporting-period portfolio share). Engine-only until 6B / 6A-MATRIX.
+10. **Engine source:** `lib/metrics/cohort-revenue-retention.ts::calculateCohortRevenueRetention`.
+11. **UI locations:** None currently (engine-only). Planned later: `/retention`, `/cohorts` matrices (6B).
+12. **Existing tests:** `cohort-revenue-retention.test.ts`; golden as-of reconciliation; `metric-contract-index.test.ts`.
+13. **Data quality:** `actual` for complete cells; `partial` when Month+N is incomplete relative to asOf; `unavailable` for not-yet-started / beyond-horizon cells.
 
 ### revenue_ltv
 

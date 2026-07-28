@@ -17,6 +17,7 @@ import {
 import {
   GOLDEN_CAC,
   GOLDEN_COHORT_REVENUE_CONTRIBUTION_JAN_2025,
+  GOLDEN_COHORT_REVENUE_RETENTION_ASOF_2025_05_01,
   GOLDEN_COHORT_SIZES,
   GOLDEN_CONTRIBUTION_LTV,
   GOLDEN_CSV_PREVIEW,
@@ -38,6 +39,7 @@ import {
 import { buildAcquisitionPageViewModelFromDataset } from "./acquisition-view-model";
 import { calculateCohorts } from "./cohorts";
 import { calculateCohortRevenueContribution } from "./cohort-revenue-contribution";
+import { calculateCohortRevenueRetention } from "./cohort-revenue-retention";
 import { calculateLTVByCohort } from "./ltv";
 import { calculateFirstProductCustomerQualityFromDataset } from "./product-quality";
 import {
@@ -360,5 +362,48 @@ describe("MET-SHARE golden — Jan 2025 cohort revenue contribution", () => {
     }
     const shareSum = result.rows.reduce((s, r) => s + (r.shareOfReportingRevenue ?? 0), 0);
     assertClose(shareSum, 1, "shares sum to 1");
+  });
+});
+
+describe("MET-REV-RETENTION golden — asOf 2025-05-01 cohort revenue retention", () => {
+  it("matches hand-calculated period revenue retention matrix", () => {
+    const dataset = buildGoldenRetentionOSDataset();
+    const selection = buildAnalysisSelection(dataset, {
+      asOfDate: "2025-05-01T00:00:00.000Z",
+    });
+    const result = calculateCohortRevenueRetention(selection);
+    const expected = GOLDEN_COHORT_REVENUE_RETENTION_ASOF_2025_05_01;
+
+    assert.equal(result.status, expected.status);
+    assert.equal(result.maxOffset, expected.maxOffset);
+    assert.equal(result.eligibleCustomerCount, expected.eligibleCustomerCount);
+    assert.equal(result.rows.length, expected.rows.length);
+
+    for (let i = 0; i < expected.rows.length; i++) {
+      const row = result.rows[i]!;
+      const exp = expected.rows[i]!;
+      assert.equal(row.cohortMonthKey, exp.cohortMonthKey, `row ${i} cohort`);
+      assert.equal(row.cohortCustomerCount, exp.cohortCustomerCount, `row ${i} size`);
+      assertClose(row.month0Revenue!, exp.month0Revenue, `row ${i} month0`);
+      assert.equal(row.cells.length, exp.cells.length, `row ${i} cells`);
+      for (let j = 0; j < exp.cells.length; j++) {
+        const cell = row.cells[j]!;
+        const ec = exp.cells[j]!;
+        assert.equal(cell.offset, ec.offset, `r${i}c${j} offset`);
+        assert.equal(cell.periodMonthKey, ec.periodMonthKey, `r${i}c${j} month`);
+        assert.equal(cell.maturityStatus, ec.maturityStatus, `r${i}c${j} status`);
+        if (ec.revenue == null) {
+          assert.equal(cell.revenue, null, `r${i}c${j} revenue null`);
+          assert.equal(cell.retentionRate, null, `r${i}c${j} rate null`);
+          assert.equal(cell.orderCount, null, `r${i}c${j} orders null`);
+          assert.equal(cell.activeCustomerCount, null, `r${i}c${j} customers null`);
+        } else {
+          assertClose(cell.revenue!, ec.revenue, `r${i}c${j} revenue`);
+          assertClose(cell.retentionRate!, ec.retentionRate, `r${i}c${j} rate`);
+          assert.equal(cell.orderCount, ec.orderCount, `r${i}c${j} orders`);
+          assert.equal(cell.activeCustomerCount, ec.activeCustomerCount, `r${i}c${j} customers`);
+        }
+      }
+    }
   });
 });

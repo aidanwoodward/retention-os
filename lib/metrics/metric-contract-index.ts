@@ -15,6 +15,7 @@ export const CONTRACTED_METRIC_IDS = [
   "first_to_second_conversion",
   "cohort_retention",
   "cohort_revenue_contribution",
+  "cohort_revenue_retention",
   "revenue_ltv",
   "contribution_ltv",
   "cac",
@@ -160,6 +161,22 @@ export const METRIC_CONTRACT_INDEX: Readonly<Record<ContractedMetricId, MetricCo
     uiRoutes: [],
     existingTests: [
       "lib/metrics/cohort-revenue-contribution.test.ts",
+      "lib/metrics/golden-reconciliation.test.ts",
+      "lib/metrics/metric-definitions.test.ts",
+      "lib/metrics/metric-contract-index.test.ts",
+    ],
+  },
+  cohort_revenue_retention: {
+    id: "cohort_revenue_retention",
+    docAnchor: `${DOC}#cohort_revenue_retention`,
+    engineEntrypoints: [
+      "lib/metrics/cohort-revenue-retention.ts::calculateCohortRevenueRetention",
+    ],
+    // MET-REV-RETENTION: engine only — no current VM/route wiring.
+    viewModelBuilders: [],
+    uiRoutes: [],
+    existingTests: [
+      "lib/metrics/cohort-revenue-retention.test.ts",
       "lib/metrics/golden-reconciliation.test.ts",
       "lib/metrics/metric-definitions.test.ts",
       "lib/metrics/metric-contract-index.test.ts",

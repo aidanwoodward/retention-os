@@ -123,10 +123,11 @@ Brands need to know how active customers, order frequency, and AOV combine to pr
 
 - URL: https://github.com/aidanwoodward/retention-os/pull/38
 - Base: `restart-retentionos-mvp` @ `f633d201e939a2970a0f7950a6c7c03a43b0cbf1`
-- Head SHA: `0761b762e24a98bc0736422c8d193bf3c1431cd7`
+- Head SHA: `94926d30b40be18ed77289ca2fdf439fe1105390`
+- Gate 2 frozen PR tip: confirmed via `gh pr view` after green checks (if a later docs-only tip exists, prefer `gh pr view --json headRefOid`)
 
 ### Checks
 
-- `gh pr checks --watch`: pass
-- CI validate: pass (https://github.com/aidanwoodward/retention-os/actions/runs/30374610069/job/90326935648)
-- Vercel: pass (https://vercel.com/aidan-woodwards-projects/retention-os/Cnb6ztCTryxeBEhHcgvjqUBPJeFR)
+- `gh pr checks --watch`: pass on tip `94926d30b40be18ed77289ca2fdf439fe1105390`
+- CI validate: pass (https://github.com/aidanwoodward/retention-os/actions/runs/30374939764/job/90328055807)
+- Vercel: pass (https://vercel.com/aidan-woodwards-projects/retention-os/GUtRASVoFHNhzrUMz1CDUSgnY2R7)

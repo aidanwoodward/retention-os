@@ -44,6 +44,13 @@ export {
 } from "./cohort-revenue-contribution";
 
 export {
+  calculateCohortRevenueRetention,
+  type CohortRevenueRetentionCell,
+  type CohortRevenueRetentionCohortRow,
+  type CohortRevenueRetentionResult,
+} from "./cohort-revenue-retention";
+
+export {
   calculateRetentionByCohort,
   type RetentionByCohortSeries,
   type CalculateRetentionOptions,

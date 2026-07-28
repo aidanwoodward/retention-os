@@ -251,6 +251,43 @@ Reporting orders (trusted nets):
 - `status` = `available`
 - `reportingOrderCount` = **5**
 
+## MET-REV-RETENTION — cohort revenue retention (asOf 2025-05-01)
+
+`asOfDate`: `2025-05-01T00:00:00.000Z` (exclusive observation boundary).
+Acquisition scope: `all`. No `maturityHorizonMonths` (auto maxOffset to latest month with instant before asOf = 2025-04).
+`reportingPeriod`: irrelevant (not used).
+
+Hand nets by cohort × calendar month:
+
+### Cohort 2024-12 (c1, c2, c3) — size 3
+
+| Month | Orders | Net |
+|-------|--------|----:|
+| 2024-12 (M+0) | o1, o3, o5 | 90 + 100 + 150 = **340** |
+| 2025-01 (M+1) | o2 | **80** |
+| 2025-02 (M+2) | — | **0** |
+| 2025-03 (M+3) | — | **0** |
+| 2025-04 (M+4) | o4 | **50** |
+
+Rates: M+0 = 1; M+1 = 80/340; M+2 = 0; M+3 = 0; M+4 = 50/340.
+
+### Cohort 2025-01 (c4, c5, c6) — size 3
+
+| Month | Orders | Net |
+|-------|--------|----:|
+| 2025-01 (M+0) | o6, o7, o8, o9 | 100 + 100 + 50 + 80 = **330** |
+| 2025-02 (M+1) | o10 | **40** |
+| 2025-03 (M+2) | — | **0** |
+| 2025-04 (M+3) | — | **0** |
+
+Rates: M+0 = 1; M+1 = 40/330; M+2 = 0; M+3 = 0.
+M+4 period month is 2025-05: uniform `maxOffset` emits the column; maturity at asOf May 1 start is `partial` with zero observed activity (no May instant `< asOf`).
+
+- `maxOffset` = **4** (from earliest cohort 2024-12 to latest observed month 2025-04)
+- `eligibleCustomerCount` = **6**
+- `status` = `available`
+- Dec-row cells M+0…M+4 and Jan-row cells M+0…M+3 are `complete`; Jan M+4 is `partial` with zeros
+
 ## Missing-data mutations
 
 | Mutation | Expected commercial behaviour |

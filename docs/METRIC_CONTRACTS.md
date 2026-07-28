@@ -8,7 +8,7 @@
 
 This document is the source of truth for KPI formulas, inputs, treatments, missing-data behaviour, and UI mapping on the retained command-centre path. Quarantined legacy SQL/API surfaces are out of scope.
 
-**Contracted MetricId set (17):** index and tests assert this set exactly — not `ALL_METRIC_IDS` (excludes `aov`).
+**Contracted MetricId set (18):** index and tests assert this set exactly — not `ALL_METRIC_IDS` (excludes `aov`).
 
 **UTC calendar-month cohort contract (all cohort metrics):** Cohort month = UTC `YYYY-MM` of `Customer.firstOrderAt`. M+N is a calendar-month index offset, not an elapsed 30-day window. Qualifying orders are rows present in the selected dataset (no silent paid-order filter in the TS engine).
 
@@ -171,6 +171,29 @@ Each core contract uses these 13 fields:
 11. **UI locations:** `/retention`, `/cohorts` (matrix `retention_rate`), `/dashboard`, `/insights`.
 12. **Existing tests:** `demo-sanity-check.test.ts`; dashboard/durability (Month+1 average).
 13. **Data quality:** `actual` when order history supports the offset; partial when young cohorts lack mature offsets.
+
+### cohort_revenue_contribution
+
+1. **Canonical name + MetricId:** Acquisition cohort revenue contribution — `cohort_revenue_contribution`
+2. **Commercial question:** Which acquisition cohorts generated the trusted net revenue in the selected reporting period?
+3. **Formula:** For each order in `AnalysisSelection.reportingOrders`, attribute `netOrderRevenue(order)` to:
+   - `unidentified_customer` when `customerId` is null;
+   - `unresolved_customer` when `customerId` is non-null but no matching `Customer` exists;
+   - `outside_selected_acquisition_period` when acquisition scope is bounded and the customer is outside `eligibleCustomerIds`;
+   - otherwise cohort month `utcMonthKeyFromIso(customer.firstOrderAt)`.
+   Denominator `totalReportingRevenue` = Σ attributed nets (includes residuals). Row shares = revenue / total when total > 0, else `null`.
+   `selectedCohortRevenue` = Σ `kind === "cohort"` revenue; `selectedCohortShareOfReportingRevenue` = selected / total (or null).
+   `cohortResolvedRevenue` = selected cohort revenue + `outside_selected_acquisition_period` revenue; `cohortAttributionCoverage` = resolved / total (or null). Coverage excludes unidentified and unresolved.
+4. **Raw + transformed inputs:** `AnalysisSelection` from `buildAnalysisSelection` over canonical full-history `RetentionOSDataset`. Reuses `netOrderRevenue`; does not re-filter periods.
+5. **Inclusion / exclusion / financial treatment:** Trusted net merchandise via `netOrderRevenue` (gross − discounts − refunds, floored ≥ 0). Tax/shipping excluded. Guests and unresolved remain in the denominator via residual rows.
+6. **Time / cohort / identity / assumptions:** Reporting period half-open via selection; acquisition cohort from canonical `firstOrderAt` (never reporting order date). Invalid `firstOrderAt` throws `RangeError`. `maturityHorizonMonths` ignored. Omitted reporting period → all dataset orders as reporting population.
+7. **Output type / unit / rounding / display:** Currency + fractional shares. Engine does not round. Emit rows with `orderCount > 0` (including zero-net refunded activity). Cohort rows chronological; residuals: unidentified → outside → unresolved.
+8. **Missing / partial / zero-denominator:** Zero reporting orders → `status: "empty"` (no reporting activity). Orders with total net 0 → `status: "available"` with null ratio fields (never NaN / artificial zero). `outside_selected_acquisition_period` absent when acquisition scope is `all`.
+9. **Caveats:** Period portfolio share — **not** cumulative cohort LTV / revenue LTV. Distinct from `calculateCohorts` all-time absolute rollups. Planned presentation destinations `/cohorts` and `/dashboard` are not wired in MET-SHARE.
+10. **Engine source:** `lib/metrics/cohort-revenue-contribution.ts::calculateCohortRevenueContribution`.
+11. **UI locations:** None currently (engine-only). Planned later: `/cohorts`, `/dashboard` (6B).
+12. **Existing tests:** `cohort-revenue-contribution.test.ts`; golden Jan 2025 period share; `metric-contract-index.test.ts`.
+13. **Data quality:** `actual` when reporting orders exist; empty when no reporting activity.
 
 ### revenue_ltv
 

@@ -16,6 +16,7 @@ import {
 } from "./golden/golden-dataset";
 import {
   GOLDEN_CAC,
+  GOLDEN_COHORT_REVENUE_CONTRIBUTION_JAN_2025,
   GOLDEN_COHORT_SIZES,
   GOLDEN_CONTRIBUTION_LTV,
   GOLDEN_CSV_PREVIEW,
@@ -36,6 +37,7 @@ import {
 } from "./acquisition";
 import { buildAcquisitionPageViewModelFromDataset } from "./acquisition-view-model";
 import { calculateCohorts } from "./cohorts";
+import { calculateCohortRevenueContribution } from "./cohort-revenue-contribution";
 import { calculateLTVByCohort } from "./ltv";
 import { calculateFirstProductCustomerQualityFromDataset } from "./product-quality";
 import {
@@ -44,6 +46,7 @@ import {
 } from "./repeat-purchase";
 import { calculateRetentionByCohort } from "./retention";
 import { netOrderRevenue } from "./utils";
+import { buildAnalysisSelection } from "../analysis-context";
 
 function assertClose(actual: number, expected: number, label: string): void {
   assert.ok(
@@ -311,5 +314,51 @@ describe("5U-C golden reconciliation — missing-data mutations", () => {
     const result = calculateFirstProductCustomerQualityFromDataset(dataset);
     assert.equal(result.hasLineItemCoverage, false);
     assert.equal(result.rows.length, 0);
+  });
+});
+
+describe("MET-SHARE golden — Jan 2025 cohort revenue contribution", () => {
+  it("matches hand-calculated reporting-period cohort shares", () => {
+    const dataset = buildGoldenRetentionOSDataset();
+    const selection = buildAnalysisSelection(dataset, {
+      asOfDate: "2025-04-30T23:59:59.000Z",
+      reportingPeriod: {
+        startDate: "2025-01-01T00:00:00.000Z",
+        endDateExclusive: "2025-02-01T00:00:00.000Z",
+      },
+    });
+    const result = calculateCohortRevenueContribution(selection);
+    const expected = GOLDEN_COHORT_REVENUE_CONTRIBUTION_JAN_2025;
+
+    assert.equal(result.status, expected.status);
+    assert.equal(result.reportingOrderCount, expected.reportingOrderCount);
+    assertClose(result.totalReportingRevenue, expected.totalReportingRevenue, "totalReportingRevenue");
+    assertClose(result.selectedCohortRevenue, expected.selectedCohortRevenue, "selectedCohortRevenue");
+    assertClose(
+      result.selectedCohortShareOfReportingRevenue!,
+      expected.selectedCohortShareOfReportingRevenue,
+      "selectedCohortShare",
+    );
+    assertClose(result.cohortResolvedRevenue, expected.cohortResolvedRevenue, "cohortResolvedRevenue");
+    assertClose(
+      result.cohortAttributionCoverage!,
+      expected.cohortAttributionCoverage,
+      "cohortAttributionCoverage",
+    );
+    assert.equal(result.rows.length, expected.rows.length);
+    for (let i = 0; i < expected.rows.length; i++) {
+      const row = result.rows[i]!;
+      const exp = expected.rows[i]!;
+      assert.equal(row.kind, exp.kind, `row ${i} kind`);
+      if (row.kind === "cohort" && exp.kind === "cohort") {
+        assert.equal(row.cohortMonthKey, exp.cohortMonthKey);
+      }
+      assertClose(row.revenue, exp.revenue, `row ${i} revenue`);
+      assertClose(row.shareOfReportingRevenue!, exp.shareOfReportingRevenue, `row ${i} share`);
+      assert.equal(row.orderCount, exp.orderCount, `row ${i} orderCount`);
+      assert.equal(row.customerCount, exp.customerCount, `row ${i} customerCount`);
+    }
+    const shareSum = result.rows.reduce((s, r) => s + (r.shareOfReportingRevenue ?? 0), 0);
+    assertClose(shareSum, 1, "shares sum to 1");
   });
 });

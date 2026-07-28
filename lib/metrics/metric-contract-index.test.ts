@@ -10,9 +10,9 @@ import {
 } from "./metric-contract-index";
 
 describe("metric-contract-index", () => {
-  it("covers exactly 17 contracted MetricIds", () => {
-    assert.equal(CONTRACTED_METRIC_IDS.length, 17);
-    assert.equal(Object.keys(METRIC_CONTRACT_INDEX).length, 17);
+  it("covers exactly 18 contracted MetricIds", () => {
+    assert.equal(CONTRACTED_METRIC_IDS.length, 18);
+    assert.equal(Object.keys(METRIC_CONTRACT_INDEX).length, 18);
   });
 
   it("indexes every contracted id with required linkage fields", () => {
@@ -22,13 +22,20 @@ describe("metric-contract-index", () => {
       assert.ok(entry.docAnchor.includes("METRIC_CONTRACTS.md#"), `${id} docAnchor`);
       assert.ok(entry.docAnchor.endsWith(id) || entry.docAnchor.includes(`#${id}`), `${id} anchor slug`);
       assert.ok(entry.engineEntrypoints.length > 0, `${id} engineEntrypoints`);
-      assert.ok(entry.viewModelBuilders.length > 0, `${id} viewModelBuilders`);
-      assert.ok(entry.uiRoutes.length > 0, `${id} uiRoutes`);
+      // Empty viewModelBuilders / uiRoutes are valid when the metric is engine-only (current wiring).
+      assert.ok(Array.isArray(entry.viewModelBuilders), `${id} viewModelBuilders`);
+      assert.ok(Array.isArray(entry.uiRoutes), `${id} uiRoutes`);
       assert.ok(entry.existingTests.length > 0, `${id} existingTests`);
       for (const route of entry.uiRoutes) {
         assert.ok(route.startsWith("/"), `${id} route ${route}`);
       }
     }
+  });
+
+  it("keeps cohort_revenue_contribution unwired to VMs and routes until 6B", () => {
+    const entry = getMetricContractIndexEntry("cohort_revenue_contribution");
+    assert.deepEqual(entry.viewModelBuilders, []);
+    assert.deepEqual(entry.uiRoutes, []);
   });
 
   it("excludes aov from the contracted set while keeping it in ALL_METRIC_IDS", () => {

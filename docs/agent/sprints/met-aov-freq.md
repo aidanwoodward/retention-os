@@ -114,7 +114,19 @@ Brands need to know how active customers, order frequency, and AOV combine to pr
 
 ## Validation and PR/check evidence
 
-- Local: `npm test` (339 pass), `npm run lint`, `npm run typecheck`, `npm run build`, `git diff --check` — all green
-- PR: (filled after open)
-- PR head SHA: (filled after CI)
-- CI / Vercel: (filled after watch)
+### Local validation
+
+- Commands run: focused aov-frequency + golden + contract tests; `npm test`; `npm run lint`; `npm run typecheck`; `npm run build`; `git diff --check`
+- Result: pass (339 tests)
+
+### PR
+
+- URL: https://github.com/aidanwoodward/retention-os/pull/38
+- Base: `restart-retentionos-mvp` @ `f633d201e939a2970a0f7950a6c7c03a43b0cbf1`
+- Head SHA: (updated after freeze commit)
+
+### Checks
+
+- `gh pr checks --watch`: pass
+- CI validate: pass (https://github.com/aidanwoodward/retention-os/actions/runs/30374610069/job/90326935648)
+- Vercel: pass (https://vercel.com/aidan-woodwards-projects/retention-os/Cnb6ztCTryxeBEhHcgvjqUBPJeFR)

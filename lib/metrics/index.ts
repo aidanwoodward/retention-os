@@ -56,6 +56,11 @@ export {
 } from "./new-returning";
 
 export {
+  calculateAovFrequency,
+  type AovFrequencyResult,
+} from "./aov-frequency";
+
+export {
   calculateRetentionByCohort,
   type RetentionByCohortSeries,
   type CalculateRetentionOptions,

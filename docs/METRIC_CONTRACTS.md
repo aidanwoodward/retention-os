@@ -8,7 +8,7 @@
 
 This document is the source of truth for KPI formulas, inputs, treatments, missing-data behaviour, and UI mapping on the retained command-centre path. Quarantined legacy SQL/API surfaces are out of scope.
 
-**Contracted MetricId set (19):** index and tests assert this set exactly — not `ALL_METRIC_IDS` (excludes `aov`).
+**Contracted MetricId set (21):** index and tests assert this set exactly — not `ALL_METRIC_IDS` (excludes appendix-only `aov`).
 
 **UTC calendar-month cohort contract (all cohort metrics):** Cohort month = UTC `YYYY-MM` of `Customer.firstOrderAt`. M+N is a calendar-month index offset, not an elapsed 30-day window. Qualifying orders are rows present in the selected dataset (no silent paid-order filter in the TS engine).
 
@@ -227,6 +227,22 @@ Each core contract uses these 13 fields:
 12. **Existing tests:** `new-returning.test.ts`; golden Jan 2025; `metric-contract-index.test.ts`.
 13. **Data quality:** `actual` when reporting orders exist; empty when no reporting activity; coverage communicates identity completeness.
 
+### aov_frequency
+
+1. **Canonical name + MetricId:** Customer count x frequency x AOV — `aov_frequency`
+2. **Commercial question:** For the selected reporting period, how did active customer count, purchase frequency, and average order value combine to produce customer-resolved revenue, and what is the primary portfolio AOV across all trusted orders?
+3. **Formula:** Require `reportingPeriod` (else `RangeError`). Walk `selection.reportingOrders` with `netOrderRevenue`. Portfolio: `portfolioAverageOrderValue = totalReportingRevenue / reportingOrderCount` when count > 0 (null if empty). Classified when `customerId !== null` and customer resolves in `fullDataset.customers`: `ordersPerActiveCustomer = classifiedOrderCount / activeCustomerCount`; `classifiedAverageOrderValue = classifiedRevenue / classifiedOrderCount`; `revenuePerActiveCustomer = classifiedRevenue / activeCustomerCount`. Exact classified decomposition: `classifiedRevenue ≈ activeCustomerCount × ordersPerActiveCustomer × classifiedAverageOrderValue`. Guests → unidentified residual; identified missing customer → unresolved residual. Coverages = classified ÷ reporting totals (null when denom 0). Ignore `eligibleCustomerIds` / `acquisitionPeriod` / `maturityHorizonMonths`. Does **not** call `calculateNewReturningMix` or validate `firstOrderAt`.
+4. **Raw + transformed inputs:** `AnalysisSelection` from `buildAnalysisSelection`. Reuses `netOrderRevenue` and `isIdentifiedOrder`. Consumes `reportingOrders` as-is (no independent period/asOf re-filter). Resolves customers via `fullDataset.customers`.
+5. **Inclusion / exclusion / financial treatment:** Trusted net merchandise via `netOrderRevenue` (discounts and refunds included; floored at 0). Zero-net / fully refunded trusted orders remain in order-count denominators. Guests and unresolved contribute to portfolio AOV but not to classified customer economics. No synthetic guest IDs. Unresolved reporting orders do not throw.
+6. **Time / cohort / identity / assumptions:** Selected-period only. Half-open reporting window is already applied by AnalysisSelection. Acquisition cohort filters must not remove older returning customers from this metric. Duplicate order IDs are not silent-deduped here; uniqueness relies on upstream canonical construction (same as sibling metrics).
+7. **Output type / unit / rounding / display:** Counts, currency, fractional frequency/AOV/coverage. Engine does not round. Primary commercial AOV = `portfolioAverageOrderValue`. `classifiedAverageOrderValue` exists only to make the customer-count × frequency decomposition mathematically valid for the customer-resolved portion of the portfolio. Future UI may hide residual detail when coverage is 100%.
+8. **Missing / partial / zero-denominator:** No reporting orders → `status: "empty"`, zeros, null averages/ratios/coverages. Orders with total net 0 → `available`, portfolio AOV 0, null revenue coverage, classified AOV/RPA 0 when denoms > 0. Guest-only / unresolved-only → classified ratios null; coverages 0 when denoms positive. Never NaN / Infinity / invented 0% for unavailable denoms.
+9. **Caveats:** Do not claim `totalReportingRevenue = activeCustomerCount × ordersPerActiveCustomer × portfolioAverageOrderValue` when identity residuals exist. Distinct from new/returning mix, cohort contribution, and lifetime repeat-purchase frequency. Engine-only until 6B.
+10. **Engine source:** `lib/metrics/aov-frequency.ts::calculateAovFrequency`.
+11. **UI locations:** None currently (engine-only). Planned later: `/dashboard` (6B).
+12. **Existing tests:** `aov-frequency.test.ts`; golden Jan 2025; `metric-contract-index.test.ts`.
+13. **Data quality:** `actual` when reporting orders exist; empty when no reporting activity; coverage communicates identity completeness.
+
 ### revenue_ltv
 
 1. **Canonical name + MetricId:** Revenue LTV — `revenue_ltv`
@@ -393,7 +409,7 @@ Each core contract uses these 13 fields:
 
 | Item | Status | Why not a full contract |
 |------|--------|-------------------------|
-| `aov` | MetricId exists; tooltip says not computed; MVP does not display AOV | Do not invent engine behaviour |
+| `aov` | Appendix MetricId only (not contracted). Portfolio AOV is computed as `calculateAovFrequency.portfolioAverageOrderValue` (trusted net / order count). Contracted composite is `aov_frequency` | Keep appendix; do not dual-contract portfolio AOV |
 | Channel quality | No `calculateChannelCustomerQuality`; spend may list `channel` labels only | Do not invent a quality module |
 | `RevenueDurabilityScore` (0–100) | Type exists in `lib/types/metrics.ts`; unused by engine | Posture enum is the retained concept |
 | Legacy SQL/API KPI names (`mv_kpis.customer_lifetime_value`, etc.) | Quarantined dual ecosystem | Not oracles for contracts |

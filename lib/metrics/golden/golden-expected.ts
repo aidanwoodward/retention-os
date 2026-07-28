@@ -165,6 +165,26 @@ export const GOLDEN_NEW_RETURNING_MIX_JAN_2025 = {
   status: "available" as const,
 } as const;
 
+/** MET-AOV-FREQ — Jan 2025 reporting period (hand arithmetic; 4 x 1.25 x 82 = 410). */
+export const GOLDEN_AOV_FREQUENCY_JAN_2025 = {
+  totalReportingRevenue: 410,
+  reportingOrderCount: 5,
+  portfolioAverageOrderValue: 82,
+  activeCustomerCount: 4,
+  classifiedOrderCount: 5,
+  classifiedRevenue: 410,
+  ordersPerActiveCustomer: 1.25,
+  classifiedAverageOrderValue: 82,
+  revenuePerActiveCustomer: 102.5,
+  unidentifiedOrderCount: 0,
+  unidentifiedRevenue: 0,
+  unresolvedOrderCount: 0,
+  unresolvedRevenue: 0,
+  customerIdentityOrderCoverage: 1,
+  customerIdentityRevenueCoverage: 1,
+  status: "available" as const,
+} as const;
+
 /** MET-REV-RETENTION — asOf 2025-05-01 over golden fixture (hand arithmetic). */
 export const GOLDEN_COHORT_REVENUE_RETENTION_ASOF_2025_05_01 = {
   maxOffset: 4,

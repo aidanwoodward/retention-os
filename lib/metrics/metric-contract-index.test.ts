@@ -10,9 +10,9 @@ import {
 } from "./metric-contract-index";
 
 describe("metric-contract-index", () => {
-  it("covers exactly 19 contracted MetricIds", () => {
-    assert.equal(CONTRACTED_METRIC_IDS.length, 19);
-    assert.equal(Object.keys(METRIC_CONTRACT_INDEX).length, 19);
+  it("covers exactly 20 contracted MetricIds", () => {
+    assert.equal(CONTRACTED_METRIC_IDS.length, 20);
+    assert.equal(Object.keys(METRIC_CONTRACT_INDEX).length, 20);
   });
 
   it("indexes every contracted id with required linkage fields", () => {
@@ -40,6 +40,12 @@ describe("metric-contract-index", () => {
 
   it("keeps cohort_revenue_retention unwired to VMs and routes until 6B", () => {
     const entry = getMetricContractIndexEntry("cohort_revenue_retention");
+    assert.deepEqual(entry.viewModelBuilders, []);
+    assert.deepEqual(entry.uiRoutes, []);
+  });
+
+  it("keeps new_returning_mix unwired to VMs and routes until 6B", () => {
+    const entry = getMetricContractIndexEntry("new_returning_mix");
     assert.deepEqual(entry.viewModelBuilders, []);
     assert.deepEqual(entry.uiRoutes, []);
   });

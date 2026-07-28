@@ -16,6 +16,7 @@ export type MetricId =
   | "cohort_retention"
   | "cohort_revenue_contribution"
   | "cohort_revenue_retention"
+  | "new_returning_mix"
   | "revenue_ltv"
   | "contribution_ltv"
   | "cac"
@@ -71,6 +72,7 @@ export const ALL_METRIC_IDS: readonly MetricId[] = [
   "cohort_retention",
   "cohort_revenue_contribution",
   "cohort_revenue_retention",
+  "new_returning_mix",
   "revenue_ltv",
   "contribution_ltv",
   "cac",
@@ -217,6 +219,18 @@ export const METRIC_DEFINITIONS: Readonly<Record<MetricId, MetricDefinition>> = 
       partial: "Month+N started but not fully observed relative to asOfDate; observed values returned",
       unavailable: "Month+N not started or beyond maturityHorizonMonths; numeric fields null",
     },
+  },
+
+  new_returning_mix: {
+    id: "new_returning_mix",
+    name: "New vs returning mix",
+    meaning:
+      "Selected-period split of identifiable active customers and classified trusted net revenue into new versus returning, with guest/unresolved coverage residuals",
+    retentionOsBasis:
+      "calculateNewReturningMix(selection): customer class from firstOrderAt vs reportingPeriod; new revenue = net of canonical first order only; returning = later orders; residuals unidentified/unresolved. Mix shares over classifiedRevenue; coverage = classified/total",
+    caveat:
+      "Only the canonical first order is new revenue - same-period repeats are returning. Guest/unresolved are trust residuals, not commercial customer categories. Engine-only until 6B",
+    defaultDataQuality: "actual",
   },
 
   revenue_ltv: {

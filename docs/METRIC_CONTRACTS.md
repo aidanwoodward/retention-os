@@ -211,6 +211,22 @@ Each core contract uses these 13 fields:
 12. **Existing tests:** `cohort-revenue-retention.test.ts`; golden as-of reconciliation; `metric-contract-index.test.ts`.
 13. **Data quality:** `actual` for complete cells; `partial` when Month+N is incomplete relative to asOf; `unavailable` for not-yet-started / beyond-horizon cells.
 
+### new_returning_mix
+
+1. **Canonical name + MetricId:** New vs returning mix — `new_returning_mix`
+2. **Commercial question:** Of customers active in the selected reporting period, how many are new versus returning, and how much classified trusted net revenue came from the canonical first order versus later orders?
+3. **Formula:** Require `reportingPeriod` (else `RangeError`). Walk `selection.reportingOrders` with `netOrderRevenue`. Guests → `unidentifiedRevenue`; identified missing customer → `unresolvedRevenue`; resolved customers enter the reporting-active set. For each reporting-active resolved customer only: validate `firstOrderAt`; scan that customer’s `fullDataset.orders` with `orderedAt < asOfDate`; reject `orderedAt < firstOrderAt`; derive canonical first order by `orderedAt ASC` then order-id comparator. New revenue = net of that first order when present in reporting orders; returning revenue = all other resolved reporting nets. Customer new = `firstOrderAt` in half-open reporting period; returning = `firstOrderAt` before period start. `classifiedRevenue = new + returning`. Mix shares = new/returning ÷ `classifiedRevenue` (null if classified 0). Coverage = classified ÷ total (null if total 0). Customer shares ÷ `classifiedActiveCustomerCount`. Ignore `eligibleCustomerIds` / `acquisitionPeriod` / `maturityHorizonMonths`.
+4. **Raw + transformed inputs:** `AnalysisSelection` from `buildAnalysisSelection`. Reuses `netOrderRevenue` and `assertCanonicalUtcInstant`. Does not re-filter reporting period.
+5. **Inclusion / exclusion / financial treatment:** Trusted net merchandise via `netOrderRevenue`. Guests and unresolved stay in the total via residuals; excluded from customer counts and `classifiedRevenue`. No synthetic guest IDs. Zero-net identified orders still activate customers.
+6. **Time / cohort / identity / assumptions:** Reporting half-open via selection. First-order identity is exact order id (not calendar-period membership). History-gap (`earliest observed > firstOrderAt`) → no new revenue; all observed reporting nets are returning; customer class still uses `firstOrderAt`. Same-period second orders are returning revenue.
+7. **Output type / unit / rounding / display:** Counts, currency, fractional shares. Engine does not round. Primary commercial output = new/returning customers and classified revenue. Unidentified/unresolved are trust residuals — future UI may hide residual detail when both are zero and surface coverage only when meaningfully below 100%.
+8. **Missing / partial / zero-denominator:** No reporting orders → `status: "empty"`, zeros, null ratios. Orders with total net 0 → `available`, null coverage and null classified revenue shares; customer counts may still be positive. `classifiedRevenue === 0` with positive residuals → null classified mix shares; coverage 0 when total > 0. Never NaN / invented 0%.
+9. **Caveats:** Distinct from cohort contribution share and revenue retention. Not an all-time mix (`reportingPeriod` required). Engine-only until 6B.
+10. **Engine source:** `lib/metrics/new-returning.ts::calculateNewReturningMix`.
+11. **UI locations:** None currently (engine-only). Planned later: `/dashboard`, `/retention`, `/cohorts` (6B).
+12. **Existing tests:** `new-returning.test.ts`; golden Jan 2025; `metric-contract-index.test.ts`.
+13. **Data quality:** `actual` when reporting orders exist; empty when no reporting activity; coverage communicates identity completeness.
+
 ### revenue_ltv
 
 1. **Canonical name + MetricId:** Revenue LTV — `revenue_ltv`

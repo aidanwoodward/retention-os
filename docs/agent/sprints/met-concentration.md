@@ -2,7 +2,7 @@
 
 ## Status
 
-`IMPLEMENTING`
+`AWAITING_FOUNDER_MERGE_APPROVAL`
 
 ## Final plan and scope
 
@@ -51,7 +51,7 @@ Brands need to know how dependent selected-period trusted net revenue is on lead
 - [x] Acquisition ignored; reportingPeriod required
 - [x] Contracted MetricId with empty VM/route linkage
 - [x] Golden Jan 2025 locked (prod_a 360 / prod_b 50 of 410)
-- [ ] Validation + PR + Gate 2 packet
+- [x] Validation + PR + Gate 2 packet
 
 ### Files expected to change
 
@@ -121,15 +121,15 @@ Brands need to know how dependent selected-period trusted net revenue is on lead
 
 ### PR
 
-- URL:
-- Base: `restart-retentionos-mvp`
-- Head SHA:
+- URL: https://github.com/aidanwoodward/retention-os/pull/39
+- Base: `restart-retentionos-mvp` @ `f8616169ce80f084090506a08eaa07926fcaab43`
+- Head SHA: `044a149d69bec573243b4cbd6450354f4e3118b1` (pre-freeze tip; Gate 2 freeze after this docs commit)
 
 ### Checks
 
-- `gh pr checks --watch`:
-- CI validate:
-- Vercel:
+- `gh pr checks --watch`: pass on tip `044a149d69bec573243b4cbd6450354f4e3118b1`
+- CI validate: pass (https://github.com/aidanwoodward/retention-os/actions/runs/30383534356/job/90357013208)
+- Vercel: pass (https://vercel.com/aidan-woodwards-projects/retention-os/4eUvGXQzGxvy96DjfrnfD39fSsP3)
 
 ## Notes
 

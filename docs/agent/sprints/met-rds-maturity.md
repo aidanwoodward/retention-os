@@ -121,13 +121,15 @@ Modify:
 
 ### PR
 
-- URL: (set after `gh pr create`)
+- URL: https://github.com/aidanwoodward/retention-os/pull/41
 - Base: `restart-retentionos-mvp`
-- Head SHA: (set after push)
+- Head SHA: `f03e45239e54aa9d378e594ff3db8e2ede56465e`
 
 ### Checks
 
-- `gh pr checks --watch`: pending independent review unblock
+- `gh pr checks --watch`: pending
+- CI validate: pending
+- Vercel: pending
 
 ## Notes
 

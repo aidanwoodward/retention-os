@@ -123,13 +123,13 @@ Modify:
 
 - URL: https://github.com/aidanwoodward/retention-os/pull/41
 - Base: `restart-retentionos-mvp`
-- Head SHA: `f03e45239e54aa9d378e594ff3db8e2ede56465e`
+- Head SHA: `2a09fe2` (freeze after CI-green docs evidence commit)
 
 ### Checks
 
-- `gh pr checks --watch`: pending
-- CI validate: pending
-- Vercel: pending
+- `gh pr checks --watch`: pass
+- CI validate: pass
+- Vercel: pass
 
 ## Notes
 

@@ -74,6 +74,34 @@ function latestObservedMonthKeyBeforeAsOf(asOfDate: string): string {
 }
 
 /**
+ * Cell maturity with exclusive asOf observation.
+ * If the target period's first UTC instant is at or after asOfDate, no observation time
+ * exists → unavailable (null numerics), even when the shared maturity helper would say partial.
+ */
+function resolveRevenueRetentionMaturityStatus(
+  cohortMonthKey: string,
+  offset: number,
+  periodMonthKey: string,
+  asOfDate: string,
+  asOfMs: number,
+  maturityHorizonMonths?: number,
+): MaturityStatus {
+  const periodStartMs = assertCanonicalUtcInstant(
+    utcMonthStartInstant(periodMonthKey),
+    "periodMonthKey start",
+  );
+  if (periodStartMs >= asOfMs) {
+    return "unavailable";
+  }
+  return getMonthlyCohortMaturityStatus(
+    cohortMonthKey,
+    offset,
+    asOfDate,
+    maturityHorizonMonths,
+  );
+}
+
+/**
  * Period-based cohort revenue retention over canonical full history.
  *
  * Integrity (before empty return / acquisition filter):
@@ -209,10 +237,12 @@ export function calculateCohortRevenueRetention(
     const members = cohortCustomerIds.get(cohortMonthKey)!;
     const periodMap = cohortPeriodBuckets.get(cohortMonthKey) ?? new Map<string, PeriodBucket>();
     const month0Key = cohortMonthKey;
-    const month0Status = getMonthlyCohortMaturityStatus(
+    const month0Status = resolveRevenueRetentionMaturityStatus(
       cohortMonthKey,
       0,
+      month0Key,
       asOfDate,
+      asOfMs,
       horizon,
     );
     const month0Bucket = periodMap.get(month0Key);
@@ -223,10 +253,12 @@ export function calculateCohortRevenueRetention(
     const cells: CohortRevenueRetentionCell[] = [];
     for (let offset = 0; offset <= maxOffset; offset++) {
       const periodMonthKey = addMonthsToMonthKey(cohortMonthKey, offset);
-      const maturityStatus = getMonthlyCohortMaturityStatus(
+      const maturityStatus = resolveRevenueRetentionMaturityStatus(
         cohortMonthKey,
         offset,
+        periodMonthKey,
         asOfDate,
+        asOfMs,
         horizon,
       );
 

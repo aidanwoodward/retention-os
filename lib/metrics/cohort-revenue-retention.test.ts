@@ -666,6 +666,105 @@ describe("calculateCohortRevenueRetention — maturity and zeros", () => {
     assert.equal(future.revenue, null);
   });
 
+  it("uniform maxOffset at exact asOf month-start is unavailable with nulls", () => {
+    // Dec cohort drives maxOffset through April; Jan row offset 4 = May starts at asOf.
+    const ds = dataset(
+      [
+        customer("c_dec", "2024-12-05T12:00:00.000Z"),
+        customer("c_jan", "2025-01-05T12:00:00.000Z"),
+      ],
+      [
+        order("o_dec", "c_dec", "2024-12-05T12:00:00.000Z", { gross: 100 }),
+        order("o_jan", "c_jan", "2025-01-05T12:00:00.000Z", { gross: 80 }),
+      ],
+    );
+    const result = calculateCohortRevenueRetention(
+      select(ds, { asOfDate: "2025-05-01T00:00:00.000Z" }),
+    );
+    assert.equal(result.maxOffset, 4);
+    const { cell } = cellAt(result, "2025-01", 4);
+    assert.equal(cell.periodMonthKey, "2025-05");
+    assert.equal(cell.maturityStatus, "unavailable");
+    assert.equal(cell.revenue, null);
+    assert.equal(cell.retentionRate, null);
+    assert.equal(cell.orderCount, null);
+    assert.equal(cell.activeCustomerCount, null);
+  });
+
+  it("target month started before asOf and still in progress is partial with observed values", () => {
+    const ds = dataset(
+      [customer("c1", "2025-01-05T12:00:00.000Z")],
+      [
+        order("o0", "c1", "2025-01-05T12:00:00.000Z", { gross: 100 }),
+        order("o1", "c1", "2025-02-05T12:00:00.000Z", { gross: 25 }),
+      ],
+    );
+    const result = calculateCohortRevenueRetention(
+      select(ds, { asOfDate: "2025-02-15T12:00:00.000Z" }),
+    );
+    const { cell } = cellAt(result, "2025-01", 1);
+    assert.equal(cell.maturityStatus, "partial");
+    assertClose(cell.revenue!, 25, "partial observed");
+    assertClose(cell.retentionRate!, 0.25, "partial rate");
+  });
+
+  it("fully observed month with no activity is complete zeros not unavailable", () => {
+    const ds = dataset(
+      [customer("c1", "2025-01-05T12:00:00.000Z")],
+      [order("o0", "c1", "2025-01-05T12:00:00.000Z", { gross: 100 })],
+    );
+    const result = calculateCohortRevenueRetention(
+      select(ds, { asOfDate: "2025-03-01T00:00:00.000Z" }),
+    );
+    const { cell } = cellAt(result, "2025-01", 1);
+    assert.equal(cell.maturityStatus, "complete");
+    assert.equal(cell.revenue, 0);
+    assert.equal(cell.retentionRate, 0);
+    assert.equal(cell.orderCount, 0);
+    assert.equal(cell.activeCustomerCount, 0);
+  });
+
+  it("target month beginning after asOfDate is unavailable with nulls", () => {
+    const ds = dataset(
+      [customer("c1", "2025-01-05T12:00:00.000Z")],
+      [order("o0", "c1", "2025-01-05T12:00:00.000Z", { gross: 100 })],
+    );
+    const result = calculateCohortRevenueRetention(
+      select(ds, {
+        asOfDate: "2025-02-15T12:00:00.000Z",
+        maturityHorizonMonths: 3,
+      }),
+    );
+    const { cell } = cellAt(result, "2025-01", 2);
+    assert.equal(cell.periodMonthKey, "2025-03");
+    assert.equal(cell.maturityStatus, "unavailable");
+    assert.equal(cell.revenue, null);
+    assert.equal(cell.retentionRate, null);
+    assert.equal(cell.orderCount, null);
+    assert.equal(cell.activeCustomerCount, null);
+  });
+
+  it("exact asOf UTC boundary remains exclusive for period observation", () => {
+    const asOf = "2025-02-01T00:00:00.000Z";
+    const ds = dataset(
+      [customer("c1", "2025-01-05T12:00:00.000Z")],
+      [
+        order("o0", "c1", "2025-01-05T12:00:00.000Z", { gross: 100 }),
+        order("o_exact", "c1", asOf, { gross: 999 }),
+      ],
+    );
+    const result = calculateCohortRevenueRetention(
+      select(ds, { asOfDate: asOf, maturityHorizonMonths: 2 }),
+    );
+    const { cell } = cellAt(result, "2025-01", 1);
+    assert.equal(cell.periodMonthKey, "2025-02");
+    assert.equal(cell.maturityStatus, "unavailable");
+    assert.equal(cell.revenue, null);
+    assert.equal(cell.retentionRate, null);
+    assert.equal(cell.orderCount, null);
+    assert.equal(cell.activeCustomerCount, null);
+  });
+
   it("zero-net orders preserve order and active-customer counts", () => {
     const ds = dataset(
       [customer("c1", "2025-01-05T12:00:00.000Z")],

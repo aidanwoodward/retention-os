@@ -281,12 +281,12 @@ Rates: M+0 = 1; M+1 = 80/340; M+2 = 0; M+3 = 0; M+4 = 50/340.
 | 2025-04 (M+3) | — | **0** |
 
 Rates: M+0 = 1; M+1 = 40/330; M+2 = 0; M+3 = 0.
-M+4 period month is 2025-05: uniform `maxOffset` emits the column; maturity at asOf May 1 start is `partial` with zero observed activity (no May instant `< asOf`).
+M+4 period month is 2025-05: uniform `maxOffset` emits the column; target period start equals exclusive asOf → `unavailable` with null numerics (no observation time in May before asOf).
 
 - `maxOffset` = **4** (from earliest cohort 2024-12 to latest observed month 2025-04)
 - `eligibleCustomerCount` = **6**
 - `status` = `available`
-- Dec-row cells M+0…M+4 and Jan-row cells M+0…M+3 are `complete`; Jan M+4 is `partial` with zeros
+- Dec-row cells M+0…M+4 and Jan-row cells M+0…M+3 are `complete`; Jan M+4 is `unavailable`
 
 ## Missing-data mutations
 

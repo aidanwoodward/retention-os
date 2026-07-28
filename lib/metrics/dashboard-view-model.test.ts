@@ -155,4 +155,191 @@ describe("buildDashboardExecutiveViewModelFromDataset", () => {
       /line item|product_id|locked|first-product/i,
     );
   });
+
+  it("excludes partial Month+1 from the executive average (completed-only)", () => {
+    // Dec cohort M+1 (Jan) complete at mid-Feb → rate 1.
+    // Jan cohort M+1 (Feb) still partial at mid-Feb → provisional 0.5 if included.
+    const dataset: RetentionOSDataset = {
+      customers: [
+        { id: "d1", firstOrderAt: "2024-12-05T12:00:00.000Z" },
+        { id: "d2", firstOrderAt: "2024-12-10T12:00:00.000Z" },
+        { id: "j1", firstOrderAt: "2025-01-05T12:00:00.000Z" },
+        { id: "j2", firstOrderAt: "2025-01-08T12:00:00.000Z" },
+      ],
+      orders: [
+        {
+          id: "o1",
+          customerId: "d1",
+          orderedAt: "2024-12-05T12:00:00.000Z",
+          grossRevenue: 100,
+          discounts: 0,
+          refunds: 0,
+          lineItems: [],
+        },
+        {
+          id: "o2",
+          customerId: "d2",
+          orderedAt: "2024-12-10T12:00:00.000Z",
+          grossRevenue: 100,
+          discounts: 0,
+          refunds: 0,
+          lineItems: [],
+        },
+        {
+          id: "o3",
+          customerId: "d1",
+          orderedAt: "2025-01-10T12:00:00.000Z",
+          grossRevenue: 50,
+          discounts: 0,
+          refunds: 0,
+          lineItems: [],
+        },
+        {
+          id: "o3b",
+          customerId: "d2",
+          orderedAt: "2025-01-12T12:00:00.000Z",
+          grossRevenue: 50,
+          discounts: 0,
+          refunds: 0,
+          lineItems: [],
+        },
+        {
+          id: "o4",
+          customerId: "j1",
+          orderedAt: "2025-01-05T12:00:00.000Z",
+          grossRevenue: 80,
+          discounts: 0,
+          refunds: 0,
+          lineItems: [],
+        },
+        {
+          id: "o5",
+          customerId: "j2",
+          orderedAt: "2025-01-08T12:00:00.000Z",
+          grossRevenue: 80,
+          discounts: 0,
+          refunds: 0,
+          lineItems: [],
+        },
+        {
+          id: "o6",
+          customerId: "j1",
+          orderedAt: "2025-02-10T12:00:00.000Z",
+          grossRevenue: 40,
+          discounts: 0,
+          refunds: 0,
+          lineItems: [],
+        },
+      ],
+      products: [],
+      meta: {
+        sourceType: "demo",
+        sourceLabel: "partial-m1-fixture",
+        isDemo: true,
+        isUploaded: false,
+        customerCount: 4,
+        orderCount: 7,
+        productCount: 0,
+        lineItemCount: 0,
+        firstOrderAt: "2024-12-05T12:00:00.000Z",
+        lastOrderAt: "2025-02-10T12:00:00.000Z",
+      },
+    };
+
+    const vm = buildDashboardExecutiveViewModelFromDataset(dataset);
+    // Completed-only uses Dec only → 1. Point-presence would be (1 + 0.5) / 2 = 0.75.
+    assert.equal(vm.summary.averageMonthPlus1ActiveRate, 1);
+  });
+
+  it("returns null Month+N averages when no orders (no inferred asOf)", () => {
+    const dataset: RetentionOSDataset = {
+      customers: [{ id: "c1", firstOrderAt: "2025-01-01T00:00:00.000Z" }],
+      orders: [],
+      products: [],
+      meta: {
+        sourceType: "demo",
+        sourceLabel: "empty-orders",
+        isDemo: true,
+        isUploaded: false,
+        customerCount: 1,
+        orderCount: 0,
+        productCount: 0,
+        lineItemCount: 0,
+      },
+    };
+    const vm = buildDashboardExecutiveViewModelFromDataset(dataset);
+    assert.equal(vm.summary.averageMonthPlus1ActiveRate, null);
+    assert.equal(vm.summary.averageMonthPlus2ActiveRate, null);
+    assert.equal(vm.summary.averageMonthPlus3ActiveRate, null);
+  });
+
+  it("partial low Month+1 cannot worsen posture versus completed-only mean", () => {
+    // Mature Dec cohort: strong M+1 = 1.0. Immature Jan: M+1 provisional 0.
+    // Point-presence mean would be 0.5 (mid). Completed-only mean is 1.0 (healthy vote).
+    const dataset: RetentionOSDataset = {
+      customers: [
+        { id: "d1", firstOrderAt: "2024-12-01T12:00:00.000Z" },
+        { id: "j1", firstOrderAt: "2025-01-01T12:00:00.000Z" },
+      ],
+      orders: [
+        {
+          id: "o1",
+          customerId: "d1",
+          orderedAt: "2024-12-01T12:00:00.000Z",
+          grossRevenue: 100,
+          discounts: 0,
+          refunds: 0,
+          lineItems: [],
+        },
+        {
+          id: "o2",
+          customerId: "d1",
+          orderedAt: "2025-01-15T12:00:00.000Z",
+          grossRevenue: 100,
+          discounts: 0,
+          refunds: 0,
+          lineItems: [],
+        },
+        {
+          id: "o3",
+          customerId: "j1",
+          orderedAt: "2025-01-01T12:00:00.000Z",
+          grossRevenue: 100,
+          discounts: 0,
+          refunds: 0,
+          lineItems: [],
+        },
+        {
+          id: "o4",
+          customerId: "j1",
+          orderedAt: "2025-02-10T12:00:00.000Z",
+          grossRevenue: 10,
+          discounts: 0,
+          refunds: 0,
+          lineItems: [],
+        },
+      ],
+      products: [],
+      marketingSpend: [
+        { month: "2024-12", spend: 10 },
+        { month: "2025-01", spend: 10 },
+      ],
+      meta: {
+        sourceType: "demo",
+        sourceLabel: "posture-partial-low",
+        isDemo: true,
+        isUploaded: false,
+        customerCount: 2,
+        orderCount: 4,
+        productCount: 0,
+        lineItemCount: 0,
+        lastOrderAt: "2025-02-10T12:00:00.000Z",
+      },
+    };
+
+    const vm = buildDashboardExecutiveViewModelFromDataset(dataset);
+    assert.equal(vm.summary.averageMonthPlus1ActiveRate, 1);
+    // With M+1 = 1 (healthy vote) and small portfolio, posture must not be Watch solely from partial 0.
+    assert.notEqual(vm.durability.status, "Watch");
+  });
 });

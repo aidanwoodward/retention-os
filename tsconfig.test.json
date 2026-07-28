@@ -38,6 +38,10 @@
     "lib/metrics/revenue-concentration.ts",
     "lib/metrics/revenue-concentration.test.ts",
     "lib/metrics/retention.ts",
+    "lib/metrics/completed-cohort-retention.ts",
+    "lib/metrics/completed-cohort-retention.test.ts",
+    "lib/metrics/retention-view-model.ts",
+    "lib/metrics/retention-view-model.test.ts",
     "lib/metrics/ltv.ts",
     "lib/metrics/acquisition.ts",
     "lib/metrics/acquisition-view-model.ts",
@@ -57,6 +61,7 @@
     "lib/import/detect-orders-csv-format.ts",
     "lib/import/detect-orders-csv-format.test.ts",
     "lib/import/metric-preview.ts",
+    "lib/import/metric-preview.test.ts",
     "lib/import/import-review-view-model.ts",
     "lib/import/import-review-view-model.test.ts",
     "lib/import/import-trust.ts",
@@ -85,6 +90,11 @@
     "lib/demo/**/*.ts",
     "lib/mvp/mvp-nav.test.ts",
     "lib/mvp/cohesion.ts",
-    "lib/analysis-context/**/*.ts"
+    "lib/analysis-context/**/*.ts",
+    "lib/insights/context.ts",
+    "lib/insights/thresholds.ts",
+    "lib/insights/rules.ts",
+    "lib/insights/generate-diagnostic-insights.ts",
+    "lib/insights/generate-diagnostic-insights.test.ts"
   ]
 }

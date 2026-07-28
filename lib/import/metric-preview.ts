@@ -5,16 +5,18 @@
  * matching the “no invented margin” rule for CSV onboarding.
  */
 
+import { inferConservativeAsOfDateFromDataset } from "../analysis-context";
+import type { RetentionOSDataset } from "../data-source";
 import type { Customer, Order, Product } from "../types";
 import type { LTVPoint } from "../types/metrics";
 import {
+  averageCompletedCohortRetentionAtOffset,
   calculateCohorts,
   calculateFirstToSecondOrderConversion,
   calculateLTVByCohort,
   calculateRepeatPurchaseRate,
   calculateRetentionByCohort,
   safeDivide,
-  type RetentionByCohortSeries,
 } from "../metrics";
 
 export interface ImportedCsvMetricPreview {
@@ -30,7 +32,7 @@ export interface ImportedCsvMetricPreview {
   readonly firstToSecondWithin90DaysRate: number;
   readonly averageDaysToSecondOrder: number | null;
   readonly medianDaysToSecondOrder: number | null;
-  /** Mean cohort Month +1 active rate across cohorts that have offset 1. */
+  /** Unweighted mean of completed cohort Month +1 active rates; null when none complete. */
   readonly averageMonth1ActiveRate: number | null;
   readonly averageMonth2ActiveRate: number | null;
   readonly averageMonth3ActiveRate: number | null;
@@ -40,16 +42,6 @@ export interface ImportedCsvMetricPreview {
   readonly latestAverageContributionLTV: number | null;
   /** Operator-facing caveats (sample size, partial margins, missing offsets). */
   readonly warnings: readonly string[];
-}
-
-function averageRetentionAtOffset(series: readonly RetentionByCohortSeries[], offset: number): number | null {
-  const rates: number[] = [];
-  for (const s of series) {
-    const p = s.points.find((pt) => pt.offset === offset);
-    if (p) rates.push(p.retentionRate);
-  }
-  if (rates.length === 0) return null;
-  return safeDivide(rates.reduce((a, b) => a + b, 0), rates.length);
 }
 
 function averageTerminalLtv(
@@ -152,9 +144,28 @@ export function buildImportedCsvMetricPreview(
     ? averageTerminalLtv(ltvPoints, (p) => p.cumulativeAvgContribution)
     : null;
 
-  const m1 = averageRetentionAtOffset(retentionSeries, 1);
-  const m2 = averageRetentionAtOffset(retentionSeries, 2);
-  const m3 = averageRetentionAtOffset(retentionSeries, 3);
+  const asOfInferenceDataset: RetentionOSDataset = {
+    customers,
+    orders,
+    products,
+    meta: {
+      sourceType: "uploaded_csv",
+      sourceLabel: "metric-preview-asof-inference",
+      isDemo: false,
+      isUploaded: true,
+      customerCount,
+      orderCount,
+      productCount,
+      lineItemCount: 0,
+    },
+  };
+  const asOfDate = inferConservativeAsOfDateFromDataset(asOfInferenceDataset);
+  const m1 =
+    asOfDate == null ? null : averageCompletedCohortRetentionAtOffset(retentionSeries, 1, asOfDate);
+  const m2 =
+    asOfDate == null ? null : averageCompletedCohortRetentionAtOffset(retentionSeries, 2, asOfDate);
+  const m3 =
+    asOfDate == null ? null : averageCompletedCohortRetentionAtOffset(retentionSeries, 3, asOfDate);
   const missingOffsets: string[] = [];
   if (m1 === null) missingOffsets.push("+1");
   if (m2 === null) missingOffsets.push("+2");

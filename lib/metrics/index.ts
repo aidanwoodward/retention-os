@@ -80,6 +80,8 @@ export {
   type CalculateRetentionOptions,
 } from "./retention";
 
+export { averageCompletedCohortRetentionAtOffset } from "./completed-cohort-retention";
+
 export {
   calculateRepeatPurchaseRate,
   calculateFirstToSecondOrderConversion,

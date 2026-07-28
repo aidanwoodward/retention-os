@@ -1,11 +1,12 @@
+import { inferConservativeAsOfDateFromDataset } from "../analysis-context";
 import { buildDemoRetentionOSDataset, type RetentionOSDataset } from "../data-source";
+import { averageCompletedCohortRetentionAtOffset } from "./completed-cohort-retention";
 import { calculateCohorts, type CohortSummary } from "./cohorts";
 import {
   calculateFirstToSecondOrderConversion,
   calculateRepeatPurchaseRate,
 } from "./repeat-purchase";
 import { calculateRetentionByCohort, type RetentionByCohortSeries } from "./retention";
-import { safeDivide } from "./utils";
 
 export interface RetentionPageSummaryView {
   totalCustomers: number;
@@ -15,7 +16,7 @@ export interface RetentionPageSummaryView {
   firstToSecondWithin90DaysRate: number;
   averageDaysToSecondOrder: number | null;
   medianDaysToSecondOrder: number | null;
-  /** Mean of cohort-level Month +1 active rates where that month exists (fraction). */
+  /** Unweighted mean of completed cohort Month +1 active rates (fraction); null when none complete. */
   averageMonthPlus1ActiveRate: number | null;
   averageMonthPlus2ActiveRate: number | null;
   averageMonthPlus3ActiveRate: number | null;
@@ -49,20 +50,6 @@ function retentionRateAtOffset(
   return p ? p.retentionRate : null;
 }
 
-/** Simple mean across cohorts that have a point at `offset` (denominator excludes cohorts too young). */
-function averageActiveRateAcrossCohorts(series: readonly RetentionByCohortSeries[], offset: number): number | null {
-  let sum = 0;
-  let n = 0;
-  for (const row of series) {
-    const p = row.points.find((pt) => pt.offset === offset);
-    if (p) {
-      sum += p.retentionRate;
-      n += 1;
-    }
-  }
-  return n === 0 ? null : safeDivide(sum, n);
-}
-
 function buildCohortTableRows(
   cohortSummaries: readonly CohortSummary[],
   retention: readonly RetentionByCohortSeries[],
@@ -86,6 +73,7 @@ export function buildRetentionPageViewModelFromDataset(dataset: RetentionOSDatas
   const retention = calculateRetentionByCohort(customers, orders);
   const repeat = calculateRepeatPurchaseRate(customers, orders);
   const f2 = calculateFirstToSecondOrderConversion(customers, orders, 90);
+  const asOfDate = inferConservativeAsOfDateFromDataset(dataset);
 
   return {
     summary: {
@@ -94,9 +82,12 @@ export function buildRetentionPageViewModelFromDataset(dataset: RetentionOSDatas
       firstToSecondWithin90DaysRate: f2.conversionRateWithinWindow,
       averageDaysToSecondOrder: f2.averageDaysToSecondOrder,
       medianDaysToSecondOrder: f2.medianDaysToSecondOrder,
-      averageMonthPlus1ActiveRate: averageActiveRateAcrossCohorts(retention, 1),
-      averageMonthPlus2ActiveRate: averageActiveRateAcrossCohorts(retention, 2),
-      averageMonthPlus3ActiveRate: averageActiveRateAcrossCohorts(retention, 3),
+      averageMonthPlus1ActiveRate:
+        asOfDate == null ? null : averageCompletedCohortRetentionAtOffset(retention, 1, asOfDate),
+      averageMonthPlus2ActiveRate:
+        asOfDate == null ? null : averageCompletedCohortRetentionAtOffset(retention, 2, asOfDate),
+      averageMonthPlus3ActiveRate:
+        asOfDate == null ? null : averageCompletedCohortRetentionAtOffset(retention, 3, asOfDate),
     },
     cohortRows: buildCohortTableRows(cohortSummaries, retention),
   };

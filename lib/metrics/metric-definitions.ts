@@ -393,8 +393,9 @@ export const METRIC_DEFINITIONS: Readonly<Record<MetricId, MetricDefinition>> = 
     name: "Revenue durability posture",
     meaning: "Informal Healthy / Mixed / Watch label from repeatable portfolio threshold checks",
     retentionOsBasis:
-      "Vote heuristic on repeat rate, first-to-second within 90 days, Month +1 active, and LTV cohort spread (`evaluateRevenueDurabilityStatus`)",
-    caveat: "Posture label only, not a numeric durability score, composite index, or finance-grade durability metric",
+      "Vote heuristic on repeat rate, first-to-second within 90 days, completed-only unweighted Month +1 active mean (`averageCompletedCohortRetentionAtOffset`), and LTV cohort spread (`evaluateRevenueDurabilityStatus`); null Month +1 omits that vote",
+    caveat:
+      "Posture label only, not a numeric durability score, composite index, or finance-grade durability metric; Month +1 uses the latest observation instant proven by available canonical order data when no explicit asOfDate exists; inference may understate maturity",
     defaultDataQuality: "actual",
   },
 

@@ -1,6 +1,8 @@
+import { inferConservativeAsOfDateFromDataset } from "../analysis-context";
 import { buildDemoRetentionOSDataset, getDatasetSummary, type RetentionOSDataset } from "../data-source";
 import type { LTVPoint } from "../types";
 import { calculateCohorts, type CohortSummary } from "./cohorts";
+import { averageCompletedCohortRetentionAtOffset } from "./completed-cohort-retention";
 import {
   calculateFirstToSecondOrderConversion,
   calculateRepeatPurchaseRate,
@@ -153,22 +155,6 @@ function pickWeakestDistinct(rows: readonly TerminalRollupRow[]): TerminalRollup
   }, rows[0]!);
 }
 
-function averageActiveRateAcrossCohorts(
-  retention: ReturnType<typeof calculateRetentionByCohort>,
-  offset: number,
-): number | null {
-  let sum = 0;
-  let n = 0;
-  for (const row of retention) {
-    const p = row.points.find((pt) => pt.offset === offset);
-    if (p) {
-      sum += p.retentionRate;
-      n += 1;
-    }
-  }
-  return n === 0 ? null : safeDivide(sum, n);
-}
-
 function summarizeLargestCohort(rows: readonly CohortSummary[]): { cohortPeriod: string; cohortSize: number } | null {
   if (rows.length === 0) return null;
   return rows.reduce(
@@ -190,7 +176,7 @@ function computeDurability(
 ): RevenueDurabilitySnapshotView {
   const methodologyNotes = [
     "Snapshot uses MVP fraction thresholds only (portfolio repeat ≥2 orders; first→second ≤90 calendar days vs first order).",
-    "Month +1 active rate is cohort calendar-month repurchase breadth — not interchangeable with journey first→second timing.",
+    "Month +1 active rate is the unweighted mean of completed cohort calendar-month repurchase breadth — not interchangeable with journey first→second timing.",
     "LTV cohort spread compares terminal staircase net revenue LTV only (discounts/refunds removed from merchandise revenue).",
   ] as const;
 
@@ -692,6 +678,13 @@ export function buildDashboardExecutiveViewModelFromDataset(dataset: RetentionOS
   const retentionSeries = calculateRetentionByCohort(customers, orders);
   const repeat = calculateRepeatPurchaseRate(customers, orders);
   const f2 = calculateFirstToSecondOrderConversion(customers, orders, 90);
+  const asOfDate = inferConservativeAsOfDateFromDataset(dataset);
+  const averageMonthPlus1ActiveRate =
+    asOfDate == null ? null : averageCompletedCohortRetentionAtOffset(retentionSeries, 1, asOfDate);
+  const averageMonthPlus2ActiveRate =
+    asOfDate == null ? null : averageCompletedCohortRetentionAtOffset(retentionSeries, 2, asOfDate);
+  const averageMonthPlus3ActiveRate =
+    asOfDate == null ? null : averageCompletedCohortRetentionAtOffset(retentionSeries, 3, asOfDate);
 
   const ltvPoints = calculateLTVByCohort(customers, orders, marginAssumptions);
   const curvesByCohort = groupLtvCurveByCohort(ltvPoints);
@@ -748,9 +741,9 @@ export function buildDashboardExecutiveViewModelFromDataset(dataset: RetentionOS
     allTimeRepeatPurchaseRate: repeat.repeatPurchaseRate,
     firstToSecondWithin90DaysRate: f2.conversionRateWithinWindow,
     averageDaysToSecondOrder: f2.averageDaysToSecondOrder,
-    averageMonthPlus1ActiveRate: averageActiveRateAcrossCohorts(retentionSeries, 1),
-    averageMonthPlus2ActiveRate: averageActiveRateAcrossCohorts(retentionSeries, 2),
-    averageMonthPlus3ActiveRate: averageActiveRateAcrossCohorts(retentionSeries, 3),
+    averageMonthPlus1ActiveRate,
+    averageMonthPlus2ActiveRate,
+    averageMonthPlus3ActiveRate,
     avgTerminalNetRevenueLtvAcrossCohorts,
     avgTerminalContributionLtvAcrossCohorts,
     bestNetRevenueLtvCohort,

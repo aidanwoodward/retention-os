@@ -1,14 +1,16 @@
 import { getDemoDataset } from "../demo";
+import { inferConservativeAsOfDateFromDataset } from "../analysis-context";
+import type { RetentionOSDataset } from "../data-source";
 import type { Customer, LTVPoint, MarginAssumptions } from "../types";
 import type { Order } from "../types/order";
 import type { Insight } from "../types/insight";
 import {
+  averageCompletedCohortRetentionAtOffset,
   calculateCohorts,
   calculateFirstToSecondOrderConversion,
   calculateLTVByCohort,
   calculateRepeatPurchaseRate,
   calculateRetentionByCohort,
-  safeDivide,
 } from "../metrics";
 import type { CohortSummary } from "../metrics/cohorts";
 import type { DiagnosticInsightsInput, RecentOffsetLtvComparison } from "./context";
@@ -76,22 +78,6 @@ function pickWeakestDistinct(rows: readonly TerminalRollupRow[]): TerminalRollup
   }, rows[0]!);
 }
 
-function averageActiveRateAcrossCohorts(
-  retention: ReturnType<typeof calculateRetentionByCohort>,
-  offset: number,
-): number | null {
-  let sum = 0;
-  let n = 0;
-  for (const row of retention) {
-    const p = row.points.find((pt) => pt.offset === offset);
-    if (p) {
-      sum += p.retentionRate;
-      n += 1;
-    }
-  }
-  return n === 0 ? null : safeDivide(sum, n);
-}
-
 function sortedCohortPeriods(rows: readonly CohortSummary[]): string[] {
   return [...rows].map((r) => r.cohortPeriod).sort((a, b) => a.localeCompare(b));
 }
@@ -139,6 +125,7 @@ function buildBundleCore(
   repeat: ReturnType<typeof calculateRepeatPurchaseRate>,
   f2: ReturnType<typeof calculateFirstToSecondOrderConversion>,
   curvesByCohort: ReadonlyMap<string, LTVPoint[]>,
+  asOfDate: string | null,
 ): Omit<DiagnosticInsightsBundle, "recentOffsetLtvComparison"> {
   const terminals: TerminalRollupRow[] = [];
   const terminalContribution: number[] = [];
@@ -193,9 +180,9 @@ function buildBundleCore(
     averageDaysToSecondOrderAmongRepeaters: f2.averageDaysToSecondOrder,
     firstToSecondMedianDaysAmongRepeaters: f2.medianDaysToSecondOrder,
     retentionAverages: {
-      m1: averageActiveRateAcrossCohorts(retentionSeries, 1),
-      m2: averageActiveRateAcrossCohorts(retentionSeries, 2),
-      m3: averageActiveRateAcrossCohorts(retentionSeries, 3),
+      m1: asOfDate == null ? null : averageCompletedCohortRetentionAtOffset(retentionSeries, 1, asOfDate),
+      m2: asOfDate == null ? null : averageCompletedCohortRetentionAtOffset(retentionSeries, 2, asOfDate),
+      m3: asOfDate == null ? null : averageCompletedCohortRetentionAtOffset(retentionSeries, 3, asOfDate),
     },
     bestTerminalNetRevenueLtvCohort,
     weakestTerminalNetRevenueLtvCohort,
@@ -219,9 +206,25 @@ export function buildDiagnosticInsightsBundle(
   const f2 = calculateFirstToSecondOrderConversion(customers, orders, 90);
   const ltvPoints = calculateLTVByCohort(customers, orders, marginAssumptions);
   const curvesByCohort = groupLtvCurveByCohort(ltvPoints);
+  const asOfInferenceDataset: RetentionOSDataset = {
+    customers,
+    orders,
+    products: [],
+    meta: {
+      sourceType: "uploaded_csv",
+      sourceLabel: "diagnostic-insights-asof-inference",
+      isDemo: false,
+      isUploaded: true,
+      customerCount: customers.length,
+      orderCount: orders.length,
+      productCount: 0,
+      lineItemCount: 0,
+    },
+  };
+  const asOfDate = inferConservativeAsOfDateFromDataset(asOfInferenceDataset);
 
   const recentOffsetLtvComparison = buildRecentOffsetComparison(cohortSummaries, curvesByCohort);
-  const core = buildBundleCore(cohortSummaries, retentionSeries, repeat, f2, curvesByCohort);
+  const core = buildBundleCore(cohortSummaries, retentionSeries, repeat, f2, curvesByCohort, asOfDate);
 
   return { ...core, recentOffsetLtvComparison };
 }
@@ -238,7 +241,23 @@ export function buildDiagnosticInsightsInput(
   const f2 = calculateFirstToSecondOrderConversion(customers, orders, 90);
   const ltvPoints = calculateLTVByCohort(customers, orders, marginAssumptions);
   const curvesByCohort = groupLtvCurveByCohort(ltvPoints);
-  return buildBundleCore(cohortSummaries, retentionSeries, repeat, f2, curvesByCohort);
+  const asOfInferenceDataset: RetentionOSDataset = {
+    customers,
+    orders,
+    products: [],
+    meta: {
+      sourceType: "uploaded_csv",
+      sourceLabel: "diagnostic-insights-asof-inference",
+      isDemo: false,
+      isUploaded: true,
+      customerCount: customers.length,
+      orderCount: orders.length,
+      productCount: 0,
+      lineItemCount: 0,
+    },
+  };
+  const asOfDate = inferConservativeAsOfDateFromDataset(asOfInferenceDataset);
+  return buildBundleCore(cohortSummaries, retentionSeries, repeat, f2, curvesByCohort, asOfDate);
 }
 
 /**

@@ -117,29 +117,39 @@ describe("buildImportReviewViewModel", () => {
   });
 
   it("ready only when no source or metric limitations (spend + positive CM + product signal)", () => {
+    // firstOrderAt must equal each customer's earliest order (MET-FIRST-PRODUCT-RULE chronology).
     const customers = Array.from({ length: 6 }, (_, i) => ({
       id: `c${i}`,
-      firstOrderAt: "2024-01-01T00:00:00.000Z",
+      firstOrderAt: "2024-01-15T12:00:00.000Z",
     }));
-    const orders = Array.from({ length: 12 }, (_, i) => ({
-      id: `o${i}`,
-      customerId: `c${i % 6}`,
-      orderedAt: `2024-0${1 + (i % 5)}-15T12:00:00.000Z`,
-      grossRevenue: 100,
-      discounts: 0,
-      refunds: 0,
-      contributionMargin: 40,
-      lineItems: [
-        {
-          id: `li${i}`,
-          productId: "p1",
-          title: "Product",
-          quantity: 1,
-          unitPrice: 100,
-          lineTotal: 100,
-        },
-      ],
-    }));
+    const orders = Array.from({ length: 12 }, (_, i) => {
+      const customerId = `c${i % 6}`;
+      const month = 1 + (i % 5);
+      // First order per customer (i < 6) lands on Jan 15 matching firstOrderAt; repeats later.
+      const orderedAt =
+        i < 6
+          ? "2024-01-15T12:00:00.000Z"
+          : `2024-0${month}-15T12:00:00.000Z`;
+      return {
+        id: `o${i}`,
+        customerId,
+        orderedAt,
+        grossRevenue: 100,
+        discounts: 0,
+        refunds: 0,
+        contributionMargin: 40,
+        lineItems: [
+          {
+            id: `li${i}`,
+            productId: "p1",
+            title: "Product",
+            quantity: 1,
+            unitPrice: 100,
+            lineTotal: 100,
+          },
+        ],
+      };
+    });
     const result: CombineOrderCsvImportResult = {
       customers,
       orders,

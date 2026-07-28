@@ -7,7 +7,7 @@ import {
 
 /** Visible near the first-product quality table — attribution honesty. */
 export const FIRST_PRODUCT_ATTRIBUTION_CAVEAT =
-  "First product means the first line item on the customer's chronological first order. Discount/refund drag is order-level customer economics attributed by first product, not proof that the SKU caused the refund or discount." as const;
+  "First product means a single_product canonical first order (all-time for product quality). Multi-product first baskets and unknown first-product attribution are excluded from product rows. Discount/refund drag is order-level customer economics attributed by first product, not proof that the SKU caused the refund or discount. Imported Customer.firstProductId is denormalised interim data and is not the engine source of truth." as const;
 
 export interface ProductsPageSummaryView {
   readonly totalCustomers: number;

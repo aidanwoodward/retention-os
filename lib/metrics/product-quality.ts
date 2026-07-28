@@ -3,6 +3,10 @@
  *
  * Answers: which entry products create valuable, repeat, profitable customers?
  * Customer quality framing — not product sales volume.
+ *
+ * First-product identity uses `deriveFirstProductAttribution` (MET-FIRST-PRODUCT-RULE).
+ * Product-quality observation is all-time in this sprint (helper called without asOfDate).
+ * Imported Customer.firstProductId is denormalised interim data and is not read here.
  */
 
 import type { RetentionOSDataset } from "../data-source/dataset-types";
@@ -10,6 +14,7 @@ import type { Customer } from "../types/customer";
 import { isIdentifiedOrder, type Order } from "../types/order";
 import type { Product } from "../types/product";
 import type { MarginAssumptions } from "../types/scenario";
+import { deriveFirstProductAttribution } from "./first-product-attribution";
 import {
   calculateFirstToSecondOrderConversion,
   calculateRepeatPurchaseRate,
@@ -55,7 +60,12 @@ export interface FirstProductQualityRow {
 
 export interface FirstProductCustomerQualityResult {
   readonly rows: readonly FirstProductQualityRow[];
+  /** multiProductCustomerCount + unknownFirstProductCustomerCount */
   readonly unassignedCustomerCount: number;
+  /** Valid multi-product first baskets — not missing data. */
+  readonly multiProductCustomerCount: number;
+  /** Insufficient or unreliable first-product evidence. */
+  readonly unknownFirstProductCustomerCount: number;
   readonly totalCustomers: number;
   readonly productCount: number;
   readonly groupsWithEnoughCustomers: number;
@@ -95,18 +105,6 @@ function sortedOrdersForCustomer(customerId: string, orders: readonly Order[]): 
       if (a.orderedAt > b.orderedAt) return 1;
       return a.id.localeCompare(b.id, "en");
     });
-}
-
-/** First line on chronological first order — matches import normalise-orders semantics. */
-export function deriveFirstProductIdForCustomer(
-  customerId: string,
-  orders: readonly Order[],
-): string | undefined {
-  const list = sortedOrdersForCustomer(customerId, orders);
-  if (list.length === 0) return undefined;
-  const firstLine = list[0]!.lineItems[0];
-  const pid = firstLine?.productId?.trim();
-  return pid && pid.length > 0 ? pid : undefined;
 }
 
 function ordersHaveLineItemProductIds(orders: readonly Order[]): boolean {
@@ -280,6 +278,8 @@ function emptyResult(withinDays: number, warnings: string[]): FirstProductCustom
   return {
     rows: [],
     unassignedCustomerCount: 0,
+    multiProductCustomerCount: 0,
+    unknownFirstProductCustomerCount: 0,
     totalCustomers: 0,
     productCount: 0,
     groupsWithEnoughCustomers: 0,
@@ -318,33 +318,46 @@ export function calculateFirstProductCustomerQuality(
     return {
       ...emptyResult(withinDays, warnings),
       unassignedCustomerCount: totalCustomers,
+      multiProductCustomerCount: 0,
+      unknownFirstProductCustomerCount: totalCustomers,
       totalCustomers,
     };
   }
 
   warnings.push(
-    "First product is the first line item on the customer's chronological first order.",
+    "First product attribution uses single_product / multi_product / unknown on the customer's canonical first order (all-time for product quality).",
   );
   warnings.push(
     "Discount and refund drag are order-level totals attributed by first product — not line-level SKU return rates.",
   );
 
   const firstProductByCustomer = new Map<string, string>();
-  let unassignedCustomerCount = 0;
+  let multiProductCustomerCount = 0;
+  let unknownFirstProductCustomerCount = 0;
 
   for (const c of customers) {
-    const pid = deriveFirstProductIdForCustomer(c.id, orders);
-    if (pid) {
-      firstProductByCustomer.set(c.id, pid);
+    const attribution = deriveFirstProductAttribution(c, orders);
+    if (attribution.attributionStatus === "single_product") {
+      firstProductByCustomer.set(c.id, attribution.firstProductId);
+    } else if (attribution.attributionStatus === "multi_product") {
+      multiProductCustomerCount += 1;
     } else {
-      unassignedCustomerCount += 1;
+      unknownFirstProductCustomerCount += 1;
     }
   }
 
-  if (unassignedCustomerCount > 0) {
-    const pct = safeDivide(unassignedCustomerCount, totalCustomers) * 100;
+  const unassignedCustomerCount = multiProductCustomerCount + unknownFirstProductCustomerCount;
+
+  if (multiProductCustomerCount > 0) {
+    const pct = safeDivide(multiProductCustomerCount, totalCustomers) * 100;
     warnings.push(
-      `${unassignedCustomerCount} customer(s) (${pct.toFixed(1)}%) have no identifiable first product and are excluded from product rows.`,
+      `${multiProductCustomerCount} customer(s) (${pct.toFixed(1)}%) have a multi-product first basket and are excluded from single-product rows (valid, not missing data).`,
+    );
+  }
+  if (unknownFirstProductCustomerCount > 0) {
+    const pct = safeDivide(unknownFirstProductCustomerCount, totalCustomers) * 100;
+    warnings.push(
+      `${unknownFirstProductCustomerCount} customer(s) (${pct.toFixed(1)}%) have unknown first-product attribution and are excluded from product rows.`,
     );
   }
 
@@ -482,6 +495,8 @@ export function calculateFirstProductCustomerQuality(
   return {
     rows: draftRows,
     unassignedCustomerCount,
+    multiProductCustomerCount,
+    unknownFirstProductCustomerCount,
     totalCustomers,
     productCount: draftRows.length,
     groupsWithEnoughCustomers,

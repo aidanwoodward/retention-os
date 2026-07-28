@@ -5,25 +5,27 @@ import type { Customer } from "../types/customer";
 import type { Order, OrderLineItem } from "../types/order";
 import type { Product } from "../types/product";
 import type { MarginAssumptions } from "../types/scenario";
+import { deriveFirstProductAttribution } from "./first-product-attribution";
 import {
   MIN_CUSTOMERS_FOR_SIGNAL,
   calculateFirstProductCustomerQuality,
   calculateFirstProductCustomerQualityFromDataset,
-  deriveFirstProductIdForCustomer,
 } from "./product-quality";
 
 function line(
-  productId: string,
+  productId: string | undefined,
   title: string,
-  lineTotal: number,
+  lineTotal?: number,
+  extras: Partial<OrderLineItem> = {},
 ): OrderLineItem {
   return {
-    id: `li_${productId}`,
+    id: `li_${productId ?? title}`,
     productId,
     title,
     quantity: 1,
     unitPrice: lineTotal,
     lineTotal,
+    ...extras,
   };
 }
 
@@ -68,16 +70,80 @@ function assertRatesInUnitInterval(result: ReturnType<typeof calculateFirstProdu
   }
 }
 
-describe("deriveFirstProductIdForCustomer", () => {
-  it("uses first line on chronological first order", () => {
+describe("product-quality first-product attribution integration", () => {
+  it("44-45: uses deriveFirstProductAttribution full union, not lineItems[0]", () => {
+    const customers = [customer("c1", "2024-01-01T00:00:00.000Z")];
     const orders: Order[] = [
-      order("o2", "c1", "2024-02-01T00:00:00Z", [line("prod_b", "B", 50)]),
-      order("o1", "c1", "2024-01-01T00:00:00Z", [
+      order("o1", "c1", "2024-01-01T00:00:00.000Z", [
         line("prod_a", "A", 30),
-        line("prod_c", "C", 20),
+        line("prod_b", "B", 70),
       ]),
     ];
-    assert.equal(deriveFirstProductIdForCustomer("c1", orders), "prod_a");
+    const attr = deriveFirstProductAttribution(customers[0]!, orders);
+    assert.equal(attr.attributionStatus, "multi_product");
+    const result = calculateFirstProductCustomerQuality(customers, orders, [
+      product("prod_a", "A"),
+      product("prod_b", "B"),
+    ]);
+    assert.equal(result.rows.length, 0);
+    assert.equal(result.multiProductCustomerCount, 1);
+    assert.equal(result.unknownFirstProductCustomerCount, 0);
+    assert.equal(result.unassignedCustomerCount, 1);
+    assert.ok(!result.warnings.some((w) => w.includes("first line item")));
+  });
+
+  it("46: single-product customers remain backward compatible", () => {
+    const customers = [
+      customer("c1", "2024-01-01T00:00:00.000Z"),
+      customer("c2", "2024-01-02T00:00:00.000Z"),
+    ];
+    const orders: Order[] = [
+      order("o1", "c1", "2024-01-01T00:00:00.000Z", [line("prod_a", "A", 100)]),
+      order("o2", "c1", "2024-02-01T00:00:00.000Z", [line("prod_a", "A", 100)]),
+      order("o3", "c2", "2024-01-02T00:00:00.000Z", [line("prod_a", "A", 100)]),
+    ];
+    const result = calculateFirstProductCustomerQuality(customers, orders, [product("prod_a", "A")]);
+    assert.equal(result.rows.length, 1);
+    assert.equal(result.rows[0]!.customerCount, 2);
+    assert.equal(result.multiProductCustomerCount, 0);
+    assert.equal(result.unknownFirstProductCustomerCount, 0);
+    assert.equal(result.unassignedCustomerCount, 0);
+  });
+
+  it("47-51: multi and unknown residuals reconcile separately", () => {
+    const customers = [
+      customer("c_single", "2024-01-01T00:00:00.000Z"),
+      customer("c_multi", "2024-01-02T00:00:00.000Z"),
+      customer("c_unknown", "2024-01-03T00:00:00.000Z"),
+    ];
+    const orders: Order[] = [
+      order("o1", "c_single", "2024-01-01T00:00:00.000Z", [line("prod_a", "A", 100)]),
+      order("o2", "c_multi", "2024-01-02T00:00:00.000Z", [
+        line("prod_a", "A", 40),
+        line("prod_b", "B", 60),
+      ]),
+      order("o3", "c_unknown", "2024-01-03T00:00:00.000Z", [
+        line(undefined, "No id", 50),
+      ]),
+    ];
+    // Need at least one product_id somewhere for coverage gate
+    orders.push(
+      order("o_cover", "c_single", "2024-02-01T00:00:00.000Z", [line("prod_a", "A", 10)]),
+    );
+
+    const result = calculateFirstProductCustomerQuality(customers, orders, [
+      product("prod_a", "A"),
+      product("prod_b", "B"),
+    ]);
+    assert.equal(result.rows.length, 1);
+    assert.equal(result.rows[0]!.productId, "prod_a");
+    assert.equal(result.rows[0]!.customerCount, 1);
+    assert.ok(!result.rows.some((r) => r.productId === "prod_b"));
+    assert.equal(result.multiProductCustomerCount, 1);
+    assert.equal(result.unknownFirstProductCustomerCount, 1);
+    assert.equal(result.unassignedCustomerCount, 2);
+    assert.ok(result.warnings.some((w) => w.includes("multi-product")));
+    assert.ok(result.warnings.some((w) => w.includes("unknown first-product")));
   });
 });
 
@@ -88,15 +154,17 @@ describe("calculateFirstProductCustomerQuality", () => {
     assert.equal(result.totalCustomers, 0);
     assert.equal(result.strongestProduct, null);
     assert.equal(result.weakestProduct, null);
+    assert.equal(result.multiProductCustomerCount, 0);
+    assert.equal(result.unknownFirstProductCustomerCount, 0);
   });
 
   it("marks no line-item coverage when product_id is absent", () => {
-    const customers = [customer("c1", "2024-01-01T00:00:00Z")];
+    const customers = [customer("c1", "2024-01-01T00:00:00.000Z")];
     const orders: Order[] = [
       {
         id: "o1",
         customerId: "c1",
-        orderedAt: "2024-01-01T00:00:00Z",
+        orderedAt: "2024-01-01T00:00:00.000Z",
         grossRevenue: 100,
         discounts: 0,
         refunds: 0,
@@ -107,19 +175,21 @@ describe("calculateFirstProductCustomerQuality", () => {
     assert.equal(result.hasLineItemCoverage, false);
     assert.equal(result.rows.length, 0);
     assert.equal(result.unassignedCustomerCount, 1);
+    assert.equal(result.unknownFirstProductCustomerCount, 1);
+    assert.equal(result.multiProductCustomerCount, 0);
   });
 
   it("segments two products with different repeat behaviour", () => {
     const customers = [
-      customer("c1", "2024-01-01T00:00:00Z"),
-      customer("c2", "2024-01-02T00:00:00Z"),
-      customer("c3", "2024-01-03T00:00:00Z"),
+      customer("c1", "2024-01-01T00:00:00.000Z"),
+      customer("c2", "2024-01-02T00:00:00.000Z"),
+      customer("c3", "2024-01-03T00:00:00.000Z"),
     ];
     const orders: Order[] = [
-      order("o1", "c1", "2024-01-01T00:00:00Z", [line("prod_a", "A", 100)]),
-      order("o2", "c1", "2024-02-01T00:00:00Z", [line("prod_a", "A", 100)]),
-      order("o3", "c2", "2024-01-02T00:00:00Z", [line("prod_a", "A", 100)]),
-      order("o4", "c3", "2024-01-03T00:00:00Z", [line("prod_b", "B", 50)]),
+      order("o1", "c1", "2024-01-01T00:00:00.000Z", [line("prod_a", "A", 100)]),
+      order("o2", "c1", "2024-02-01T00:00:00.000Z", [line("prod_a", "A", 100)]),
+      order("o3", "c2", "2024-01-02T00:00:00.000Z", [line("prod_a", "A", 100)]),
+      order("o4", "c3", "2024-01-03T00:00:00.000Z", [line("prod_b", "B", 50)]),
     ];
     const products = [product("prod_a", "Product A"), product("prod_b", "Product B")];
 
@@ -137,16 +207,16 @@ describe("calculateFirstProductCustomerQuality", () => {
 
   it("computes discount and refund drag on a two-customer fixture", () => {
     const customers = [
-      customer("c1", "2024-01-01T00:00:00Z"),
-      customer("c2", "2024-01-02T00:00:00Z"),
+      customer("c1", "2024-01-01T00:00:00.000Z"),
+      customer("c2", "2024-01-02T00:00:00.000Z"),
     ];
     const orders: Order[] = [
-      order("o1", "c1", "2024-01-01T00:00:00Z", [line("prod_a", "A", 100)], {
+      order("o1", "c1", "2024-01-01T00:00:00.000Z", [line("prod_a", "A", 100)], {
         grossRevenue: 100,
         discounts: 20,
         refunds: 10,
       }),
-      order("o2", "c2", "2024-01-02T00:00:00Z", [line("prod_a", "A", 200)], {
+      order("o2", "c2", "2024-01-02T00:00:00.000Z", [line("prod_a", "A", 200)], {
         grossRevenue: 200,
         discounts: 0,
         refunds: 0,
@@ -162,9 +232,9 @@ describe("calculateFirstProductCustomerQuality", () => {
   });
 
   it("leaves contribution null without margin path", () => {
-    const customers = [customer("c1", "2024-01-01T00:00:00Z")];
+    const customers = [customer("c1", "2024-01-01T00:00:00.000Z")];
     const orders: Order[] = [
-      order("o1", "c1", "2024-01-01T00:00:00Z", [line("prod_a", "A", 100)]),
+      order("o1", "c1", "2024-01-01T00:00:00.000Z", [line("prod_a", "A", 100)]),
     ];
     const result = calculateFirstProductCustomerQuality(customers, orders, [product("prod_a", "A")]);
     assert.equal(result.hasContributionCoverage, false);
@@ -174,9 +244,9 @@ describe("calculateFirstProductCustomerQuality", () => {
   });
 
   it("populates contribution with margin assumptions", () => {
-    const customers = [customer("c1", "2024-01-01T00:00:00Z")];
+    const customers = [customer("c1", "2024-01-01T00:00:00.000Z")];
     const orders: Order[] = [
-      order("o1", "c1", "2024-01-01T00:00:00Z", [line("prod_a", "A", 100)], {
+      order("o1", "c1", "2024-01-01T00:00:00.000Z", [line("prod_a", "A", 100)], {
         grossRevenue: 100,
         discounts: 0,
         refunds: 0,
@@ -199,8 +269,8 @@ describe("calculateFirstProductCustomerQuality", () => {
     const orders: Order[] = [];
     for (let i = 0; i < MIN_CUSTOMERS_FOR_SIGNAL - 1; i++) {
       const id = `c${i}`;
-      customers.push(customer(id, "2024-01-01T00:00:00Z"));
-      orders.push(order(`o${i}`, id, "2024-01-01T00:00:00Z", [line("prod_small", "Small", 50)]));
+      customers.push(customer(id, "2024-01-01T00:00:00.000Z"));
+      orders.push(order(`o${i}`, id, "2024-01-01T00:00:00.000Z", [line("prod_small", "Small", 50)]));
     }
     const result = calculateFirstProductCustomerQuality(customers, orders, [
       product("prod_small", "Small"),
@@ -217,17 +287,17 @@ describe("calculateFirstProductCustomerQuality", () => {
 
     for (let i = 0; i < 6; i++) {
       const id = `strong_${i}`;
-      customers.push(customer(id, "2024-01-01T00:00:00Z"));
-      orders.push(order(`s1_${i}`, id, "2024-01-01T00:00:00Z", [line("prod_strong", "Strong", 200)]));
-      orders.push(order(`s2_${i}`, id, "2024-01-15T00:00:00Z", [line("prod_strong", "Strong", 200)]));
-      orders.push(order(`s3_${i}`, id, "2024-02-01T00:00:00Z", [line("prod_strong", "Strong", 200)]));
+      customers.push(customer(id, "2024-01-01T00:00:00.000Z"));
+      orders.push(order(`s1_${i}`, id, "2024-01-01T00:00:00.000Z", [line("prod_strong", "Strong", 200)]));
+      orders.push(order(`s2_${i}`, id, "2024-01-15T00:00:00.000Z", [line("prod_strong", "Strong", 200)]));
+      orders.push(order(`s3_${i}`, id, "2024-02-01T00:00:00.000Z", [line("prod_strong", "Strong", 200)]));
     }
 
     for (let i = 0; i < 6; i++) {
       const id = `weak_${i}`;
-      customers.push(customer(id, "2024-01-02T00:00:00Z"));
+      customers.push(customer(id, "2024-01-02T00:00:00.000Z"));
       orders.push(
-        order(`w1_${i}`, id, "2024-01-02T00:00:00Z", [line("prod_weak", "Weak", 50)], {
+        order(`w1_${i}`, id, "2024-01-02T00:00:00.000Z", [line("prod_weak", "Weak", 50)], {
           grossRevenue: 50,
           discounts: 20,
           refunds: 0,
@@ -257,8 +327,8 @@ describe("calculateFirstProductCustomerQuality", () => {
     const orders: Order[] = [];
     for (let i = 0; i < 6; i++) {
       const id = `c_${i}`;
-      customers.push(customer(id, "2024-01-01T00:00:00Z"));
-      orders.push(order(`o_${i}`, id, "2024-01-01T00:00:00Z", [line("prod_x", "X", 80)]));
+      customers.push(customer(id, "2024-01-01T00:00:00.000Z"));
+      orders.push(order(`o_${i}`, id, "2024-01-01T00:00:00.000Z", [line("prod_x", "X", 80)]));
     }
     const result = calculateFirstProductCustomerQuality(customers, orders, [product("prod_x", "X")]);
     assert.equal(result.productCount, 1);
@@ -276,6 +346,10 @@ describe("calculateFirstProductCustomerQualityFromDataset", () => {
     assert.ok(result.productCount > 0);
     assert.ok(result.totalCustomers > 0);
     assert.equal(result.hasLineItemCoverage, true);
+    assert.equal(
+      result.unassignedCustomerCount,
+      result.multiProductCustomerCount + result.unknownFirstProductCustomerCount,
+    );
     assertRatesInUnitInterval(result);
   });
 });

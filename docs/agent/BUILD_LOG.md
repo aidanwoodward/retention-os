@@ -1,5 +1,7 @@
 # RetentionOS Agent Build Log
 
+> **Historical build log.** Entries below are session evidence. “Next planned sprint” and similar lines are **not** current sequencing authority. Current execution sequence: [`docs/PRODUCT_RECONCILIATION_BACKLOG.md`](../PRODUCT_RECONCILIATION_BACKLOG.md) §10. Operating rules: [`docs/agent/OPS_01.md`](OPS_01.md). Frozen sprint evidence: [`docs/agent/sprints/`](sprints/).
+
 This file records agent-assisted build sessions.
 
 Each entry should include:

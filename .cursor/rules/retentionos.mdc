@@ -1,66 +1,19 @@
 ---
-description: RetentionOS product and engineering rules
+description: RetentionOS Cursor enforcement — read AGENTS.md for routing
 alwaysApply: true
 ---
 
 # RetentionOS Cursor Rules
 
-You are working on RetentionOS, a customer economics operating system for ecommerce brands.
+Read [AGENTS.md](../../AGENTS.md) first for product boundary, source hierarchy, canonical document routing, Ops-01 gates, and prohibitions. Do not duplicate that routing map here.
 
-## Product wedge
+## Enforcement
 
-RetentionOS helps brands understand whether growth is durable, profitable, and repeatable.
-
-Prioritise:
-- cohorts
-- retention
-- LTV
-- contribution LTV
-- CAC
-- payback
-- first-to-second purchase behaviour
-- product-level customer quality
-- channel-level acquisition quality
-- revenue durability score
-- diagnostic insight cards
-- CSV/demo mode
-
-Avoid:
-- CRM features
-- marketing automation
-- generic dashboard bloat
-- attribution overbuild
-- premature integrations
-- unnecessary dependencies
-
-## Technical rules
-
-- Metric logic belongs in /lib/metrics.
-- Types belong in /lib/types.
-- Demo data belongs in /lib/demo.
-- Insight rules belong in /lib/insights.
-- React components should render view models, not calculate core metrics.
-- Keep changes small and reviewable.
-- Do not modify database migrations unless explicitly requested.
-- Do not add dependencies unless explicitly requested.
-- Do not fake live production states.
-- Do not silently use mock data in production paths.
-
-## Validation
-
-Run these before completion:
-
-```bash
-npm run lint
-npm run typecheck
-npm run build
-```
-
-## Behaviour
-
-Before editing:
-1. Inspect relevant files.
-2. State a short plan.
-3. Implement smallest viable change.
-4. Validate.
-5. Summarise files changed, product impact, and risks.
+1. Inspect current source and canonical docs before making claims about repo state.
+2. Use Plan Mode before architecture, metrics, or roadmap changes.
+3. Keep diffs small and scoped to the approved allowlist.
+4. Do not add dependencies, migrations, or broad refactors without explicit approval.
+5. Do not fabricate production integrations or present planned Shopify connectivity as live.
+6. Respect the active feature branch and Ops-01 founder gates (`restart-retentionos-mvp` is the integration target; never work on `main`).
+7. Run the validations required by the sprint (typically `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`).
+8. Prefer the smallest change that meets the acceptance criteria; do not begin later roadmap work without authorisation.

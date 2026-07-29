@@ -1,5 +1,7 @@
 # Roadmap Analysis: What's Live, In Progress, and Next Priorities
 
+> **Historical document.** This analysis records legacy route and production-readiness assumptions that are **not** current. Do not use it for MVP navigation, readiness, or sequencing. Current truth: [`docs/RETENTIONOS_ARCHITECTURE.md`](RETENTIONOS_ARCHITECTURE.md) (routes / architecture) and [`docs/PRODUCT_RECONCILIATION_BACKLOG.md`](PRODUCT_RECONCILIATION_BACKLOG.md) (product boundary §2.1; execution sequence §10).
+
 ## Executive Summary
 
 This document analyzes the current state of all features in the RetentionOS sidebar navigation, categorizing them as:

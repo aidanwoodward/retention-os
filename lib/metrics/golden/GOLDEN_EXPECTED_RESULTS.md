@@ -215,7 +215,7 @@ Preview does **not** apply MarginAssumptions (no order `contributionMargin`).
 | firstToSecondWithin90DaysRate | 1/2 |
 | averageMonth1ActiveRate | (1/3 + 1/3) / 2 = 1/3 |
 | averageMonth2ActiveRate | (0 + 0) / 2 = 0 |
-| averageMonth3ActiveRate | (0 + 0) / 2 = 0 |
+| averageMonth3ActiveRate | completed-only at conservative asOf `2025-04-20T12:00:00.000Z`: Dec 2024 M+3 **complete** and included (rate 0); Jan 2025 M+3 **partial** and excluded; aggregate = **0** |
 | latestAverageNetRevenueLTV | ((470/3) + (370/3)) / 2 = 140 |
 | contributionLTVAvailable | false |
 | latestAverageContributionLTV | null |

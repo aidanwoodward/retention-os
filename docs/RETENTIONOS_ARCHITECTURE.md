@@ -8,7 +8,11 @@
 - **Initial working tree:** Clean
 - **Runtime changes in this audit:** None
 
-This document is the current repository-grounded architecture reference. `AGENTS.md` and the agent runbooks define operating behavior; historical audits remain useful evidence for the state they inspected but do not override this document.
+This document is the current repository-grounded architecture reference for routes, system boundaries, canonical versus legacy paths, and implementation state.
+
+**Product boundary:** [PRODUCT_RECONCILIATION_BACKLOG.md](PRODUCT_RECONCILIATION_BACKLOG.md) §2.1 (do not redefine here).
+**Execution sequence:** [PRODUCT_RECONCILIATION_BACKLOG.md](PRODUCT_RECONCILIATION_BACKLOG.md) §10.
+Agent routing: [AGENTS.md](../AGENTS.md). Historical audits remain evidence for the state they inspected but do not override this document.
 
 ## 1. Executive decisions
 
@@ -369,21 +373,15 @@ Package usage statements below are **Confirmed**. **Investigate** is used only w
 | `MVP_STATUS.md` | Pre-restart historical status | Quarantine |
 | `RETENTIONOS_RESTART_AUDIT_V2.md` | Historical six-route restart comparison | Quarantine |
 
-## 10. Immediate follow-on scope
+## 10. Current program state
 
-### Sprint 5U-B — source-to-screen metric contracts
+**Metric foundation:** **METRIC_FOUNDATION_CLOSED** (contracted MetricId set remains 22; formula ledger in [`METRIC_CONTRACTS.md`](./METRIC_CONTRACTS.md)).
 
-**Shipped ledger:** [`docs/METRIC_CONTRACTS.md`](./METRIC_CONTRACTS.md) with thin linkage in `lib/metrics/metric-contract-index.ts`. Document each retained KPI's formula, inputs, treatment rules, missing-data behavior, data-quality state, calculator/view-model/UI mapping, and UTC calendar semantics. Cover cohort size, Month+N active, repeat, first-to-second, revenue/contribution LTV, CAC/LTV:CAC/payback, product quality, dashboard inputs (crosswalk appendix), and Revenue Durability Posture. Tooltip copy remains in `lib/metrics/metric-definitions.ts`.
+**Current execution sequence** is owned by [`PRODUCT_RECONCILIATION_BACKLOG.md`](PRODUCT_RECONCILIATION_BACKLOG.md) §10 — do not duplicate the full sequence here. After documentation alignment (`DOC-AGENT-ALIGN`), next shared-system work is `6A-SIGNAL` → `6A-MATRIX` → `6A-PROVENANCE`, then 6B page upgrades, later 6C consolidation, and later PRE6D / 6D production Shopify ingestion.
 
-### Sprint 5U-C — golden dataset and reconciliation
+**Still deferred / not live on the canonical spine:** production Shopify ingestion; channel-quality engine; numerical 0–100 Revenue Durability Score; Signal/Matrix/Provenance shared UI layer; 6B analytical page upgrades. Demo/CSV and fixture adapter parity are not production Shopify connectivity.
 
-Define a small hand-calculated fixture and expected outputs. Test canonical calculators, view models, and CSV preview parity against 5U-B contracts, including year-boundary UTC cohorts and missing margin, spend, or product data. Legacy SQL/API output is not the oracle.
-
-### Sprint 5X-B — product reconciliation backlog
-
-Durable execution SoT for approved analyses and 6A/6B/6C / pre-6D sequencing: [`PRODUCT_RECONCILIATION_BACKLOG.md`](PRODUCT_RECONCILIATION_BACKLOG.md). Documentation only in 5X-B; no runtime changes.
-
-No wider roadmap is set here beyond that SoT. Route/API behavior changes, migrations, dependency removal, and legacy deletion require separately approved sprints.
+Route/API behavior changes, migrations, dependency removal, and legacy deletion require separately approved sprints.
 
 ## 11. Audit validation contract
 

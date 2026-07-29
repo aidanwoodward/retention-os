@@ -1,5 +1,7 @@
 # RetentionOS Restart Audit
 
+> **Historical document — pre-restart audit.** Superseded for current architecture decisions. Preserve as evidence of the state inspected at the time; do not treat counts, readiness claims, or next-step recommendations as current. Current architecture: [`docs/RETENTIONOS_ARCHITECTURE.md`](docs/RETENTIONOS_ARCHITECTURE.md).
+
 ## 1. Executive Summary
 
 RetentionOS is a Next.js 15 App Router application with Supabase auth/data access, a broad set of analytics routes, and a recently preserved WIP baseline focused on retention/LTV diagnosis. The repo is not in a clean production-ready state: the dev server starts, but lint and production build fail on ESLint errors introduced around the retention-LTV/diagnosis work.

@@ -1,6 +1,6 @@
 # RetentionOS — Uploaded-Data MVP Checkpoint
 
-> **Supporting historical milestone.** This document remains the detailed record of session CSV ingestion, but its six-route references predate Acquisition and Products joining the retained spine. Use [`docs/RETENTIONOS_ARCHITECTURE.md`](docs/RETENTIONOS_ARCHITECTURE.md) for the current eight-route architecture, inventories, and dispositions.
+> **Supporting historical milestone.** This document remains the detailed record of session CSV ingestion at the checkpoint date. Its six-route references and capability-gap lists (including CAC, payback, and product quality as gaps) are **frozen historical claims** and are not current product truth — those capabilities later joined the retained spine. Current capability and roadmap: [`docs/RETENTIONOS_ARCHITECTURE.md`](docs/RETENTIONOS_ARCHITECTURE.md), [`docs/PRODUCT_RECONCILIATION_BACKLOG.md`](docs/PRODUCT_RECONCILIATION_BACKLOG.md). Current metric semantics: [`docs/METRIC_CONTRACTS.md`](docs/METRIC_CONTRACTS.md). Do not rewrite the historical body below.
 
 **Purpose:** Single accountability snapshot for the **post-upload** command-centre MVP (branch `restart-retentionos-mvp`, after demo-script sprint `f38ff0e` / `a125e33`). This document **supplements** `RETENTIONOS_RESTART_AUDIT_V2.md` (historical comparison to pre-restart) and aligns with `docs/RETENTIONOS_MVP_DEMO_SCRIPT.md`.
 

@@ -47,7 +47,7 @@ Do not claim additional functionality without source evidence.
 
 ### 2.1 Product framing
 
-RetentionOS remains a customer-economics decision-support product, not generic BI, marketing analytics, CRM, attribution, SEO/CRO, FP&A, or a diligence platform.
+**Primary current product-boundary source.** RetentionOS remains a customer-economics decision-support product, not generic BI, marketing analytics, CRM, attribution, SEO/CRO, FP&A, or a diligence platform. Architecture and agent routing link here; they do not independently redefine this boundary.
 
 ### 2.2 Approved visible MVP analyses
 
@@ -84,39 +84,37 @@ RetentionOS remains a customer-economics decision-support product, not generic B
 
 ---
 
-## 3. Multi-product first-order attribution (founder lock — 5X-B)
+## 3. Multi-product first-order attribution
 
-### 3.1 Future target rule (do not implement in 5X-B)
+### 3.1 Canonical engine rule (shipped — `MET-FIRST-PRODUCT-RULE`)
 
-Preserve the **current first-line implementation** until a separately approved **`MET-FIRST-PRODUCT-RULE`** sprint.
+`deriveFirstProductAttribution` is the canonical engine rule. States: `single_product` | `multi_product` | `unknown`.
 
-**Future target:**
+Concise behaviour:
 
-1. If the earliest valid order contains exactly one distinct non-gift-card canonical product:  
-   - `entryType = "single_product"`  
-   - `firstProductId =` that product  
-2. Multiple quantities or variants of the **same** canonical product still count as single-product entry.  
-3. If the earliest valid order contains more than one distinct canonical product:  
-   - `entryType = "multi_product"`  
-   - `firstProductId = null`  
-4. If no reliable product identity exists:  
-   - `entryType = "unknown"`  
-   - `firstProductId = null`  
-5. Do **not** select first line, highest value, highest quantity, or inferred primary line for multi-product baskets.  
+1. Exactly one distinct non-gift-card canonical product on the earliest valid order → `single_product` with that `firstProductId`.
+2. Multiple quantities or variants of the **same** canonical product remain `single_product`.
+3. More than one distinct canonical product → `multi_product` (`firstProductId = null`).
+4. No reliable product identity → `unknown` (`firstProductId = null`).
+5. Do **not** select first line, highest value, highest quantity, or inferred primary line for multi-product baskets.
 6. **Rejected:** highest-net-merchandise-value attribution.
 
-### 3.2 Interim vs target
+Product-quality rows include only `single_product` attribution. Multi-product and unknown customers remain separate reconciling residuals. Imported `Customer.firstProductId` is denormalised and **not** the engine source of truth.
+
+Formula detail: [`METRIC_CONTRACTS.md`](METRIC_CONTRACTS.md) (`product_quality`) and `lib/metrics/first-product-attribution.ts`.
+
+### 3.2 Status
 
 | State | Rule | Status |
 |-------|------|--------|
-| **Interim (shipped)** | Earliest valid order → `lineItems[0].productId` | CSV + GraphQL + `deriveFirstProductIdForCustomer`; F06 Cream-before-Serum |
-| **Target (MET-FIRST-PRODUCT-RULE)** | Single / multi / unknown entry types above | Not implemented |
+| **Shipped** | Three-state `deriveFirstProductAttribution` | `MET-FIRST-PRODUCT-RULE` merged; first-line helper removed |
+| **Historical interim (retired)** | Earliest valid order → `lineItems[0].productId` | Replaced; do not reinstate |
 
-GraphQL adapter already excludes gift-card lines from `lineItems` (`isGiftCard === true` skipped). CSV path may still differ — document in MET sprint.
+GraphQL adapter excludes gift-card lines from `lineItems` (`isGiftCard === true` skipped). CSV gift-card signalling may still differ — honesty via contracts / provenance.
 
 ### 3.3 Future Products experience requirements
 
-When MET + 6B Products ship the target rule, expose:
+When 6B Products ships presentation work, expose:
 
 - single-product entry coverage  
 - multi-product entry share  
@@ -128,9 +126,8 @@ When MET + 6B Products ship the target rule, expose:
 
 Analysis 9 is:
 
-- an **existing interim metric** under the current first-line rule;  
-- a **targeted deterministic attribution change** required (`MET-FIRST-PRODUCT-RULE`);  
-- **presentation and provenance** work required (coverage shares + multi-product segment).
+- a **shipped** three-state attribution metric (`MET-FIRST-PRODUCT-RULE`);
+- **presentation and provenance** work remaining (coverage shares + multi-product segment on 6B Products).
 
 ---
 
@@ -338,17 +335,17 @@ Shopify feasibility cites [`SHOPIFY_FIELD_CAPABILITY_CONTRACT.md`](SHOPIFY_FIELD
 
 | Field | Content |
 |-------|---------|
-| **Classification** | Interim metric exists (first-line) + **targeted attribution change** + presentation/provenance |
-| **Commercial definition** | Which **attributable single-product** entries create durable customers; multi-product entry is a separate segment (target rule §3) |
-| **Current** | `calculateFirstProductCustomerQuality` / `deriveFirstProductIdForCustomer` (first line); `/products`; dashboard entry-product signal; `FIRST_PRODUCT_ATTRIBUTION_CAVEAT` |
-| **Shopify** | §10 partial; F06 multi-product first-line parity; vendor present on GraphQL `Product`; category often missing |
+| **Classification** | Engine attribution **shipped** (three-state); presentation/provenance remaining for 6B |
+| **Commercial definition** | Which **attributable single-product** entries create durable customers; multi-product and unknown are separate residuals (§3) |
+| **Current** | `deriveFirstProductAttribution` + `calculateFirstProductCustomerQuality` (single_product rows only); `/products`; dashboard entry-product signal; caveat copy |
+| **Shopify** | §10 partial; F06 multi_product parity; vendor present on GraphQL `Product`; category often missing |
 | **Identity** | Identifiable first orders; guests not in identifiable quality cohorts |
 | **Filters** | Product contextual; vendor/category conditional on coverage |
-| **Visual** | Quality table + coverage strip (single/multi/unknown shares after MET) |
+| **Visual** | Quality table + coverage strip (single/multi/unknown shares — 6B) |
 | **Signals** | Strong/watch/weak/insufficient_data; multi-product share material |
-| **Likely files** | `product-quality.ts`, products VM/panel, MET-FIRST-PRODUCT-RULE, contracts |
-| **Primary sprint** | `MET-FIRST-PRODUCT-RULE` → 6B Products (after MET foundations sequencing) |
-| **Acceptance** | Interim tests pass until MET; MET implements §3; UI shows coverage shares + multi-product segment; quality on single-product entries only |
+| **Likely files** | `first-product-attribution.ts`, `product-quality.ts`, products VM/panel, contracts |
+| **Primary sprint** | `MET-FIRST-PRODUCT-RULE` **shipped** → 6B Products for presentation |
+| **Acceptance** | Engine: §3 three-state; quality on single_product only. Remaining: UI coverage shares + multi-product segment |
 
 ### 6.10 Product / vendor / category concentration
 
@@ -553,42 +550,44 @@ Avoid: `PremiumDashboard`, `REDHomePage`, `DashboardClient` (unused by live `/da
 
 ## 10. Sequenced implementation backlog
 
-### 10.1 Sequence (founder-locked)
+**Authority:** This section owns current execution sequence and shipped/deferred status. Agent routing and architecture link here; they do not copy the full sequence.
+
+### 10.1 Current sequence
 
 ```text
-5X-B documentation
-  → 6A-NAV
-  → 6A-ANALYSIS-CONTEXT
-  → MET foundation sprints (isolated)
-  → 6A-SIGNAL / 6A-MATRIX / 6A-PROVENANCE
-  → 6B page upgrades (splittable per page)
-  → 6C consolidation
-  → PRE6D-HARNESS
-  → 6D production Shopify
+DOC-AGENT-ALIGN
+  → 6A-SIGNAL
+  → 6A-MATRIX
+  → 6A-PROVENANCE
+  → 6B visible analytical pages
+  → later 6C consolidation
+  → later PRE6D / 6D production readiness and Shopify ingestion
 ```
 
-**Metric foundations are isolated work items — do not combine formulas into a broad UI sprint:**
+### 10.2 Shipped foundation (do not reopen without founder approval)
 
-- `MET-SHARE`  
-- `MET-REV-RETENTION`  
-- `MET-NEW-RETURN`  
-- `MET-AOV-FREQ`  
-- `MET-CONCENTRATION`  
-- `MET-FIRST-PRODUCT-RULE`  
+**METRIC_FOUNDATION_CLOSED.**
 
-### 10.2 Work items
+| ID | Status |
+|----|--------|
+| **5XB-DOC** | Shipped |
+| **6A-NAV** | Shipped |
+| **6A-ANALYSIS-CONTEXT** | Shipped |
+| **MET-SHARE** | Shipped |
+| **MET-REV-RETENTION** | Shipped |
+| **MET-NEW-RETURN** | Shipped |
+| **MET-AOV-FREQ** | Shipped |
+| **MET-CONCENTRATION** | Shipped |
+| **MET-FIRST-PRODUCT-RULE** | Shipped |
+| **MET-RDS-MATURITY** | Shipped (completed-only Month+N aggregates; PR #41) |
+
+Metric foundations were isolated work items — do not combine reopened formula work into a broad UI sprint without founder approval.
+
+### 10.3 Remaining work items
 
 | ID | Commercial outcome | Analysis / page | Dependency | Likely files | Class | Acceptance | Tests | Sprint | Priority |
 |----|--------------------|-----------------|------------|--------------|-------|------------|-------|--------|----------|
-| **5XB-DOC** | Durable reconciliation SoT | All | Base 48a0894 | `docs/PRODUCT_RECONCILIATION_BACKLOG.md`, `docs/agent/sprints/5xb.md`, thin cross-links | docs | This document complete; §15 amended; docs-only diff | Scope check | 5X-B | must |
-| **6A-NAV** | One nav SoT | Chrome | 5XB-DOC | `lib/mvp/cohesion.ts`, `components/app-sidebar.tsx` | UI | Sidebar imports `MVP_NAV`; no duplicate Core list | Smoke / typecheck | 6A | must |
-| **6A-ANALYSIS-CONTEXT** | Honest period semantics + gated filters | Shared | 6A-NAV | New context helpers under `lib/` (later); page hooks | shared-system | Reporting vs cohort vs maturity distinct; conditional filters capability-gated | Unit tests for context reducers | 6A | must |
-| **MET-SHARE** | Cohort revenue share % | #1 | 6A-ANALYSIS-CONTEXT (period semantics) | `lib/metrics/cohorts.ts` (+ VM) | metric | Shares sum 100%; Unidentified explicit | Golden + unit | MET | must |
-| **MET-REV-RETENTION** | Revenue retention rates | #4 | Period/maturity clarity | `retention.ts`, `cohort-matrix.ts`, contracts | metric | N/0 rate; >100% ok; ≠ LTV | Golden + expansion case | MET | must |
-| **MET-NEW-RETURN** | New vs returning mix | #2 | Identity coverage | New metrics module + VMs | metric | Defs match §2.3; guests excluded from identifiable counts | Unit + identity fixtures | MET | must |
-| **MET-AOV-FREQ** | AOV + frequency decomposition | #6 | Trusted nets | New metric + contracts | metric | AOV = net/orders; guest policy explicit | Unit + guest fixture | MET | must |
-| **MET-CONCENTRATION** | Product concentration baseline | #10 | Product ids | New metric module | metric | Product baseline; vendor/category gated | Unit + missing taxonomy | MET | must |
-| **MET-FIRST-PRODUCT-RULE** | Single/multi/unknown entry types | #9 | Line items; gift-card policy | `product-quality.ts`, import paths, F06 update | metric | Implements §3; interim first-line removed only here | F06 rewrite + parity | MET | must |
+| **DOC-AGENT-ALIGN** | Docs/agent routing aligned to current SoTs | Docs | METRIC_FOUNDATION_CLOSED | `AGENTS.md`, backlog, architecture, golden narrative, historical banners | docs | Canonical ownership explicit; no runtime change | Scope check | DOC-AGENT-ALIGN | must |
 | **6A-SIGNAL** | Compact signal pills/cards | #11 | MET outputs useful | Shared signal types; page chrome | shared-system | §5 fields; prescription optional | Unit for contract mapping | 6A | must |
 | **6A-MATRIX** | Shared matrix patterns + revenue retention kind | #3/#4/#7 | MET-REV-RETENTION for new kind | `cohort-matrix.ts`, shared UI | shared-system / UI | Matrices consume VMs only | Matrix unit tests | 6A | must |
 | **6A-PROVENANCE** | Coverage / unavailable honesty | All | Completeness meta | Banners/panels | shared-system / UI | No silent zeros | VM tests | 6A | must |
@@ -631,4 +630,4 @@ Avoid: `PremiumDashboard`, `REDHomePage`, `DashboardClient` (unused by live `/da
 
 ## 12. Maintenance
 
-When a MET or 6A/6B/6C sprint ships, update the matching work-item status here and cross-link the sprint record. Do not silently change locked commercial definitions or the multi-product target rule without founder approval.
+When a 6A/6B/6C or later sprint ships, update the matching work-item status here and cross-link the sprint record. Do not silently change locked commercial definitions or reopen closed metric foundations without founder approval.

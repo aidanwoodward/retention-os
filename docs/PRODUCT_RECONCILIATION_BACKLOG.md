@@ -191,10 +191,12 @@ Existing `Insight.recommendedAction` and insight-rule prescriptions **remain** i
 
 ### 5.3 Current evidence
 
-- Product quality signals: `strong` \| `watch` \| `weak` \| `insufficient_data` (`lib/metrics/product-quality.ts`)  
-- Durability posture: `Healthy` \| `Mixed` \| `Watch` (not numeric RAG)  
-- Insights: `lib/insights/rules.ts` with `metricRefs` + often `recommendedAction`  
-- Duplicated `QualitySignalBadge` in dashboard spine and products panel  
+- Product quality signals: `strong` \| `watch` \| `weak` \| `insufficient_data` (`lib/metrics/product-quality.ts`)
+- Durability posture: `Healthy` \| `Mixed` \| `Watch` (not numeric RAG)
+- Canonical deterministic Signal contract: existing `Insight` domain in `lib/types/insight.ts` + `lib/insights` (structured observations, contracted `metricRefs`, sufficiency, caveats, route destination; numeric `confidence` no longer emitted)
+- Insights rules: `lib/insights/rules.ts` with optional `recommendedAction`
+- Duplicated `QualitySignalBadge` in dashboard spine and products panel (page pills / chrome remain Matrix / 6B — not claimed here)
+
 
 ---
 

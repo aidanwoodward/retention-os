@@ -5,6 +5,15 @@ export type {
   RevenueDurabilityStatus,
 } from "./context";
 
+export type {
+  Insight,
+  InsightDestination,
+  InsightObservation,
+  InsightObservationUnit,
+  InsightSeverity,
+  InsightSufficiency,
+} from "../types/insight";
+
 export {
   RECENT_QUALITY_MIN_BASELINE_COHORTS,
   RECENT_QUALITY_MIN_TOTAL_COHORTS,
@@ -23,6 +32,7 @@ export { evaluateRevenueDurabilityStatus, methodologyNotesSnapshot } from "./rul
 export {
   buildDiagnosticInsightsBundle,
   buildDiagnosticInsightsInput,
+  finalizeInsights,
   generateDiagnosticInsights,
   generateDiagnosticInsightsFromMetrics,
   generateDemoDiagnosticInsights,

@@ -261,6 +261,21 @@ export function buildDiagnosticInsightsInput(
 }
 
 /**
+ * Narrow finaliser: preserve registry order, fail closed on duplicate ids, do not mutate input.
+ * No severity sorting, silent dedupe, page caps, or Matrix selection.
+ */
+export function finalizeInsights(insights: readonly Insight[]): Insight[] {
+  const seen = new Set<string>();
+  for (const insight of insights) {
+    if (seen.has(insight.id)) {
+      throw new RangeError(`Duplicate canonical Insight.id "${insight.id}"`);
+    }
+    seen.add(insight.id);
+  }
+  return [...insights];
+}
+
+/**
  * Deterministic diagnostic insights from the scalar envelope.
  * @param recentOffsetLtvComparison — pass `null` when offset-aligned maturity checks are unavailable.
  */
@@ -277,26 +292,31 @@ export function generateDiagnosticInsights(
 
   const status = evaluateRevenueDurabilityStatus(durabilityInputs);
 
-  const ordered: Insight[] = [
-    insightRepeatPurchaseHealth(input),
-    insightFirstToSecondWithin90Days(input),
-    insightRetentionTiming(input),
-    insightCohortLtvSpread(input),
-  ];
+  // Canonical registry order — severity must not reorder.
+  const ordered: Insight[] = [];
+
+  const repeat = insightRepeatPurchaseHealth(input);
+  if (repeat) ordered.push(repeat);
+
+  const firstToSecond = insightFirstToSecondWithin90Days(input);
+  if (firstToSecond) ordered.push(firstToSecond);
+
+  const timing = insightRetentionTiming(input);
+  if (timing) ordered.push(timing);
+
+  const spread = insightCohortLtvSpread(input);
+  if (spread) ordered.push(spread);
 
   const contribution = insightContributionVsNetRevenueLtv(input);
-  if (contribution) {
-    ordered.push(contribution);
-  }
+  if (contribution) ordered.push(contribution);
 
   const recent = insightRecentCohortQuality(recentOffsetLtvComparison);
-  if (recent) {
-    ordered.push(recent);
-  }
+  if (recent) ordered.push(recent);
 
-  ordered.push(insightRevenueDurabilitySnapshot(status));
+  const durability = insightRevenueDurabilitySnapshot(status, input);
+  if (durability) ordered.push(durability);
 
-  return ordered;
+  return finalizeInsights(ordered);
 }
 
 /** Metrics → bundle → insights in one pure pipeline. */

@@ -1,4 +1,4 @@
-import type { Insight } from "../types";
+import type { Insight } from "../types/insight";
 import {
   FIRST_TO_SECOND_90_HEALTHY,
   FIRST_TO_SECOND_90_WATCH,
@@ -29,6 +29,9 @@ const METHODOLOGY_NOTES_DEFAULT = [
   "Net revenue LTV is merchandise revenue after discounts/refunds — not interchangeable with contribution LTV.",
 ] as const;
 
+/** Existing contribution-vs-net ratio trigger (internal heuristic — not an industry benchmark). */
+const CONTRIBUTION_TO_NET_LTV_WARNING_RATIO = 0.42;
+
 function pct(fraction: number, digits = 1): string {
   return `${(fraction * 100).toFixed(digits)}%`;
 }
@@ -41,8 +44,14 @@ export function methodologyNotesSnapshot(): readonly string[] {
   return METHODOLOGY_NOTES_DEFAULT;
 }
 
-export function insightRepeatPurchaseHealth(input: DiagnosticInsightsInput): Insight {
+export function insightRepeatPurchaseHealth(input: DiagnosticInsightsInput): Insight | null {
   const { repeatPurchaseRate, repeatCustomers, totalCustomers } = input;
+
+  // Empty eligible population — do not diagnose poor performance from metric zero-rates.
+  if (totalCustomers === 0) {
+    return null;
+  }
+
   const evidence = `${pct(repeatPurchaseRate)} of customers have placed two or more orders (${repeatCustomers.toLocaleString()} of ${totalCustomers.toLocaleString()} shoppers in this slice).`;
 
   let severity: Insight["severity"];
@@ -53,17 +62,17 @@ export function insightRepeatPurchaseHealth(input: DiagnosticInsightsInput): Ins
     severity = "warning";
     title = "Repeat depth looks thin versus an MVP reorder benchmark";
     recommended =
-      "Diagnose fulfilment friction, SKU cadence, and post-first-order messaging before leaning on cohort LTV ceilings.";
+      "Investigate fulfilment friction, SKU cadence, and post-first-order messaging before leaning on cohort LTV ceilings.";
   } else if (repeatPurchaseRate >= REPEAT_PURCHASE_HEALTHY) {
     severity = "info";
     title = "Portfolio repeat purchase depth is respectable for this cohort set";
     recommended =
-      "Press advantage into contribution economics — tighten margin assumptions explicitly when comparing to net revenue ladders.";
+      "Compare contribution economics next — tighten margin assumptions explicitly when comparing to net revenue ladders.";
   } else {
     severity = "info";
     title = "Repeat purchase rate sits in a mid band worth pressure-testing";
     recommended =
-      "Use first-to-second within 90 days and Month +N active rates together to see whether slowdown is timing vs depth.";
+      "Compare first-to-second within 90 days and Month +N active rates together to see whether slowdown is timing vs depth.";
   }
 
   return {
@@ -72,12 +81,27 @@ export function insightRepeatPurchaseHealth(input: DiagnosticInsightsInput): Ins
     title,
     evidence,
     recommendedAction: recommended,
-    metricRefs: ["repeat.all_time_rate"],
-    confidence: totalCustomers >= 100 ? 0.88 : totalCustomers >= 30 ? 0.72 : 0.58,
+    metricRefs: ["repeat_purchase_rate"],
+    observations: [
+      {
+        value: repeatPurchaseRate,
+        comparisonValue: REPEAT_PURCHASE_WATCH,
+        unit: "ratio",
+        eligibleCount: totalCustomers,
+        affectedCount: repeatCustomers,
+      },
+    ],
+    sufficiency: "sufficient",
+    caveats: [],
+    destination: { route: "/retention" },
   };
 }
 
-export function insightFirstToSecondWithin90Days(input: DiagnosticInsightsInput): Insight {
+export function insightFirstToSecondWithin90Days(input: DiagnosticInsightsInput): Insight | null {
+  if (input.totalCustomers === 0) {
+    return null;
+  }
+
   const rate = input.firstToSecondWithin90DaysRate;
   const avgDaysAmongRepeaters =
     input.averageDaysToSecondOrderAmongRepeaters ??
@@ -98,12 +122,12 @@ export function insightFirstToSecondWithin90Days(input: DiagnosticInsightsInput)
     severity = "warning";
     title = "First-to-second within 90 days is soft — journey timing needs attention";
     recommended =
-      "Audit welcome and replenishment flows; pair with SKU-level replenishment hypotheses before rewriting acquisition targets.";
+      "Inspect welcome and replenishment flows; compare with SKU-level replenishment hypotheses before rewriting acquisition targets.";
   } else if (rate >= FIRST_TO_SECOND_90_HEALTHY) {
     severity = "info";
     title = "First-to-second within 90 days looks disciplined for this population";
     recommended =
-      "Carry this strength into cohort LTV and contribution LTV pacing — reinforce offers that shorten safe reorder windows.";
+      "Compare this strength into cohort LTV and contribution LTV pacing — review offers that shorten safe reorder windows.";
   } else {
     severity = "warning";
     title = "First-to-second within 90 days is mixed — not yet a reliable strength";
@@ -111,18 +135,42 @@ export function insightFirstToSecondWithin90Days(input: DiagnosticInsightsInput)
       "Segment by merchandising archetype before scaling spend; consolidate wins from cohorts converting inside the ninety-day envelope.";
   }
 
+  const observations = [
+    {
+      value: rate,
+      comparisonValue: FIRST_TO_SECOND_90_WATCH,
+      unit: "ratio" as const,
+      eligibleCount: input.totalCustomers,
+    },
+    ...(avgDaysAmongRepeaters != null
+      ? [
+          {
+            value: avgDaysAmongRepeaters,
+            unit: "days" as const,
+            eligibleCount: input.totalCustomers,
+          },
+        ]
+      : []),
+  ];
+
   return {
     id: "first-to-second-within-ninety-days",
     severity,
     title,
     evidence,
     recommendedAction: recommended,
-    metricRefs: ["repeat.first_to_second_within_90d", "repeat.avg_days_first_to_second"],
-    confidence: input.totalCustomers >= 100 ? 0.87 : input.totalCustomers >= 30 ? 0.71 : 0.55,
+    metricRefs: ["first_to_second_conversion"],
+    observations,
+    sufficiency: "sufficient",
+    caveats:
+      avgDaysAmongRepeaters == null
+        ? ["Average days to second order among repeaters is unavailable in this slice."]
+        : [],
+    destination: { route: "/retention" },
   };
 }
 
-export function insightRetentionTiming(input: DiagnosticInsightsInput): Insight {
+export function insightRetentionTiming(input: DiagnosticInsightsInput): Insight | null {
   const { m1, m2, m3 } = input.retentionAverages;
   const f2Healthy = input.firstToSecondWithin90DaysRate >= FIRST_TO_SECOND_90_HEALTHY;
 
@@ -168,25 +216,40 @@ export function insightRetentionTiming(input: DiagnosticInsightsInput): Insight 
         `Mean Month +1 / +2 / +3 active rates are ${pct(m1)}, ${pct(m2)}, ${pct(m3)} — sequencing is comparatively flat versus a pronounced long-cycle uplift pattern.`,
       );
     } else {
-      parts.push(
-        "Insufficient overlapping Month +1/+2/+3 telemetry across cohort ages to pronounce a reorder-cycle story — widen the observable window once more cohorts mature.",
-      );
+      // Minimum completed-offset evidence absent — suppress rather than invent a timing diagnosis.
+      return null;
     }
   }
 
-  const severity: Insight["severity"] = longerCycleCue ? "info" : "info";
+  const severity: Insight["severity"] = "info";
   const title = longerCycleCue
     ? "Retention timing hints at longer effective reorder rhythms"
     : "Retention timing needs Month +N context — avoid reading Month +1 alone";
 
-  let recommended =
-    longerCycleCue
-      ? "Model cash contribution on realistic replenishment arcs; stress-test stocking and CRM cadence assumptions past the first calendar month strip."
-      : "Compare Month +N strips with first-to-second within 90 days before treating early Month offsets as deterioration.";
+  const recommended = longerCycleCue
+    ? "Review cash contribution models on realistic replenishment arcs; stress-test stocking and CRM cadence assumptions past the first calendar month strip."
+    : "Compare Month +N strips with first-to-second within 90 days before treating early Month offsets as deterioration.";
 
-  if (parts.length === 1 && parts[0]?.includes("Insufficient")) {
-    recommended =
-      "Revisit once additional cohort offsets exist — prioritize collecting consistent calendar-month histories.";
+  const observations = [
+    ...(m1 != null
+      ? [
+          {
+            value: m1,
+            comparisonValue: MONTH_PLUS_1_ACTIVE_WATCH,
+            unit: "ratio" as const,
+          },
+        ]
+      : []),
+    ...(m2 != null ? [{ value: m2, unit: "ratio" as const }] : []),
+    ...(m3 != null ? [{ value: m3, unit: "ratio" as const }] : []),
+  ];
+
+  const caveats: string[] = [];
+  if (m2 == null) {
+    caveats.push("Completed Month +2 active-rate average is unavailable in this as-of window.");
+  }
+  if (m3 == null) {
+    caveats.push("Completed Month +3 active-rate average is unavailable in this as-of window.");
   }
 
   return {
@@ -195,12 +258,15 @@ export function insightRetentionTiming(input: DiagnosticInsightsInput): Insight 
     title,
     evidence: parts.join(" "),
     recommendedAction: recommended,
-    metricRefs: ["retention.month_plus_1", "retention.month_plus_2", "retention.month_plus_3"],
-    confidence: longerCycleCue ? 0.79 : m1 != null && m2 != null && m3 != null ? 0.73 : 0.55,
+    metricRefs: ["cohort_retention", "first_to_second_conversion"],
+    observations,
+    sufficiency: m1 != null && m2 != null && m3 != null ? "sufficient" : "limited",
+    caveats,
+    destination: { route: "/retention" },
   };
 }
 
-export function insightCohortLtvSpread(input: DiagnosticInsightsInput): Insight {
+export function insightCohortLtvSpread(input: DiagnosticInsightsInput): Insight | null {
   const { bestTerminalNetRevenueLtvCohort, weakestTerminalNetRevenueLtvCohort, terminalNetRevenueSpreadUsd } = input;
 
   if (
@@ -208,17 +274,7 @@ export function insightCohortLtvSpread(input: DiagnosticInsightsInput): Insight 
     weakestTerminalNetRevenueLtvCohort == null ||
     terminalNetRevenueSpreadUsd == null
   ) {
-    return {
-      id: "cohort-ltv-dispersion",
-      severity: "info",
-      title: "Cohort net revenue LTV dispersion is muted in this dataset window",
-      evidence:
-        "Not enough materially distinct cohort terminal net revenue ladders to underline a dispersion risk — broaden the observable horizon or tighten cohort granularity.",
-      recommendedAction:
-        "When live data introduces spread, rerun diagnostics with monthly acquisition cuts to localize merchandising-led variance.",
-      metricRefs: ["ltv.terminal_net_revenue.best", "ltv.terminal_net_revenue.weakest"],
-      confidence: 0.6,
-    };
+    return null;
   }
 
   const spreadRounded = terminalNetRevenueSpreadUsd;
@@ -231,12 +287,12 @@ export function insightCohortLtvSpread(input: DiagnosticInsightsInput): Insight 
     severity = "warning";
     title = "Terminal net revenue LTV dispersion flags acquisition-quality variance risk";
     recommended =
-      "Pressure-test funnel sources and SKU bundles tied to weakest cohorts — spread at the terminal staircase often precedes brittle ROAS narratives.";
+      "Investigate funnel sources and SKU bundles tied to weakest cohorts — review whether terminal-staircase spread coincides with brittle ROAS narratives.";
   } else {
     severity = "info";
     title = "Cohort terminal net revenue LTV spread sits within tolerance for now";
     recommended =
-      "Still monitor outliers monthly; contribution LTV can diverge materially even when revenue ladders align.";
+      "Continue monitoring outliers monthly; contribution LTV can diverge materially even when revenue ladders align.";
   }
 
   const evidence = `Strongest terminal net revenue LTV is cohort ${bestTerminalNetRevenueLtvCohort.cohortPeriod} at ${money(
@@ -251,8 +307,22 @@ export function insightCohortLtvSpread(input: DiagnosticInsightsInput): Insight 
     title,
     evidence,
     recommendedAction: recommended,
-    metricRefs: ["ltv.terminal_net_revenue.spread"],
-    confidence: spreadRounded >= LTV_COHORT_SPREAD_MATERIAL_USD ? 0.84 : 0.76,
+    metricRefs: ["revenue_ltv"],
+    observations: [
+      {
+        value: bestTerminalNetRevenueLtvCohort.terminalNetRevenueLtv,
+        comparisonValue: weakestTerminalNetRevenueLtvCohort.terminalNetRevenueLtv,
+        unit: "usd",
+      },
+      {
+        value: spreadRounded,
+        comparisonValue: LTV_COHORT_SPREAD_MATERIAL_USD,
+        unit: "usd",
+      },
+    ],
+    sufficiency: "sufficient",
+    caveats: [],
+    destination: { route: "/ltv" },
   };
 }
 
@@ -260,6 +330,7 @@ export function insightContributionVsNetRevenueLtv(input: DiagnosticInsightsInpu
   const net = input.avgTerminalNetRevenueLtvAcrossCohorts;
   const contrib = input.avgTerminalContributionLtvAcrossCohorts;
 
+  // Missing contribution must suppress — never coerce null to zero.
   if (net == null || contrib == null || net <= 0) {
     return null;
   }
@@ -269,9 +340,9 @@ export function insightContributionVsNetRevenueLtv(input: DiagnosticInsightsInpu
   let title =
     "Contribution LTV complements — but does not replace — terminal net revenue LTV";
   let recommended =
-    "When presenting externally, headline net revenue LTV for continuity; insist on modeled contribution assumptions for underwriting cash.";
+    "When presenting externally, headline net revenue LTV for continuity; validate modeled contribution assumptions for underwriting cash.";
 
-  if (ratio < 0.42) {
+  if (ratio < CONTRIBUTION_TO_NET_LTV_WARNING_RATIO) {
     severity = "warning";
     title = "Contribution LTV materially trails terminal net revenue LTV on average";
     recommended =
@@ -288,8 +359,24 @@ export function insightContributionVsNetRevenueLtv(input: DiagnosticInsightsInpu
     title,
     evidence,
     recommendedAction: recommended,
-    metricRefs: ["ltv.terminal_net_revenue.avg", "ltv.terminal_contribution.avg"],
-    confidence: input.cohortCount >= 4 ? 0.82 : 0.65,
+    metricRefs: ["revenue_ltv", "contribution_ltv"],
+    observations: [
+      {
+        value: contrib,
+        comparisonValue: net,
+        unit: "usd",
+      },
+      {
+        value: ratio,
+        comparisonValue: CONTRIBUTION_TO_NET_LTV_WARNING_RATIO,
+        unit: "ratio",
+      },
+    ],
+    sufficiency: "sufficient",
+    caveats: [
+      "Contribution LTV depends on modeled margin assumptions and is not interchangeable with net revenue LTV.",
+    ],
+    destination: { route: "/ltv" },
   };
 }
 
@@ -318,7 +405,7 @@ export function insightRecentCohortQuality(
     severity = "warning";
     title = "Younger cohorts show softer aligned-horizon net revenue pacing";
     recommended =
-      "Hold acquisition scaling until economics at matched offsets stabilize — reconcile channel mix shifts before diagnosing product failure.";
+      "Review acquisition scaling against matched-offset economics — reconcile mix shifts before diagnosing product failure.";
   } else if (gap <= -RECENT_TERMINAL_GAP_WARN) {
     severity = "info";
     title = "Aligned-horizon net revenue pacing tilts favourable for newer cohorts";
@@ -343,12 +430,36 @@ export function insightRecentCohortQuality(
     title,
     evidence,
     recommendedAction: recommended,
-    metricRefs: ["ltv.partial.offset_aligned_recent_vs_mature"],
-    confidence: comparison.baselineCohortCount >= 4 ? 0.74 : 0.66,
+    metricRefs: ["revenue_ltv"],
+    observations: [
+      {
+        value: comparison.recentAvgLtvAtOffset,
+        comparisonValue: comparison.baselineAvgLtvAtOffset,
+        unit: "usd",
+        eligibleCount: comparison.baselineCohortCount + comparison.recentCohortLabels.length,
+      },
+      {
+        value: gap,
+        comparisonValue: RECENT_TERMINAL_GAP_WARN,
+        unit: "ratio",
+      },
+    ],
+    sufficiency: "limited",
+    caveats: [
+      "Younger cohort tails are still maturing; aligned-horizon gaps can change as additional offsets unlock.",
+    ],
+    destination: { route: "/ltv" },
   };
 }
 
-export function insightRevenueDurabilitySnapshot(status: RevenueDurabilityStatus): Insight {
+export function insightRevenueDurabilitySnapshot(
+  status: RevenueDurabilityStatus,
+  input: Pick<DiagnosticInsightsInput, "totalCustomers" | "retentionAverages" | "terminalNetRevenueSpreadUsd">,
+): Insight | null {
+  if (input.totalCustomers === 0) {
+    return null;
+  }
+
   const mapping: Record<RevenueDurabilityStatus, { severity: Insight["severity"]; title: string }> = {
     Healthy: {
       severity: "info",
@@ -365,6 +476,7 @@ export function insightRevenueDurabilitySnapshot(status: RevenueDurabilityStatus
   };
 
   const { severity, title } = mapping[status];
+  const m1 = input.retentionAverages.m1;
 
   return {
     id: "revenue-durability-snapshot",
@@ -375,9 +487,36 @@ export function insightRevenueDurabilitySnapshot(status: RevenueDurabilityStatus
       status === "Healthy"
         ? "Institutionalize the operating review cadence so Healthy does not mask single-cohort fragility."
         : status === "Mixed"
-          ? "Pick the weakest vote-getter (repeat, ninety-day reorder, Month +1, or spread) and assign an owner-level remediation plan."
-          : "Treat acquisition and replenishment pacing as intertwined — slow both until diagnostics stabilise.",
-    metricRefs: ["durability.status"],
-    confidence: 0.7,
+          ? "Prioritise analysis of the weakest vote-getter (repeat, ninety-day reorder, Month +1, or spread) and assign an owner-level review."
+          : "Prioritise analysis of acquisition and replenishment pacing as intertwined until diagnostics stabilise.",
+    metricRefs: [
+      "revenue_durability_posture",
+      "repeat_purchase_rate",
+      "first_to_second_conversion",
+      "cohort_retention",
+      "revenue_ltv",
+    ],
+    observations: [
+      {
+        value: status,
+        unit: "posture",
+        eligibleCount: input.totalCustomers,
+      },
+      {
+        value: m1,
+        unit: "ratio",
+      },
+      {
+        value: input.terminalNetRevenueSpreadUsd,
+        comparisonValue: LTV_COHORT_SPREAD_MATERIAL_USD,
+        unit: "usd",
+      },
+    ],
+    sufficiency: m1 == null ? "limited" : "sufficient",
+    caveats:
+      m1 == null
+        ? ["Completed Month +1 active-rate average is unavailable; that vote is omitted from the posture heuristic."]
+        : [],
+    destination: { route: "/dashboard" },
   };
 }

@@ -118,13 +118,15 @@ Modify (maximum; subset allowed):
 
 ### PR
 
-- URL: (filled after create)
+- URL: https://github.com/aidanwoodward/retention-os/pull/43
 - Base: `restart-retentionos-mvp`
-- Head SHA: (filled after push)
+- Head SHA: `673e3534c95184e1c173d21f29309feeb832fdf3`
 
 ### Checks
 
-- `gh pr checks --watch`: pending
+- `gh pr checks --watch`: pass
+- CI validate: pass (2m36s)
+- Vercel: pass
 
 ## Notes
 

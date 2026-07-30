@@ -95,6 +95,8 @@
     "lib/insights/thresholds.ts",
     "lib/insights/rules.ts",
     "lib/insights/generate-diagnostic-insights.ts",
-    "lib/insights/generate-diagnostic-insights.test.ts"
+    "lib/insights/generate-diagnostic-insights.test.ts",
+    "lib/insights/matrix.ts",
+    "lib/insights/matrix.test.ts"
   ]
 }

@@ -118,7 +118,7 @@ Modify:
 
 - URL: https://github.com/aidanwoodward/retention-os/pull/44
 - Base: `restart-retentionos-mvp` @ `c3abb00dfe64be143bfd9b69305a4b25a100b795`
-- Head SHA: `2f69f89095768a2c83f47170f4184016992e5237`
+- Head SHA: frozen in Gate 2 packet / PR `headRefOid` (tip of `agent/6a-matrix`)
 
 ### Checks
 

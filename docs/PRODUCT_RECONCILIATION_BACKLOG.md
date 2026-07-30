@@ -195,7 +195,8 @@ Existing `Insight.recommendedAction` and insight-rule prescriptions **remain** i
 - Durability posture: `Healthy` \| `Mixed` \| `Watch` (not numeric RAG)
 - Canonical deterministic Signal contract: existing `Insight` domain in `lib/types/insight.ts` + `lib/insights` (structured observations, contracted `metricRefs`, sufficiency, caveats, route destination; numeric `confidence` no longer emitted)
 - Insights rules: `lib/insights/rules.ts` with optional `recommendedAction`
-- Duplicated `QualitySignalBadge` in dashboard spine and products panel (page pills / chrome remain Matrix / 6B — not claimed here)
+- Matrix placement policy: `lib/insights/matrix.ts` — analytical surface identity, explicit Signal eligibility, and explicit deterministic order only (no caps, no sufficiency filtering, no severity ranking; `/insights` inbox bypasses Matrix; not wired to page UI)
+- Duplicated `QualitySignalBadge` in dashboard spine and products panel (page pills / chrome remain 6B — not claimed here)
 
 
 ---
@@ -591,7 +592,7 @@ Metric foundations were isolated work items — do not combine reopened formula 
 |----|--------------------|-----------------|------------|--------------|-------|------------|-------|--------|----------|
 | **DOC-AGENT-ALIGN** | Docs/agent routing aligned to current SoTs | Docs | METRIC_FOUNDATION_CLOSED | `AGENTS.md`, backlog, architecture, golden narrative, historical banners | docs | Canonical ownership explicit; no runtime change | Scope check | DOC-AGENT-ALIGN | must |
 | **6A-SIGNAL** | Compact signal pills/cards | #11 | MET outputs useful | Shared signal types; page chrome | shared-system | §5 fields; prescription optional | Unit for contract mapping | 6A | must |
-| **6A-MATRIX** | Shared matrix patterns + revenue retention kind | #3/#4/#7 | MET-REV-RETENTION for new kind | `cohort-matrix.ts`, shared UI | shared-system / UI | Matrices consume VMs only | Matrix unit tests | 6A | must |
+| **6A-MATRIX** | Deterministic Signal placement policy (eligibility + order per analytical surface) | #11 | 6A-SIGNAL | `lib/insights/matrix.ts` | shared-system | Surfaces place approved Signal IDs only; `/insights` bypasses Matrix; no UI wiring | Matrix unit tests | 6A | must |
 | **6A-PROVENANCE** | Coverage / unavailable honesty | All | Completeness meta | Banners/panels | shared-system / UI | No silent zeros | VM tests | 6A | must |
 | **6B-DASHBOARD** | Executive composition | Dashboard | MET + 6A signal/provenance | dashboard VMs/components | UI | §8.1 | VM tests + visual check | 6B | must |
 | **6B-COHORTS** | Share + matrices | Cohorts | MET-SHARE, MET-REV-RETENTION, 6A-MATRIX | cohorts page | UI | §8.2 | VM + visual | 6B | must |

@@ -44,3 +44,9 @@ export {
   buildInsightsPageViewModelFromDataset,
   type InsightsPageViewModel,
 } from "./insights-view-model";
+
+export {
+  MATRIX_SURFACES,
+  selectSignalsForSurface,
+  type MatrixSurfaceId,
+} from "./matrix";

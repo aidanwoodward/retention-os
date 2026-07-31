@@ -119,13 +119,15 @@ Modify:
 
 ### PR
 
-- URL: (filled after `gh pr create`)
+- URL: https://github.com/aidanwoodward/retention-os/pull/45
 - Base: `restart-retentionos-mvp` @ `6d8780385b2e06259a0db404b9ca09781d815e4c`
-- Head SHA: (filled after push)
+- Head SHA: frozen in Gate 2 packet / PR `headRefOid` (tip of `agent/6a-provenance`)
 
 ### Checks
 
-- (filled after `gh pr checks --watch`)
+- `gh pr checks --watch`: pass
+- CI validate: pass (3m21s)
+- Vercel: pass
 
 ## Notes
 

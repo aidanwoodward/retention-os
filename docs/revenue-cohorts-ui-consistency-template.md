@@ -1,9 +1,11 @@
 # Revenue Cohorts Page - UI/UX Consistency Template
 
-**Purpose:** Master template documenting all UI/UX patterns, styles, colors, spacing, and consistency rules from the Revenue Cohorts page. Use this as a reference for maintaining consistency across all pages.
+> **Historical / legacy document.** Patterns below were captured from quarantined `/retention-ltv/revenue-cohorts` and are **not** the active MVP presentation source of truth. Current presentation composition authority: [`VISIBLE_PRODUCT_BIBLE.md`](VISIBLE_PRODUCT_BIBLE.md). Current routes / Keep-Quarantine: [`RETENTIONOS_ARCHITECTURE.md`](RETENTIONOS_ARCHITECTURE.md). Execution sequence: [`PRODUCT_RECONCILIATION_BACKLOG.md`](PRODUCT_RECONCILIATION_BACKLOG.md) §10. Body preserved for historical evidence only.
+
+**Purpose (historical):** Master template documenting UI/UX patterns, styles, colors, spacing, and consistency rules from the legacy Revenue Cohorts page.
 
 **Last Updated:** 2025-01-01  
-**Page Reference:** `/retention-ltv/revenue-cohorts`
+**Page Reference:** `/retention-ltv/revenue-cohorts` (quarantined)
 
 ---
 

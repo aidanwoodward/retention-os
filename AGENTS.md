@@ -32,6 +32,7 @@ When documents disagree, prefer evidence in this order:
 |---------|------------------|
 | Product boundary / MVP wedge | [docs/PRODUCT_RECONCILIATION_BACKLOG.md](docs/PRODUCT_RECONCILIATION_BACKLOG.md) §2.1 |
 | Execution sequence / shipped vs deferred | [docs/PRODUCT_RECONCILIATION_BACKLOG.md](docs/PRODUCT_RECONCILIATION_BACKLOG.md) §10 |
+| MVP page presentation / composition | [docs/VISIBLE_PRODUCT_BIBLE.md](docs/VISIBLE_PRODUCT_BIBLE.md) |
 | Architecture / routes / canonical vs legacy | [docs/RETENTIONOS_ARCHITECTURE.md](docs/RETENTIONOS_ARCHITECTURE.md) |
 | Metric formulas and semantics | [docs/METRIC_CONTRACTS.md](docs/METRIC_CONTRACTS.md) |
 | Metric registries | `lib/metrics/metric-definitions.ts`, `lib/metrics/metric-contract-index.ts` |

@@ -12,6 +12,7 @@ This document is the current repository-grounded architecture reference for rout
 
 **Product boundary:** [PRODUCT_RECONCILIATION_BACKLOG.md](PRODUCT_RECONCILIATION_BACKLOG.md) §2.1 (do not redefine here).
 **Execution sequence:** [PRODUCT_RECONCILIATION_BACKLOG.md](PRODUCT_RECONCILIATION_BACKLOG.md) §10.
+**MVP presentation composition:** [VISIBLE_PRODUCT_BIBLE.md](VISIBLE_PRODUCT_BIBLE.md) (page ownership, analytical hierarchy, Signal/trust presentation — do not redefine here).
 Agent routing: [AGENTS.md](../AGENTS.md). Historical audits remain evidence for the state they inspected but do not override this document.
 
 ## 1. Executive decisions

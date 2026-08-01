@@ -412,11 +412,15 @@ Smallest reusable decision system — **not** a generic BI framework.
 
 ## 8. Page backlog — 6B
 
+**Presentation composition:** [`VISIBLE_PRODUCT_BIBLE.md`](VISIBLE_PRODUCT_BIBLE.md) owns page ownership phrasing, analytical hierarchy, Signal/trust presentation, formatting, and visualisation roles for the eight-route spine. This §8 keeps short commercial/executive inventory fields only — not a second full composition SoT.
+
 Preserve: `CommandCentrePageFrame`, `useCommandCentreDatasetSelection`, dataset view-models, cohort matrix UI patterns, `MetricSourceBanner`, unavailable panels, `FirstProductQualityPanel` (evolve, don’t replace blindly).
 
 Avoid: `PremiumDashboard`, `REDHomePage`, `DashboardClient` (unused by live `/dashboard`); legacy `retention-ltv/*` mock/dummy paths; React-side money re-derivation; wiring `lib/filters` CRM filters onto spine without redesign.
 
 ### 8.1 Dashboard
+
+**Composition detail:** [`VISIBLE_PRODUCT_BIBLE.md`](VISIBLE_PRODUCT_BIBLE.md) §7.1.
 
 | Field | Content |
 |-------|---------|
@@ -432,6 +436,8 @@ Avoid: `PremiumDashboard`, `REDHomePage`, `DashboardClient` (unused by live `/da
 
 ### 8.2 Cohorts
 
+**Composition detail:** [`VISIBLE_PRODUCT_BIBLE.md`](VISIBLE_PRODUCT_BIBLE.md) §7.4.
+
 | Field | Content |
 |-------|---------|
 | Executive question | Which acquisition months drive durable revenue share and LTV? |
@@ -445,6 +451,8 @@ Avoid: `PremiumDashboard`, `REDHomePage`, `DashboardClient` (unused by live `/da
 | Avoid | Legacy revenue-cohorts mock pages as source of truth |
 
 ### 8.3 Retention
+
+**Composition detail:** [`VISIBLE_PRODUCT_BIBLE.md`](VISIBLE_PRODUCT_BIBLE.md) §7.3.
 
 | Field | Content |
 |-------|---------|
@@ -460,6 +468,8 @@ Avoid: `PremiumDashboard`, `REDHomePage`, `DashboardClient` (unused by live `/da
 
 ### 8.4 LTV
 
+**Composition detail:** [`VISIBLE_PRODUCT_BIBLE.md`](VISIBLE_PRODUCT_BIBLE.md) §7.5.
+
 | Field | Content |
 |-------|---------|
 | Executive question | How does cumulative value build by cohort age? |
@@ -473,6 +483,8 @@ Avoid: `PremiumDashboard`, `REDHomePage`, `DashboardClient` (unused by live `/da
 | Avoid | Confusing revenue retention with LTV |
 
 ### 8.5 Acquisition
+
+**Composition detail:** [`VISIBLE_PRODUCT_BIBLE.md`](VISIBLE_PRODUCT_BIBLE.md) §7.7.
 
 | Field | Content |
 |-------|---------|
@@ -488,6 +500,8 @@ Avoid: `PremiumDashboard`, `REDHomePage`, `DashboardClient` (unused by live `/da
 
 ### 8.6 Products
 
+**Composition detail:** [`VISIBLE_PRODUCT_BIBLE.md`](VISIBLE_PRODUCT_BIBLE.md) §7.6.
+
 | Field | Content |
 |-------|---------|
 | Executive question | Which entry products create valuable customers — and how large is multi-product entry? |
@@ -502,6 +516,8 @@ Avoid: `PremiumDashboard`, `REDHomePage`, `DashboardClient` (unused by live `/da
 
 ### 8.7 Insights
 
+**Composition detail:** [`VISIBLE_PRODUCT_BIBLE.md`](VISIBLE_PRODUCT_BIBLE.md) §7.2.
+
 | Field | Content |
 |-------|---------|
 | Executive question | What compact evidence-backed signals deserve attention? |
@@ -513,6 +529,22 @@ Avoid: `PremiumDashboard`, `REDHomePage`, `DashboardClient` (unused by live `/da
 | Sufficiency | Do not over-claim under low coverage |
 | Preserve | Rules engine structure + `metricRefs` |
 | Avoid | Mandatory prescription; chatty AI |
+
+### 8.8 Data
+
+**Composition detail:** [`VISIBLE_PRODUCT_BIBLE.md`](VISIBLE_PRODUCT_BIBLE.md) §7.8.
+
+| Field | Content |
+|-------|---------|
+| Executive question | Is the analysis current, complete, and trustworthy? |
+| Primary visual | Source / freshness / coverage / unlock honesty (no major analytical chart required) |
+| Supporting | Assumptions; import/sync state; locked analysis summary |
+| Metric work | None foundational (consumes existing trust/completeness surfaces) |
+| Filters | N/A for MVP analytical dims |
+| ≤4 signals | Prefer trust/completeness honesty over new diagnoses |
+| Sufficiency | Do not claim production Shopify ingestion; surface incomplete/locked honestly |
+| Preserve | `DataPage` / import preview / coverage rows |
+| Avoid | Major chart wall; silent mock fallback; pretending sync is live |
 
 ---
 
@@ -563,14 +595,24 @@ DOC-AGENT-ALIGN
   → 6A-SIGNAL
   → 6A-MATRIX
   → 6A-PROVENANCE
-  → 6B visible analytical pages
+  → 6B-VISIBLE-PRODUCT-BIBLE
+  → 6B-DASHBOARD
+  → 6B-INSIGHTS
+  → 6B-RETENTION
+  → 6B-LTV
+  → 6B-COHORTS
+  → 6B-PRODUCTS
+  → 6B-ACQUISITION
+  → 6B-DATA
   → later 6C consolidation
   → later PRE6D / 6D production readiness and Shopify ingestion
 ```
 
+Presentation composition for 6B pages: [`VISIBLE_PRODUCT_BIBLE.md`](VISIBLE_PRODUCT_BIBLE.md). This section remains sole execution-sequence / work-item / shipped-deferred authority.
+
 ### 10.2 Shipped foundation (do not reopen without founder approval)
 
-**METRIC_FOUNDATION_CLOSED.**
+**METRIC_FOUNDATION_CLOSED.** **6A shared analytical systems closed** (Signal / Matrix / Provenance composition; UI wiring remains 6B).
 
 | ID | Status |
 |----|--------|
@@ -584,6 +626,10 @@ DOC-AGENT-ALIGN
 | **MET-CONCENTRATION** | Shipped |
 | **MET-FIRST-PRODUCT-RULE** | Shipped |
 | **MET-RDS-MATURITY** | Shipped (completed-only Month+N aggregates; PR #41) |
+| **DOC-AGENT-ALIGN** | Shipped |
+| **6A-SIGNAL** | Shipped (PR #43) — contract only; page chrome is 6B |
+| **6A-MATRIX** | Shipped (PR #44) — placement policy only; UI wiring is 6B |
+| **6A-PROVENANCE** | Shipped (PR #45) — composition only; banners/panels are 6B |
 
 Metric foundations were isolated work items — do not combine reopened formula work into a broad UI sprint without founder approval.
 
@@ -591,17 +637,15 @@ Metric foundations were isolated work items — do not combine reopened formula 
 
 | ID | Commercial outcome | Analysis / page | Dependency | Likely files | Class | Acceptance | Tests | Sprint | Priority |
 |----|--------------------|-----------------|------------|--------------|-------|------------|-------|--------|----------|
-| **DOC-AGENT-ALIGN** | Docs/agent routing aligned to current SoTs | Docs | METRIC_FOUNDATION_CLOSED | `AGENTS.md`, backlog, architecture, golden narrative, historical banners | docs | Canonical ownership explicit; no runtime change | Scope check | DOC-AGENT-ALIGN | must |
-| **6A-SIGNAL** | Compact signal pills/cards | #11 | MET outputs useful | Shared signal types; page chrome | shared-system | §5 fields; prescription optional | Unit for contract mapping | 6A | must |
-| **6A-MATRIX** | Deterministic Signal placement policy (eligibility + order per analytical surface) | #11 | 6A-SIGNAL | `lib/insights/matrix.ts` | shared-system | Surfaces place approved Signal IDs only; `/insights` bypasses Matrix; no UI wiring | Matrix unit tests | 6A | must |
-| **6A-PROVENANCE** | Deterministic trust-metadata composition (metric/Signal provenance; methodology + source + period/asOf + pass-through population/assumption/maturity) | All | Completeness meta + metric contracts | `lib/provenance` | shared-system | Composition-only builders; Insight/Matrix untouched; no UI banners/panels claimed here | Provenance unit tests | 6A | must |
-| **6B-DASHBOARD** | Executive composition | Dashboard | MET + 6A signal/provenance | dashboard VMs/components | UI | §8.1 | VM tests + visual check | 6B | must |
-| **6B-COHORTS** | Share + matrices | Cohorts | MET-SHARE, MET-REV-RETENTION, 6A-MATRIX | cohorts page | UI | §8.2 | VM + visual | 6B | must |
-| **6B-RETENTION** | Customer + revenue retention + F2S | Retention | MET-REV-RETENTION, MET-NEW-RETURN | retention client | UI | §8.3 | VM + visual | 6B | must |
-| **6B-LTV** | Ladders clarity | LTV | 6A context | ltv page | UI | §8.4 | VM + visual | 6B | should |
-| **6B-ACQUISITION** | CAC honesty | Acquisition | 6A provenance | acquisition page | UI | §8.5 | VM + visual | 6B | should |
-| **6B-PRODUCTS** | Entry types + quality + concentration | Products | MET-FIRST-PRODUCT-RULE, MET-CONCENTRATION | products panel | UI | §8.6 + §3.3 | VM + visual | 6B | must |
-| **6B-INSIGHTS** | Signal cards to contract | Insights | 6A-SIGNAL | insights rules/VM | UI | §8.7; optional action ok | Rule tests | 6B | should |
+| **6B-VISIBLE-PRODUCT-BIBLE** | Canonical presentation-composition Bible for 6B | Docs / all spine pages | 6A-SIGNAL / MATRIX / PROVENANCE shipped | `docs/VISIBLE_PRODUCT_BIBLE.md`; thin pointers | docs | Bible owns presentation composition; backlog remains execution SoT; no runtime | Scope check | 6B | must |
+| **6B-DASHBOARD** | Executive composition | Dashboard | Bible + MET + 6A signal/provenance | dashboard VMs/components | UI | §8.1 + Bible §7.1 | VM tests + visual check | 6B | must |
+| **6B-INSIGHTS** | Signal cards to contract | Insights | Bible + 6A-SIGNAL | insights rules/VM | UI | §8.7 + Bible §7.2; optional action ok | Rule tests | 6B | should |
+| **6B-RETENTION** | Customer + revenue retention + F2S | Retention | Bible + MET-REV-RETENTION, MET-NEW-RETURN | retention client | UI | §8.3 + Bible §7.3 | VM + visual | 6B | must |
+| **6B-LTV** | Ladders clarity | LTV | Bible + 6A context | ltv page | UI | §8.4 + Bible §7.5 | VM + visual | 6B | should |
+| **6B-COHORTS** | Share + matrices | Cohorts | Bible + MET-SHARE, MET-REV-RETENTION, 6A-MATRIX | cohorts page | UI | §8.2 + Bible §7.4 | VM + visual | 6B | must |
+| **6B-PRODUCTS** | Entry types + quality + concentration | Products | Bible + MET-FIRST-PRODUCT-RULE, MET-CONCENTRATION | products panel | UI | §8.6 + §3.3 + Bible §7.6 | VM + visual | 6B | must |
+| **6B-ACQUISITION** | CAC honesty | Acquisition | Bible + 6A provenance | acquisition page | UI | §8.5 + Bible §7.7 | VM + visual | 6B | should |
+| **6B-DATA** | Data honesty + whole-product calibration | Data | Bible + prior 6B page upgrades | data page / coverage | UI | §8.8 + Bible §7.8; no major chart required | Visual + trust check | 6B | should |
 | **6C-NAV-DEDUP** | Remove duplicate nav | Chrome | 6A-NAV done | app-sidebar leftovers, CleanSidebar | delete/consolidate | Single SoT remains | Route smoke | 6C | must |
 | **6C-DASHBOARD-DEAD** | Remove unused dashboards | Dashboard | 6B-DASHBOARD | Premium/RED/DashboardClient | delete when proven unused | No imports; spine intact | Build | 6C | should |
 | **6C-RETENTION-LTV** | Quarantine/delete legacy retention-ltv | Legacy | 6B retention/LTV/cohorts | `retention-ltv/*` | delete when replaced | Spine covers analyses | Build | 6C | should |

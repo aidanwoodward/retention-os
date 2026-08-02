@@ -42,6 +42,8 @@ export interface CommandCentrePageFrameProps {
   readonly activeMetricDatasetSource?: "demo" | "uploaded_csv" | "pending" | "lost_upload";
   /** When true, shows actionable next steps below the two-column intro (default: only on /data). */
   readonly showNextSteps?: boolean;
+  /** When true, omits the two-column “What this page tells you / Why it matters” context card. */
+  readonly hideContextCard?: boolean;
 }
 
 function CompactDemoBadge({ scope }: { scope: string }) {
@@ -70,6 +72,7 @@ export function CommandCentrePageFrame({
   insightsBannerSlot,
   activeMetricDatasetSource = "demo",
   showNextSteps = routeId === "data",
+  hideContextCard = false,
 }: CommandCentrePageFrameProps) {
   const copy =
     routeId === "dashboard" ||
@@ -135,22 +138,24 @@ export function CommandCentrePageFrame({
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">{copy.hook}</p>
         </div>
 
-        <section className="overflow-hidden rounded-lg border border-zinc-200/90 bg-white shadow-sm">
-          <div className="grid gap-0 sm:grid-cols-2 sm:divide-x sm:divide-zinc-100">
-            <ContextColumn title="What this page tells you" body={copy.lookingAt} />
-            <ContextColumn title="Why it matters" body={copy.matters} />
-          </div>
-          {showNextSteps && copy.nextSteps.length > 0 ?
-            <div className="border-t border-zinc-100 bg-zinc-50/50 px-4 py-3.5 sm:px-5">
-              <h2 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Next steps</h2>
-              <ul className="mt-2 list-inside list-disc space-y-1 text-sm leading-relaxed text-zinc-800">
-                {copy.nextSteps.map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ul>
+        {!hideContextCard ?
+          <section className="overflow-hidden rounded-lg border border-zinc-200/90 bg-white shadow-sm">
+            <div className="grid gap-0 sm:grid-cols-2 sm:divide-x sm:divide-zinc-100">
+              <ContextColumn title="What this page tells you" body={copy.lookingAt} />
+              <ContextColumn title="Why it matters" body={copy.matters} />
             </div>
-          : null}
-        </section>
+            {showNextSteps && copy.nextSteps.length > 0 ?
+              <div className="border-t border-zinc-100 bg-zinc-50/50 px-4 py-3.5 sm:px-5">
+                <h2 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Next steps</h2>
+                <ul className="mt-2 list-inside list-disc space-y-1 text-sm leading-relaxed text-zinc-800">
+                  {copy.nextSteps.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ul>
+              </div>
+            : null}
+          </section>
+        : null}
 
         <div className="space-y-8">{children}</div>
       </div>

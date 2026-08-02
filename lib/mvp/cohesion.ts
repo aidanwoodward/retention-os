@@ -43,8 +43,8 @@ export interface MvpPageCopy {
 
 export const MVP_PAGE_COPY: Record<MvpRouteId, MvpPageCopy> = {
   dashboard: {
-    title: "Executive overview",
-    hook: "Portfolio read on repeat, LTV, acquisition, and product quality before you commit capital.",
+    title: "Revenue durability",
+    hook: "Is growth durable, and what needs attention?",
     lookingAt: "Headline KPIs, revenue durability posture, acquisition economics, and first-product quality for the active data source.",
     matters: "Weak repeat or payback signals here affect how much you can scale spend with confidence.",
     nextSteps: [],

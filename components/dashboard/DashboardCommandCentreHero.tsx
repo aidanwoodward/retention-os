@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Lock } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
+import { SignalDisclosure } from "@/components/analytical/SignalDisclosure";
+import { ProvenanceDisclosure } from "@/components/analytical/ProvenanceDisclosure";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { KpiMetricLabel } from "@/components/ui/kpi-metric-label";
-import type {
-  DashboardCommandCentreHeroView,
-  DashboardHeroSignalTileView,
-  RevenueDurabilityStatus,
-} from "@/lib/metrics/dashboard-view-model";
+import type { DashboardCommandCentreHeroView, RevenueDurabilityStatus } from "@/lib/metrics/dashboard-view-model";
+import type { SignalProvenance } from "@/lib/provenance";
+import type { Insight, InsightSeverity } from "@/lib/types/insight";
 
 function postureShellClass(status: RevenueDurabilityStatus): string {
   switch (status) {
@@ -26,55 +27,50 @@ const POSTURE_WORD_STYLES: Record<RevenueDurabilityStatus, string> = {
   Watch: "text-rose-950",
 };
 
-const TILE_TONE_STYLES: Record<DashboardHeroSignalTileView["tone"], string> = {
-  neutral: "border-zinc-200/90 bg-white",
-  positive: "border-emerald-200/80 bg-emerald-50/40",
-  watch: "border-amber-200/80 bg-amber-50/40",
-  locked: "border-amber-200/90 bg-amber-50/80",
-};
-
-const TILE_VALUE_STYLES: Record<DashboardHeroSignalTileView["tone"], string> = {
-  neutral: "text-zinc-900",
-  positive: "text-emerald-950",
-  watch: "text-amber-950",
-  locked: "text-amber-950",
-};
-
-function leakAccentClass(hero: DashboardCommandCentreHeroView): string {
-  const hasLocked = hero.signals.some((s) => s.tone === "locked");
-  if (hero.posture === "Watch" || hero.signals.some((s) => s.tone === "watch")) {
-    return "border-l-rose-500";
+function severityLabel(severity: InsightSeverity): string {
+  switch (severity) {
+    case "critical":
+      return "Critical priority";
+    case "warning":
+      return "Elevated attention";
+    default:
+      return "Informative signal";
   }
-  if (hasLocked || hero.posture === "Mixed") {
-    return "border-l-amber-500";
-  }
-  return "border-l-rose-400";
 }
 
-function SignalTile({ tile }: { tile: DashboardHeroSignalTileView }) {
-  const isLocked = tile.tone === "locked";
-
-  return (
-    <div className={`rounded-lg border p-2.5 ring-1 ring-black/[0.02] sm:p-3 ${TILE_TONE_STYLES[tile.tone]}`}>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
-        <KpiMetricLabel metricId={tile.metricId} dataQuality={tile.dataQuality} tooltipSize="sm">
-          {tile.title}
-        </KpiMetricLabel>
-      </p>
-      <div className="mt-1 flex items-center gap-1.5">
-        {isLocked ?
-          <Lock className="size-3.5 shrink-0 text-amber-800/80" aria-hidden />
-        : null}
-        <p className={`text-base font-semibold tabular-nums sm:text-lg ${TILE_VALUE_STYLES[tile.tone]}`}>{tile.value}</p>
-      </div>
-      {tile.sub ?
-        <p className={`mt-0.5 text-[11px] leading-snug ${isLocked ? "text-amber-900/80" : "text-zinc-600"}`}>{tile.sub}</p>
-      : null}
-    </div>
-  );
+function severityBadgeClass(severity: InsightSeverity): string {
+  switch (severity) {
+    case "critical":
+      return "bg-red-950 text-white";
+    case "warning":
+      return "bg-amber-900 text-white";
+    default:
+      return "bg-zinc-800 text-white";
+  }
 }
 
-export function DashboardCommandCentreHero({ hero }: { hero: DashboardCommandCentreHeroView }) {
+function leakAccentClass(posture: RevenueDurabilityStatus): string {
+  if (posture === "Watch") return "border-l-rose-500";
+  if (posture === "Mixed") return "border-l-amber-500";
+  return "border-l-emerald-500";
+}
+
+function collapsedEvidenceLine(evidence: string): string {
+  const firstSentence = evidence.split(/(?<=[.!?])\s+/)[0];
+  return firstSentence ?? evidence;
+}
+
+export function DashboardCommandCentreHero({
+  hero,
+  dashboardSignal,
+  signalProvenance,
+}: {
+  hero: DashboardCommandCentreHeroView;
+  dashboardSignal: Insight | null;
+  signalProvenance: SignalProvenance | null;
+}) {
+  const investigateHref = hero.investigate.href === "/dashboard" ? "/insights" : hero.investigate.href;
+
   return (
     <section className="overflow-hidden rounded-xl border border-zinc-200/90 bg-white shadow-sm ring-1 ring-black/[0.02]">
       <div className="grid gap-0 lg:grid-cols-2">
@@ -93,27 +89,50 @@ export function DashboardCommandCentreHero({ hero }: { hero: DashboardCommandCen
             ))}
           </ul>
           <p className="mt-2.5 text-[11px] leading-snug text-zinc-500">{hero.caveat}</p>
-          <Link
-            href="/insights"
-            className="mt-3 inline-flex items-center rounded-lg border border-zinc-200/90 bg-white/80 px-3 py-1.5 text-xs font-semibold text-zinc-900 shadow-sm ring-1 ring-black/[0.02] transition hover:border-zinc-300 hover:bg-white"
-          >
-            Open Diagnostic Insights →
-          </Link>
         </div>
 
         <div className="px-4 py-4 sm:px-5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Customer economics signals</p>
-          <div className="mt-2.5 grid grid-cols-2 gap-2.5">
-            {hero.signals.map((tile) => (
-              <SignalTile key={tile.id} tile={tile} />
-            ))}
-          </div>
+          {dashboardSignal ?
+            <div className="border-l-[3px] border-l-zinc-300 pl-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${severityBadgeClass(dashboardSignal.severity)}`}
+                >
+                  {severityLabel(dashboardSignal.severity)}
+                </span>
+                {dashboardSignal.sufficiency === "limited" ?
+                  <span className="inline-flex rounded-md border border-amber-200/90 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-950">
+                    Limited evidence
+                  </span>
+                : null}
+              </div>
+              <h2 className="mt-2 text-base font-semibold leading-snug text-zinc-900">{dashboardSignal.title}</h2>
+              <p className="mt-1.5 text-sm leading-relaxed text-zinc-700">{collapsedEvidenceLine(dashboardSignal.evidence)}</p>
+
+              <Collapsible defaultOpen={false} className="mt-3">
+                <CollapsibleTrigger className="flex w-full items-center gap-1.5 rounded-md py-1 text-left text-xs font-semibold text-zinc-800 hover:text-zinc-950 [&[data-state=open]>svg]:rotate-180">
+                  <ChevronDown className="size-3.5 shrink-0 text-zinc-500 transition-transform" aria-hidden />
+                  Show detail
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3 space-y-4 border-t border-zinc-100 pt-4">
+                  <SignalDisclosure signal={dashboardSignal} />
+                  {signalProvenance ? <ProvenanceDisclosure provenance={signalProvenance} /> : null}
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+          : <div className="rounded-lg border border-zinc-200/90 bg-zinc-50/80 px-3 py-3 text-sm text-zinc-700">
+              <p className="font-semibold text-zinc-900">Signal unavailable</p>
+              <p className="mt-1 text-xs leading-relaxed">
+                Insufficient customer population to evaluate revenue durability for this source.
+              </p>
+            </div>
+          }
         </div>
       </div>
 
       <div className="grid gap-0 border-t border-zinc-100 sm:grid-cols-3">
         <div
-          className={`border-b border-zinc-100 border-l-[3px] px-4 py-3 sm:border-b-0 sm:border-r ${leakAccentClass(hero)} bg-white`}
+          className={`border-b border-zinc-100 border-l-[3px] px-4 py-3 sm:border-b-0 sm:border-r ${leakAccentClass(hero.posture)} bg-white`}
         >
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">{hero.biggestLeak.label}</p>
           <p className="mt-1 text-sm leading-snug text-zinc-800">{hero.biggestLeak.detail}</p>
@@ -126,7 +145,7 @@ export function DashboardCommandCentreHero({ hero }: { hero: DashboardCommandCen
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Investigate next</p>
           <p className="mt-1 text-sm leading-snug text-zinc-800">{hero.investigate.detail}</p>
           <Link
-            href={hero.investigate.href}
+            href={investigateHref}
             className="mt-1.5 inline-flex items-center gap-1 text-sm font-semibold text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-500"
           >
             {hero.investigate.label}

@@ -1,51 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { KpiMetricLabel } from "@/components/ui/kpi-metric-label";
-import type { MetricDataQuality, MetricId } from "@/lib/metrics/metric-definitions";
 import type {
   DashboardAcquisitionExecutiveView,
   DashboardDataCompletenessView,
-  DashboardProductHighlightView,
   DashboardProductQualityExecutiveView,
   DataCompletenessStatus,
 } from "@/lib/metrics/dashboard-executive-spine";
-import { MIN_CUSTOMERS_FOR_SIGNAL } from "@/lib/metrics/product-quality";
-import type { ProductQualitySignal } from "@/lib/metrics/product-quality";
-
-function formatMoney(amount: number | null | undefined): string {
-  if (amount == null || Number.isNaN(amount)) return "—";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
-function formatRatio(n: number | null | undefined, digits = 1): string {
-  if (n == null || !Number.isFinite(n)) return "—";
-  return `${n.toFixed(digits)}×`;
-}
-
-function formatPct(rate: number | null | undefined, digits = 1): string {
-  if (rate == null || Number.isNaN(rate)) return "—";
-  return `${(rate * 100).toFixed(digits)}%`;
-}
-
-const SIGNAL_STYLES: Record<ProductQualitySignal, string> = {
-  strong: "border-emerald-200/90 bg-emerald-50 text-emerald-900",
-  watch: "border-amber-200/90 bg-amber-50 text-amber-950",
-  weak: "border-rose-200/90 bg-rose-50 text-rose-950",
-  insufficient_data: "border-zinc-200/90 bg-zinc-100 text-zinc-700",
-};
-
-const SIGNAL_LABELS: Record<ProductQualitySignal, string> = {
-  strong: "Strong",
-  watch: "Watch",
-  weak: "Weak",
-  insufficient_data: "Insufficient data",
-};
 
 const COMPLETENESS_STYLES: Record<DataCompletenessStatus, string> = {
   unlocked: "border-emerald-200/90 bg-emerald-50/80 text-emerald-900",
@@ -59,244 +20,34 @@ const COMPLETENESS_LABELS: Record<DataCompletenessStatus, string> = {
   locked: "Locked",
 };
 
-function QualitySignalBadge({ signal }: { signal: ProductQualitySignal }) {
-  return (
-    <span
-      className={`inline-flex rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${SIGNAL_STYLES[signal]}`}
-    >
-      {SIGNAL_LABELS[signal]}
-    </span>
-  );
+function formatPct(rate: number | null | undefined, digits = 1): string {
+  if (rate == null || Number.isNaN(rate)) return "—";
+  return `${(rate * 100).toFixed(digits)}%`;
 }
 
-function CompactKpi({
-  label,
-  value,
-  sub,
-  metricId,
-  dataQuality,
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-  metricId?: MetricId;
-  dataQuality?: MetricDataQuality;
-}) {
-  return (
-    <div>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
-        <KpiMetricLabel metricId={metricId} dataQuality={dataQuality} tooltipSize="sm">
-          {label}
-        </KpiMetricLabel>
-      </p>
-      <p className="mt-1 text-lg font-semibold tabular-nums text-zinc-900">{value}</p>
-      {sub ? <p className="mt-0.5 text-[11px] leading-snug text-zinc-600">{sub}</p> : null}
-    </div>
-  );
+function acquisitionSummary(acquisition: DashboardAcquisitionExecutiveView, isUploaded: boolean): string {
+  if (acquisition.lockedMissingSpend) {
+    return isUploaded
+      ? "Locked — attach marketing spend on Data to unlock CAC and payback."
+      : "Locked — no marketing spend on the active demo source.";
+  }
+  if (acquisition.spendIsEstimated) {
+    return `Estimated economics — CAC and LTV:CAC use spend assumptions from Data. Payback: ${acquisition.paybackLabel}.`;
+  }
+  return `Blended CAC and LTV:CAC available. Payback: ${acquisition.paybackLabel}.`;
 }
 
-function ProductHighlight({
-  label,
-  highlight,
-}: {
-  label: string;
-  highlight: DashboardProductHighlightView;
-}) {
-  return (
-    <div className="rounded-md border border-zinc-100 bg-zinc-50/80 px-3 py-2.5">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-zinc-900">{highlight.productTitle}</p>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <QualitySignalBadge signal={highlight.qualitySignal} />
-        <span className="text-[11px] tabular-nums text-zinc-600">
-          Repeat {formatPct(highlight.repeatPurchaseRate)} · F2S {formatPct(highlight.firstToSecondWithinWindowRate)}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function AcquisitionEconomicsCard({
-  acquisition,
-  isUploaded,
-}: {
-  acquisition: DashboardAcquisitionExecutiveView;
-  isUploaded: boolean;
-}) {
-  return (
-    <div className="flex h-full flex-col rounded-xl border border-zinc-200/90 bg-white p-4 shadow-sm ring-1 ring-black/[0.02] sm:p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-semibold text-zinc-900">Acquisition economics</h3>
-          <p className="mt-1 text-xs leading-relaxed text-zinc-600">Blended CAC, LTV:CAC, and payback posture.</p>
-        </div>
-        <Link
-          href="/acquisition"
-          className="shrink-0 text-xs font-medium text-zinc-700 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-900 hover:decoration-zinc-500"
-        >
-          Open →
-        </Link>
-      </div>
-
-      {acquisition.lockedMissingSpend ?
-        <div className="mt-4 rounded-lg border border-amber-200/90 bg-amber-50/80 px-3 py-3 text-sm leading-relaxed text-amber-950">
-          <p className="font-semibold">Locked — marketing spend required</p>
-          <p className="mt-1.5 text-xs">
-            {isUploaded ?
-              "Uploaded orders are active, but no marketing spend is attached to this session source."
-            : "No marketing spend is attached to the active demo source for acquisition economics."}{" "}
-            Save a marketing spend % assumption or CSV on{" "}
-            <Link href="/data" className="font-medium underline decoration-amber-400 underline-offset-2">
-              /data
-            </Link>{" "}
-            to unlock CAC, LTV:CAC, and payback here.
-          </p>
-        </div>
-      : <>
-          {acquisition.spendIsEstimated ?
-            <div className="mt-4 rounded-lg border border-amber-200/90 bg-amber-50/70 px-3 py-2.5 text-xs leading-relaxed text-amber-950">
-              <span className="font-semibold">Estimated acquisition economics</span> — marketing spend is derived from your % assumption on{" "}
-              <Link href="/data" className="font-medium underline decoration-amber-400 underline-offset-2">
-                /data
-              </Link>
-              , not imported spend.
-            </div>
-          : null}
-          <div className="mt-4 grid grid-cols-2 gap-4">
-          <CompactKpi
-            label={acquisition.spendIsEstimated ? "Blended CAC (est.)" : "Blended CAC"}
-            value={formatMoney(acquisition.blendedCac)}
-            sub="Total spend ÷ customers"
-            metricId="blended_cac"
-            dataQuality={acquisition.spendIsEstimated ? "estimated" : "actual"}
-          />
-          <CompactKpi
-            label={acquisition.spendIsEstimated ? "Rev LTV:CAC (est.)" : "Rev LTV:CAC"}
-            value={formatRatio(acquisition.revenueLtvToCac)}
-            sub="Terminal revenue lens"
-            metricId="revenue_ltv_cac"
-            dataQuality={acquisition.spendIsEstimated ? "estimated" : "actual"}
-          />
-          <CompactKpi
-            label={acquisition.spendIsEstimated ? "Contrib LTV:CAC (est.)" : "Contrib LTV:CAC"}
-            value={formatRatio(acquisition.contributionLtvToCac)}
-            sub="Requires contribution path"
-            metricId="contribution_ltv_cac"
-            dataQuality={acquisition.spendIsEstimated ? "estimated" : "partial"}
-          />
-          <CompactKpi
-            label={acquisition.spendIsEstimated ? "Payback (est.)" : "Payback"}
-            value={acquisition.paybackLabel}
-            metricId="payback"
-            dataQuality={acquisition.spendIsEstimated ? "estimated" : "partial"}
-          />
-        </div>
-        </>
-      }
-
-      {!acquisition.lockedMissingSpend && acquisition.paybackStatus === "locked_no_contribution" ?
-        <p className="mt-3 text-xs leading-relaxed text-zinc-600">
-          Contribution payback needs imported contribution_margin or margin assumptions on{" "}
-          <Link href="/data" className="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2">
-            /data
-          </Link>
-          .
-        </p>
-      : null}
-    </div>
-  );
-}
-
-function ProductQualityCard({ productQuality }: { productQuality: DashboardProductQualityExecutiveView }) {
-  return (
-    <div className="flex h-full flex-col rounded-xl border border-zinc-200/90 bg-white p-4 shadow-sm ring-1 ring-black/[0.02] sm:p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-semibold text-zinc-900">
-            <KpiMetricLabel metricId="product_quality">Product quality</KpiMetricLabel>
-          </h3>
-          <p className="mt-1 text-xs leading-relaxed text-zinc-600">First-product customer quality — not SKU volume.</p>
-        </div>
-        <Link
-          href="/products"
-          className="shrink-0 text-xs font-medium text-zinc-700 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-900 hover:decoration-zinc-500"
-        >
-          Open →
-        </Link>
-      </div>
-
-      <div className="mt-4">
-        <CompactKpi
-          label="Segment coverage"
-          value={productQuality.segmentCoverageLabel}
-          sub={`≥${MIN_CUSTOMERS_FOR_SIGNAL} customers per entry-product segment`}
-        />
-      </div>
-
-      {productQuality.state === "locked_no_line_items" ?
-        <div className="mt-4 rounded-lg border border-amber-200/90 bg-amber-50/80 px-3 py-3 text-sm leading-relaxed text-amber-950">
-          <p className="font-semibold">Locked — line-item product data required</p>
-          <p className="mt-1.5 text-xs">
-            Upload combined order + line-item CSV with{" "}
-            <span className="font-mono text-[11px]">product_id</span> on{" "}
-            <Link href="/data" className="font-medium underline decoration-amber-400 underline-offset-2">
-              /data
-            </Link>
-            .
-          </p>
-        </div>
-      : null}
-
-      {productQuality.state === "insufficient_segments" ?
-        <div className="mt-4 rounded-lg border border-zinc-200/90 bg-zinc-50/90 px-3 py-3 text-sm leading-relaxed text-zinc-800">
-          <p className="font-semibold text-zinc-900">Insufficient data — segments below threshold</p>
-          <p className="mt-1.5 text-xs">
-            Line items are present, but no entry-product segment meets the {MIN_CUSTOMERS_FOR_SIGNAL}-customer minimum. This
-            is insufficient data, not a weak/strong ranking.
-          </p>
-        </div>
-      : null}
-
-      {productQuality.state === "ready" && productQuality.strongest && productQuality.weakest ?
-        <div className="mt-4 space-y-2">
-          <ProductHighlight label="Strongest entry product" highlight={productQuality.strongest} />
-          <ProductHighlight label="Weakest entry product" highlight={productQuality.weakest} />
-        </div>
-      : null}
-    </div>
-  );
-}
-
-function DataCompletenessStrip({ dataCompleteness }: { dataCompleteness: DashboardDataCompletenessView }) {
-  return (
-    <section className="rounded-xl border border-zinc-200/90 bg-white p-4 shadow-sm ring-1 ring-black/[0.02] sm:p-5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-zinc-900">Data completeness</h3>
-        <Link
-          href="/data"
-          className="text-xs font-medium text-zinc-700 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-900"
-        >
-          Manage on Data →
-        </Link>
-      </div>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {dataCompleteness.rows.map((row) => (
-          <span
-            key={row.id}
-            className="inline-flex items-center gap-1.5 rounded-md border border-zinc-100 bg-zinc-50/80 px-2.5 py-1.5 ring-1 ring-black/[0.02]"
-            title={row.detail}
-          >
-            <span className="text-[11px] font-medium text-zinc-800">{row.label}</span>
-            <span
-              className={`shrink-0 rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${COMPLETENESS_STYLES[row.status]}`}
-            >
-              {COMPLETENESS_LABELS[row.status]}
-            </span>
-          </span>
-        ))}
-      </div>
-    </section>
-  );
+function productSummary(productQuality: DashboardProductQualityExecutiveView): string {
+  if (productQuality.state === "locked_no_line_items") {
+    return "Locked — upload line items with product_id on Data.";
+  }
+  if (productQuality.state === "insufficient_segments") {
+    return `Insufficient segments — ${productQuality.segmentCoverageLabel}.`;
+  }
+  if (productQuality.strongest && productQuality.weakest) {
+    return `Strongest entry: ${productQuality.strongest.productTitle} (${formatPct(productQuality.strongest.repeatPurchaseRate)} repeat). Weakest: ${productQuality.weakest.productTitle}.`;
+  }
+  return productQuality.segmentCoverageLabel;
 }
 
 export function DashboardSpinePanels({
@@ -311,13 +62,68 @@ export function DashboardSpinePanels({
   isUploaded: boolean;
 }) {
   return (
-    <div className="space-y-4">
-      <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Command-centre spine</h2>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <AcquisitionEconomicsCard acquisition={acquisition} isUploaded={isUploaded} />
-        <ProductQualityCard productQuality={productQuality} />
+    <section className="rounded-xl border border-zinc-200/90 bg-white p-4 shadow-sm ring-1 ring-black/[0.02] sm:p-5">
+      <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Supporting evidence</h2>
+      <div className="mt-4 space-y-3">
+        <SupportingRow
+          label="Acquisition"
+          summary={acquisitionSummary(acquisition, isUploaded)}
+          href="/acquisition"
+        />
+        <SupportingRow label="Products" summary={productSummary(productQuality)} href="/products" />
+        <div>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Data completeness</p>
+            <Link
+              href="/data"
+              className="text-xs font-medium text-zinc-700 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-900"
+            >
+              Manage on Data →
+            </Link>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {dataCompleteness.rows.map((row) => (
+              <span
+                key={row.id}
+                className="inline-flex items-center gap-1.5 rounded-md border border-zinc-100 bg-zinc-50/80 px-2.5 py-1.5 ring-1 ring-black/[0.02]"
+                title={row.detail}
+              >
+                <span className="text-[11px] font-medium text-zinc-800">{row.label}</span>
+                <span
+                  className={`shrink-0 rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${COMPLETENESS_STYLES[row.status]}`}
+                >
+                  {COMPLETENESS_LABELS[row.status]}
+                </span>
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
-      <DataCompletenessStrip dataCompleteness={dataCompleteness} />
+    </section>
+  );
+}
+
+function SupportingRow({
+  label,
+  summary,
+  href,
+}: {
+  label: string;
+  summary: string;
+  href: string;
+}) {
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-2 border-b border-zinc-100 pb-3 last:border-b-0 last:pb-0">
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">{label}</p>
+        <p className="mt-1 text-sm leading-snug text-zinc-800">{summary}</p>
+      </div>
+      <Link
+        href={href}
+        className="shrink-0 text-xs font-medium text-zinc-700 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-900"
+      >
+        Open →
+      </Link>
     </div>
   );
 }

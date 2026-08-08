@@ -134,7 +134,7 @@ Exclusions: `.next`, generated output, `node_modules`, non-route backups, archiv
 | Route/auth handlers | 20 | 2 keep + 10 quarantine + 4 investigate + 4 delete later |
 | Missing literal fetch targets | 8 | Eight fetch URLs have no matching tracked `route.ts` |
 
-**Discrepancy explained:** `git ls-files -- "app/**/page.tsx"` returns 53 because that pathspec omits root `app/page.tsx`. Adding `app/page.tsx` explicitly returns 54. `docs/route-audit.md` reported 50 pages in 2024; the current count is four higher, but this audit does not infer the historical delta without a commit-to-commit route diff.
+**Discrepancy explained:** `git ls-files -- "app/**/page.tsx"` returns 53 because that pathspec omits root `app/page.tsx`. Adding `app/page.tsx` explicitly returns 54. The historical 2024 route audit in [`docs/archive/pre-restart/route-audit.md`](archive/pre-restart/route-audit.md) reported 50 pages; the current count is four higher, but this audit does not infer the historical delta without a commit-to-commit route diff.
 
 ## 4. Page route inventory
 
@@ -361,26 +361,27 @@ Package usage statements below are **Confirmed**. **Investigate** is used only w
 
 ## 9. Documentation disposition
 
-| Document | Role after 5U-A | Disposition |
+Live governing documents are listed in [`AGENTS.md`](../AGENTS.md) and [`docs/archive/README.md`](archive/README.md). **Do not use archived files for implementation authority.**
+
+| Location | Role | Disposition |
 |---|---|---|
-| `docs/RETENTIONOS_ARCHITECTURE.md` | Current architecture source of truth | Keep |
-| `docs/METRIC_CONTRACTS.md` | Canonical source-to-screen metric contracts (Sprint 5U-B) | Keep |
-| `README.md` | Current project entry point; links here | Keep |
-| `docs/agent/SPRINT_RUNBOOK.md` | Current operating workflow; links here | Keep |
-| `RETENTIONOS_UPLOADED_DATA_MVP_CHECKPOINT.md` | Historical upload milestone and supporting CSV detail | Keep |
-| `docs/agent/METRIC_ENGINE_INVENTORY.md` | Historical Sprint A–E inventory | Quarantine |
-| `docs/route-audit.md` | Historical 2024 route audit | Quarantine |
-| `docs/active-metrics-map.md` | Historical RED dashboard / legacy metric map | Quarantine |
-| `MVP_STATUS.md` | Pre-restart historical status | Quarantine |
-| `RETENTIONOS_RESTART_AUDIT_V2.md` | Historical six-route restart comparison | Quarantine |
+| `docs/RETENTIONOS_ARCHITECTURE.md` | Current architecture source of truth | **Keep (live)** |
+| `docs/METRIC_CONTRACTS.md` | Canonical source-to-screen metric contracts | **Keep (live)** |
+| `README.md` | Current project entry point | **Keep (live)** |
+| `docs/archive/README.md` | Archive index and canonical surface list | **Keep (live)** |
+| `docs/archive/phase0-legacy/` | Phase 0 trust audits for quarantined `/retention-ltv/*` pages | **Archived** — historical evidence only |
+| `docs/archive/pre-restart/` | Pre-restart audits, superseded runbooks, deployment notes | **Archived** — historical evidence only |
+| `docs/agent/sprints/` | Frozen sprint records | **Keep (live evidence)** — not product SoT |
+
+Former §9 entries (`SPRINT_RUNBOOK`, `UPLOADED_DATA_MVP_CHECKPOINT`, `METRIC_ENGINE_INVENTORY`, `route-audit`, `active-metrics-map`, `MVP_STATUS`, `RESTART_AUDIT_V2`) are in `docs/archive/pre-restart/` or `phase0-legacy/` after Sprint DOC-TRUTH-CONSOLIDATE.
 
 ## 10. Current program state
 
 **Metric foundation:** **METRIC_FOUNDATION_CLOSED** (contracted MetricId set remains 22; formula ledger in [`METRIC_CONTRACTS.md`](./METRIC_CONTRACTS.md)).
 
-**Current execution sequence** is owned by [`PRODUCT_RECONCILIATION_BACKLOG.md`](PRODUCT_RECONCILIATION_BACKLOG.md) §10 — do not duplicate the full sequence here. After documentation alignment (`DOC-AGENT-ALIGN`), next shared-system work is `6A-SIGNAL` → `6A-MATRIX` → `6A-PROVENANCE`, then 6B page upgrades, later 6C consolidation, and later PRE6D / 6D production Shopify ingestion.
+**Current execution sequence** is owned by [`PRODUCT_RECONCILIATION_BACKLOG.md`](PRODUCT_RECONCILIATION_BACKLOG.md) §10 — do not duplicate the full sequence here. **6A shared analytical systems are shipped** (Signal / Matrix / Provenance composition). **6B Visible Analytical Product** page upgrades are the active remaining spine presentation work, then later 6C consolidation, and later PRE6D / 6D production Shopify ingestion.
 
-**Still deferred / not live on the canonical spine:** production Shopify ingestion; channel-quality engine; numerical 0–100 Revenue Durability Score; Signal/Matrix/Provenance shared UI layer; 6B analytical page upgrades. Demo/CSV and fixture adapter parity are not production Shopify connectivity.
+**Still deferred / not live on the canonical spine:** production Shopify ingestion; channel-quality engine; numerical 0–100 Revenue Durability Score; Signal/Matrix/Provenance **page UI wiring** (6B); full legacy route deletion (6C). Demo/CSV and fixture adapter parity are not production Shopify connectivity.
 
 Route/API behavior changes, migrations, dependency removal, and legacy deletion require separately approved sprints.
 

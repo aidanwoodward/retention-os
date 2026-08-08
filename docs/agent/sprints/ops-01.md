@@ -48,9 +48,9 @@ Accelerates every RetentionOS sprint by automating GitHub repetition while keepi
 - `docs/agent/SPRINT_RECORD.md` (create)
 - `docs/agent/sprints/ops-01.md` (create)
 - `AGENTS.md` (modify)
-- `docs/agent/SPRINT_RUNBOOK.md` (modify lightly)
+- `docs/archive/pre-restart/SPRINT_RUNBOOK.md` (modify lightly)
 - `docs/agent/PR_WORKFLOW.md` (modify lightly)
-- `docs/agent/SPRINT_TEMPLATE.md` (modify lightly)
+- `docs/archive/pre-restart/SPRINT_TEMPLATE.md` (modify lightly)
 
 ### Stop conditions
 

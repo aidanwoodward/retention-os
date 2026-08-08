@@ -625,13 +625,15 @@ Presentation composition for 6B pages: [`VISIBLE_PRODUCT_BIBLE.md`](VISIBLE_PROD
 | **MET-AOV-FREQ** | Shipped |
 | **MET-CONCENTRATION** | Shipped |
 | **MET-FIRST-PRODUCT-RULE** | Shipped |
-| **MET-RDS-MATURITY** | Shipped (completed-only Month+N aggregates; PR #41) |
+| **MET-RDS-MATURITY** | Shipped (completed-only Month+N aggregates; PR #41)[^met-rds-maturity] |
 | **DOC-AGENT-ALIGN** | Shipped |
 | **6A-SIGNAL** | Shipped (PR #43) — contract only; page chrome is 6B |
 | **6A-MATRIX** | Shipped (PR #44) — placement policy only; UI wiring is 6B |
 | **6A-PROVENANCE** | Shipped (PR #45) — composition only; banners/panels are 6B |
 
 Metric foundations were isolated work items — do not combine reopened formula work into a broad UI sprint without founder approval.
+
+[^met-rds-maturity]: **MET-RDS-MATURITY process note:** implementation is merged on `restart-retentionos-mvp` (PR #41; shared helper `averageCompletedCohortRetentionAtOffset`). The frozen sprint record [`agent/sprints/met-rds-maturity.md`](agent/sprints/met-rds-maturity.md) retains `BLOCKED` / `BLOCKED_REVIEWER_UNAVAILABLE` as its historical process state per Ops-01 freeze rules — not as a claim that the code is absent.
 
 ### 10.3 Remaining work items
 

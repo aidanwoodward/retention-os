@@ -54,7 +54,7 @@ Modify:
 - `AGENTS.md`
 - `docs/PRODUCT_RECONCILIATION_BACKLOG.md`
 - `docs/RETENTIONOS_ARCHITECTURE.md`
-- `docs/revenue-cohorts-ui-consistency-template.md`
+- `docs/archive/pre-restart/revenue-cohorts-ui-consistency-template.md`
 
 ### Stop conditions
 

@@ -8,7 +8,7 @@ This document defines how to create, review, merge, and recover from mistakes wh
 
 **Ops-01 path:** For Ops-01 sprints, use authenticated GitHub CLI (`gh`) as specified in [OPS_01.md](./OPS_01.md). Do not merge without Founder Gate 2. After Gate 2, post a required `gh pr comment`, then `gh pr merge --squash --delete-branch`. Do not create a repository commit solely to record Gate 2 or mark the sprint `DONE`.
 
-Related: [OPS_01.md](./OPS_01.md) · [SPRINT_RUNBOOK.md](./SPRINT_RUNBOOK.md)
+Related: [OPS_01.md](./OPS_01.md) · historical [SPRINT_RUNBOOK.md](../archive/pre-restart/SPRINT_RUNBOOK.md) (archived; OPS_01 is canonical)
 
 ---
 
@@ -217,7 +217,7 @@ Report completion in chat. Do **not** add a post-merge commit solely to flip the
 Treat as incident:
 1. Revert on `main` (see above) — do not force-push `main` without team agreement.
 2. Confirm the change lands on `restart-retentionos-mvp` via a correct PR.
-3. Document what happened in BUILD_LOG.md.
+3. Document what happened in chat; optional session notes may go in [archive/pre-restart/BUILD_LOG.md](../archive/pre-restart/BUILD_LOG.md) (historical, not required for Ops-01 closeout).
 
 ### Failed CI
 

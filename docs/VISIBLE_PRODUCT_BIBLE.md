@@ -54,7 +54,17 @@ This document is **not**:
 
 Do not duplicate formulas into this Bible. Do not invent parallel work-item IDs here; cite backlog §10.3 IDs only.
 
-Historical UI pattern notes for quarantined Revenue Cohorts live in [`revenue-cohorts-ui-consistency-template.md`](revenue-cohorts-ui-consistency-template.md) and are **not** active presentation authority.
+Historical UI pattern notes for quarantined Revenue Cohorts live in [`archive/pre-restart/revenue-cohorts-ui-consistency-template.md`](archive/pre-restart/revenue-cohorts-ui-consistency-template.md) and are **not** active presentation authority.
+
+---
+
+## 2a. Lovable and external design tools — authority boundaries
+
+**Lovable** (and similar visual exploration tools) may govern **visual exploration and interaction design** only: layout rhythm, component styling, motion, and non-contractual UX polish on the eight-route spine.
+
+**Verified production contracts govern** metrics, formulas, calculations, data availability, Signal logic, backend behaviour, and causal claims. Sources: [`METRIC_CONTRACTS.md`](METRIC_CONTRACTS.md), metric registries, [`PRODUCT_RECONCILIATION_BACKLOG.md`](PRODUCT_RECONCILIATION_BACKLOG.md) §2–§5, [`IMPORT_TRUST.md`](IMPORT_TRUST.md), Shopify contracts, and [`RETENTIONOS_ARCHITECTURE.md`](RETENTIONOS_ARCHITECTURE.md).
+
+**Rule:** Lovable output must **not** override those contracts. When design exploration conflicts with contracted behaviour, contracts win — adjust presentation, not formulas, data paths, or Signal semantics.
 
 ---
 

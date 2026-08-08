@@ -2,7 +2,9 @@
 
 ## Status
 
-`AWAITING_FOUNDER_MERGE_APPROVAL`
+`DONE`
+
+Post-merge closeout recorded 2026-08-08. **Awaiting founder closeout commit approval** (`AWAITING_FOUNDER_CLOSEOUT_APPROVAL`).
 
 ## Final plan and scope
 
@@ -98,16 +100,19 @@ Reduce agent and Lovable misrouting risk by making the 14-document live surface 
 
 ### PR
 
-- URL: (not created — awaiting Gate 2)
+- URL: https://github.com/aidanwoodward/retention-os/pull/48
+- Number: **#48**
 - Base: `restart-retentionos-mvp`
-- Head SHA: pending
+- Approved head SHA: `edfb09fd8eb58e65d67c663c8796181d0480d8f2`
+- Merged integration SHA: `aa7c427dfdad57fa4b320fdd424cc3420a9a82b0` (squash merge)
 
 ### Checks
 
-- `gh pr checks --watch`: not run
-- CI validate: not run
-- Vercel: not run
+- `gh pr checks`: pass
+- CI validate: pass
+- Vercel: pass
+- Vercel Preview Comments: pass
 
 ## Notes
 
-Gate 2 approval and DONE are **not** written here after PR freeze.
+Founder Gate 2 approved; PR #48 squash-merged into `restart-retentionos-mvp` @ `aa7c427`. Sprint record updated post-merge per founder closeout instruction.

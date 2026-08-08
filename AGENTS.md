@@ -40,7 +40,14 @@ When documents disagree, prefer evidence in this order:
 | Shopify CSV path (implemented) | [docs/RETENTIONOS_SHOPIFY_CSV_CONTRACT.md](docs/RETENTIONOS_SHOPIFY_CSV_CONTRACT.md) |
 | Import honesty | [docs/IMPORT_TRUST.md](docs/IMPORT_TRUST.md) |
 | Operating gates | [docs/agent/OPS_01.md](docs/agent/OPS_01.md) |
+| PR workflow | [docs/agent/PR_WORKFLOW.md](docs/agent/PR_WORKFLOW.md) |
+| Demo narrative | [docs/RETENTIONOS_MVP_DEMO_SCRIPT.md](docs/RETENTIONOS_MVP_DEMO_SCRIPT.md) |
+| Dataset lifecycle | [docs/DATASET_LIFECYCLE.md](docs/DATASET_LIFECYCLE.md) |
+| Signal / Matrix / Provenance contracts | [docs/PRODUCT_RECONCILIATION_BACKLOG.md](docs/PRODUCT_RECONCILIATION_BACKLOG.md) §5 + `lib/insights/*` + `lib/provenance/*` |
 | Frozen sprint evidence | [docs/agent/sprints/](docs/agent/sprints/) |
+| Historical documentation (non-authoritative) | [docs/archive/README.md](docs/archive/README.md) |
+
+**Live documentation surface:** 14 canonical Markdown documents (this file, [README.md](README.md), nine product contracts under `docs/`, and `docs/agent/{OPS_01,PR_WORKFLOW,SPRINT_RECORD}.md`). Do not treat `docs/archive/` as implementation authority.
 
 Do not duplicate formulas, Shopify field semantics, or the full roadmap into this file. Follow the links.
 

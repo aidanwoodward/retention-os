@@ -4,7 +4,7 @@
 
 Canonical integration branch: `restart-retentionos-mvp`. Never work on `main`. PRs always target `restart-retentionos-mvp`.
 
-Related: [SPRINT_RECORD.md](./SPRINT_RECORD.md) · [SPRINT_RUNBOOK.md](./SPRINT_RUNBOOK.md) · [PR_WORKFLOW.md](./PR_WORKFLOW.md) · [AGENTS.md](../../AGENTS.md)
+Related: [SPRINT_RECORD.md](./SPRINT_RECORD.md) · [PR_WORKFLOW.md](./PR_WORKFLOW.md) · [AGENTS.md](../../AGENTS.md) · historical runbooks in [archive/pre-restart/](../archive/pre-restart/)
 
 ---
 

@@ -61,10 +61,10 @@ Modify:
 - `docs/RETENTIONOS_ARCHITECTURE.md`
 - `lib/metrics/golden/GOLDEN_EXPECTED_RESULTS.md`
 - `docs/RETENTIONOS_MVP_DEMO_SCRIPT.md`
-- `docs/roadmap-analysis.md`
-- `RETENTIONOS_RESTART_AUDIT.md`
-- `RETENTIONOS_UPLOADED_DATA_MVP_CHECKPOINT.md`
-- `docs/agent/BUILD_LOG.md`
+- `docs/archive/pre-restart/roadmap-analysis.md`
+- `docs/archive/pre-restart/RETENTIONOS_RESTART_AUDIT.md`
+- `docs/archive/pre-restart/RETENTIONOS_UPLOADED_DATA_MVP_CHECKPOINT.md`
+- `docs/archive/pre-restart/BUILD_LOG.md`
 
 ### Stop conditions
 

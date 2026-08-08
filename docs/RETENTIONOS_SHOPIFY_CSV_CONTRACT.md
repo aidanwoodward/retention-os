@@ -11,7 +11,7 @@
 
 **Companions:**
 
-- [`RETENTIONOS_DATA_REQUIREMENTS.md`](RETENTIONOS_DATA_REQUIREMENTS.md) — data layers, metric unlock, onboarding gate
+- [`archive/pre-restart/RETENTIONOS_DATA_REQUIREMENTS.md`](archive/pre-restart/RETENTIONOS_DATA_REQUIREMENTS.md) — historical data-layer notes (superseded; see [`IMPORT_TRUST.md`](IMPORT_TRUST.md) and [`DATASET_LIFECYCLE.md`](DATASET_LIFECYCLE.md))
 - [`lib/import/csv-schema.ts`](../lib/import/csv-schema.ts) — RetentionOS canonical combined order + line-item contract
 - [`sample-shopify-orders-export.csv`](sample-shopify-orders-export.csv) — small realistic Shopify Admin export fixture
 - [`sample-retentionos-orders.csv`](sample-retentionos-orders.csv) — canonical target shape after adapter (reference)
@@ -204,7 +204,7 @@ The adapter **must reject or refuse to claim support** for:
 
 ## 9. Metric unlock (after successful adapter + save)
 
-Importing through this contract unlocks the same spine behaviour as a valid RetentionOS-formatted CSV (see [`RETENTIONOS_DATA_REQUIREMENTS.md`](RETENTIONOS_DATA_REQUIREMENTS.md) Layer 1–2):
+Importing through this contract unlocks the same spine behaviour as a valid RetentionOS-formatted CSV (see [`IMPORT_TRUST.md`](IMPORT_TRUST.md) and [`DATASET_LIFECYCLE.md`](DATASET_LIFECYCLE.md)):
 
 | Unlocked (typical) | Locked without extra data |
 |--------------------|---------------------------|

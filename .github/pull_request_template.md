@@ -15,8 +15,8 @@ Which RetentionOS MVP area does it improve?
 - [ ] Contribution LTV
 - [ ] CAC / payback
 - [ ] Product quality
-- [ ] Channel quality
-- [ ] Revenue Durability Score
+- [ ] Revenue Durability Posture
+- [ ] Data / import trust
 - [ ] Insights
 - [ ] CSV/demo data
 - [ ] Technical stability

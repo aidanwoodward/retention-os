@@ -2,7 +2,9 @@
 
 RetentionOS is a customer-economics operating system for ecommerce brands. Its current MVP is an eight-route Revenue Durability Command Centre for understanding cohorts, retention, LTV, acquisition economics, first-product customer quality, and diagnostic insights.
 
-The canonical architecture and complete route/API/dependency audit live in [docs/RETENTIONOS_ARCHITECTURE.md](docs/RETENTIONOS_ARCHITECTURE.md).
+**Canonical documentation** (14 live governing documents): [AGENTS.md](AGENTS.md) (agent routing table), [docs/RETENTIONOS_ARCHITECTURE.md](docs/RETENTIONOS_ARCHITECTURE.md) (routes and system boundaries), [docs/PRODUCT_RECONCILIATION_BACKLOG.md](docs/PRODUCT_RECONCILIATION_BACKLOG.md) (product boundary and execution sequence), [docs/METRIC_CONTRACTS.md](docs/METRIC_CONTRACTS.md) (KPI formulas), [docs/VISIBLE_PRODUCT_BIBLE.md](docs/VISIBLE_PRODUCT_BIBLE.md) (MVP presentation composition), plus import/Shopify/lifecycle contracts and Ops-01 workflow files listed in AGENTS.md.
+
+Historical evidence lives in [docs/archive/](docs/archive/) — not authoritative for implementation.
 
 ## Tech Stack
 

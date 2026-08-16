@@ -67,9 +67,11 @@ export const MVP_PAGE_COPY: Record<MvpRouteId, MvpPageCopy> = {
   },
   ltv: {
     title: "LTV ladders",
-    hook: "Cumulative net revenue LTV alongside modeled contribution LTV by cohort age.",
-    lookingAt: "Average cumulative net revenue and contribution per customer by months since first order.",
-    matters: "Net revenue LTV and contribution LTV tell different underwriting stories — keep both in view.",
+    hook: "How does customer value build across cohort months?",
+    lookingAt:
+      "Cumulative net merchandise LTV and contribution LTV by calendar cohort month (Month +N) — not elapsed-day windows.",
+    matters:
+      "Revenue and contribution LTV show how cumulative customer value builds across cohort months, with contribution dependent on available order-level inputs or the saved margin model.",
     nextSteps: [],
   },
   acquisition: {
@@ -135,7 +137,7 @@ export function getMvpPageCopyForActiveSource(
     cohorts: "Monthly first-order cohorts from your saved upload — net revenue, contribution, and Month +N active rates.",
     retention:
       "First-to-second within 90 days, all-time repeat, and calendar Month +N retention from your saved upload.",
-    ltv: "Cumulative net revenue and contribution LTV ladders from your saved upload.",
+    ltv: "Cumulative net merchandise and contribution LTV by calendar cohort month from your saved upload.",
     acquisition: "CAC, LTV:CAC, and payback from your upload plus marketing spend (add spend on Data if locked).",
     products: "First-product customer quality from your upload — requires line items with product IDs.",
     insights: "Diagnostic cards from transparent rules on your saved upload.",

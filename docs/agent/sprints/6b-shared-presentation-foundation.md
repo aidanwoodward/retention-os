@@ -84,9 +84,11 @@ Modify:
 
 ## Implementation summary
 
+- Implementation commit: `85a8be1` (`refactor(ui): add shared analytical presentation foundation`)
 - Added dumb `AnalyticalPanel` and `MetricStat`; barrel export in `components/analytical/index.ts`
-- Retention: 8× `MetricStat`; cohort table in `AnalyticalPanel`; removed local `Kpi` and duplicate table border wrapper
-- LTV: 7× `MetricStat`; ladder table in `AnalyticalPanel`; removed local `Kpi` and duplicate table border wrapper
+- Retention: 8 × `MetricStat`; cohort table in `AnalyticalPanel`; removed local `Kpi` and duplicate table border wrapper
+- LTV: 7 × `MetricStat`; ladder table in `AnalyticalPanel`; removed local `Kpi` and duplicate table border wrapper
+- `BlockedAnalysisCard` deferred; `/acquisition` and `/products` not touched
 - Closeout: stripped UTF-8 BOM from five Sprint 2 files (UTF-8 without BOM)
 - No VM, metric, Insights, acquisition, or products changes
 
@@ -96,7 +98,7 @@ Modify:
 - reviewer_mode: `independent_closeout`
 - builder_context_used: false
 - automation_sla_met: true
-- notes: Closeout verdict APPROVE FOR CLOSURE; BOM cleanup only in closeout pass.
+- notes: Independent review approved closure; BOM cleanup only in closeout pass.
 
 ## Validation and PR/check evidence
 
@@ -107,15 +109,19 @@ Modify:
 
 ### PR
 
-- URL:
+Not applicable — committed directly on integration branch `restart-retentionos-mvp`.
+
+- URL: (none)
 - Base: `restart-retentionos-mvp`
-- Head SHA:
+- Head SHA: `85a8be15935f3a54d4740a4af6a06f011dce8b14` (implementation commit)
 
 ### Checks
 
-- `gh pr checks --watch`:
-- CI validate:
-- Vercel:
+Not applicable — no PR opened for this sprint record hygiene fix.
+
+- `gh pr checks --watch`: (none)
+- CI validate: (none)
+- Vercel: (none)
 
 ## Notes
 

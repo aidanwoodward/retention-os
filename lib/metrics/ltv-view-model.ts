@@ -1,7 +1,6 @@
 import {
   getMonthlyCohortMaturityStatus,
   inferConservativeAsOfDateFromDataset,
-  isCompletedMaturityOffsetAvailable,
   type MaturityStatus,
 } from "../analysis-context";
 import { buildDemoRetentionOSDataset, type RetentionOSDataset } from "../data-source";
@@ -9,9 +8,9 @@ import type { LTVPoint } from "../types";
 import type { MarginAssumptions } from "../types/scenario";
 import { isIdentifiedOrder, type Order } from "../types/order";
 import type { MetricDataQuality } from "./metric-definitions";
+import { averageCompletedCohortLtvAtOffset } from "./completed-cohort-ltv";
 import { calculateCohorts, type CohortSummary } from "./cohorts";
 import { calculateLTVByCohort } from "./ltv";
-import { safeDivide } from "./utils";
 
 export type { MaturityStatus };
 
@@ -189,42 +188,6 @@ function contributionDataQualityForPath(path: LtvContributionSourcePath): Metric
   return "partial";
 }
 
-/**
- * Unweighted mean of canonical staircase values at `offset` among cohorts whose Month+N
- * observation is complete. Missing engine points and missing contribution fields are skipped
- * (not treated as zero).
- */
-function averageCompletedLtvAtOffset(
-  cohortPeriods: readonly string[],
-  curvesByCohort: ReadonlyMap<string, LTVPoint[]>,
-  offset: number,
-  asOfDate: string,
-  field: "revenue" | "contribution",
-): number | null {
-  const values: number[] = [];
-  for (const period of cohortPeriods) {
-    if (!isCompletedMaturityOffsetAvailable(period, offset, asOfDate)) {
-      continue;
-    }
-    const point = pointAtOffset(curvesByCohort.get(period) ?? [], offset);
-    if (!point) {
-      continue;
-    }
-    const raw = field === "revenue" ? point.cumulativeAvgGrossRevenue : point.cumulativeAvgContribution;
-    if (raw == null || !Number.isFinite(raw)) {
-      continue;
-    }
-    values.push(raw);
-  }
-  if (values.length === 0) {
-    return null;
-  }
-  return safeDivide(
-    values.reduce((sum, v) => sum + v, 0),
-    values.length,
-  );
-}
-
 function buildCohortRows(
   cohortSummaries: readonly CohortSummary[],
   curvesByCohort: ReadonlyMap<string, LTVPoint[]>,
@@ -279,19 +242,19 @@ export function buildLTVPageViewModelFromDataset(dataset: RetentionOSDataset): L
       avgCompletedMonthPlus1NetRevenueLtv:
         asOfDate == null
           ? null
-          : averageCompletedLtvAtOffset(cohortPeriods, curvesByCohort, 1, asOfDate, "revenue"),
+          : averageCompletedCohortLtvAtOffset(cohortPeriods, curvesByCohort, 1, asOfDate, "revenue"),
       avgCompletedMonthPlus1ContributionLtv:
         asOfDate == null
           ? null
-          : averageCompletedLtvAtOffset(cohortPeriods, curvesByCohort, 1, asOfDate, "contribution"),
+          : averageCompletedCohortLtvAtOffset(cohortPeriods, curvesByCohort, 1, asOfDate, "contribution"),
       avgCompletedMonthPlus3NetRevenueLtv:
         asOfDate == null
           ? null
-          : averageCompletedLtvAtOffset(cohortPeriods, curvesByCohort, 3, asOfDate, "revenue"),
+          : averageCompletedCohortLtvAtOffset(cohortPeriods, curvesByCohort, 3, asOfDate, "revenue"),
       avgCompletedMonthPlus3ContributionLtv:
         asOfDate == null
           ? null
-          : averageCompletedLtvAtOffset(cohortPeriods, curvesByCohort, 3, asOfDate, "contribution"),
+          : averageCompletedCohortLtvAtOffset(cohortPeriods, curvesByCohort, 3, asOfDate, "contribution"),
       contributionSourcePath,
       contributionDataQuality: contributionDataQualityForPath(contributionSourcePath),
     },

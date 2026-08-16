@@ -81,6 +81,7 @@ export {
 } from "./retention";
 
 export { averageCompletedCohortRetentionAtOffset } from "./completed-cohort-retention";
+export { averageCompletedCohortLtvAtOffset } from "./completed-cohort-ltv";
 
 export {
   calculateRepeatPurchaseRate,
@@ -117,6 +118,7 @@ export {
   type CohortMonthTableRowView,
   type CohortsPageSummaryView,
   type CohortsPageViewModel,
+  type MaturityStatus,
 } from "./cohort-view-model";
 
 export {

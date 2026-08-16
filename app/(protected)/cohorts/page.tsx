@@ -1,18 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { AnalyticalPanel, MetricStat } from "@/components/analytical";
 import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
 import { DatasetSourceUnavailablePanel } from "@/components/mvp/DatasetSourceUnavailablePanel";
+import { DiagnosisContinueSection } from "@/components/mvp/DiagnosisContinueSection";
 import { MetricSourceBanner } from "@/components/mvp/MetricSourceBanner";
 import { frameSourceFromSelection } from "@/lib/data-source/client-selected-source";
 import { useCommandCentreDatasetSelection } from "@/lib/data-source/use-command-centre-dataset-selection";
 import {
-  buildCohortMatrixFromDataset,
   buildCohortsPageViewModelFromDataset,
-  type CohortMatrixCell,
-  type CohortMatrixMetricKind,
-  type CohortMatrixModel,
   type CohortMonthTableRowView,
+  type MaturityStatus,
 } from "@/lib/metrics";
 
 function formatPct(rate: number | null | undefined, digits = 1): string {
@@ -22,7 +21,10 @@ function formatPct(rate: number | null | undefined, digits = 1): string {
   return `${(rate * 100).toFixed(digits)}%`;
 }
 
-function formatMoney(amount: number): string {
+function formatMoney(amount: number | null | undefined): string {
+  if (amount == null || Number.isNaN(amount)) {
+    return "—";
+  }
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -31,155 +33,99 @@ function formatMoney(amount: number): string {
   }).format(amount);
 }
 
-function formatMatrixCell(cell: CohortMatrixCell): string {
-  if (!cell.available) return "·";
-  if (cell.value == null || Number.isNaN(cell.value)) return "—";
-  switch (cell.formattedType) {
-    case "percent":
-      return `${(cell.value * 100).toFixed(1)}%`;
-    case "currency":
-      return formatMoney(cell.value);
-    case "count":
-      return Math.round(cell.value).toLocaleString();
-    case "ratio":
-      return cell.value.toFixed(2);
-    default: {
-      const _e: never = cell.formattedType;
-      return String(_e);
-    }
+function ActiveRateCell({ value, maturity }: { value: number | null; maturity: MaturityStatus | null }) {
+  if (maturity === "unavailable") {
+    return <span className="tabular-nums text-zinc-400">—</span>;
   }
+
+  if (maturity === "partial") {
+    const formatted = formatPct(value);
+    return (
+      <span
+        className="tabular-nums text-zinc-600 underline decoration-dotted decoration-zinc-400 underline-offset-4"
+        title="Partial observation — Month +N has started but not fully elapsed"
+        aria-label={`${formatted} — partial observation`}
+      >
+        {formatted}
+      </span>
+    );
+  }
+
+  return <span className="tabular-nums">{formatPct(value)}</span>;
 }
 
-type CohortMatrixUiMetric = Extract<
-  CohortMatrixMetricKind,
-  "retention_rate" | "revenue_ltv" | "contribution_ltv"
->;
+function RevenueLtvCell({ value, maturity }: { value: number | null; maturity: MaturityStatus | null }) {
+  if (maturity === "unavailable") {
+    return <span className="tabular-nums text-zinc-400">—</span>;
+  }
 
-const MATRIX_METRIC_OPTIONS: readonly { id: CohortMatrixUiMetric; label: string }[] = [
-  { id: "retention_rate", label: "Retention %" },
-  { id: "revenue_ltv", label: "Revenue LTV" },
-  { id: "contribution_ltv", label: "Contribution LTV" },
-];
+  if (maturity === "partial") {
+    const formatted = formatMoney(value);
+    return (
+      <span
+        className="tabular-nums text-zinc-600 underline decoration-dotted decoration-zinc-400 underline-offset-4"
+        title="Partial observation — Month +N has started but not fully elapsed"
+        aria-label={`${formatted} — partial observation`}
+      >
+        {formatted}
+      </span>
+    );
+  }
 
-function CohortMatrixTable({ model }: { model: CohortMatrixModel }) {
-  const { columnOffsets, rows } = model;
+  return <span className="tabular-nums">{formatMoney(value)}</span>;
+}
+
+function CohortComparisonTable({ rows }: { rows: CohortMonthTableRowView[] }) {
   if (rows.length === 0) {
     return <p className="text-sm text-zinc-600">No cohort rows to display for this dataset.</p>;
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-zinc-200/90 bg-white ring-1 ring-black/[0.02]">
-      <table className="min-w-max w-full border-collapse text-xs">
-        <thead>
-          <tr className="border-b border-zinc-200 bg-zinc-50 text-left text-[10px] font-semibold uppercase tracking-wide text-zinc-600">
-            <th className="sticky left-0 z-20 whitespace-nowrap border-r border-zinc-100 bg-zinc-50 px-2.5 py-2 pl-3">
-              Cohort month
-            </th>
-            <th className="sticky left-[5.5rem] z-20 whitespace-nowrap border-r border-zinc-200 bg-zinc-50 px-2 py-2 text-right shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)]">
-              Size
-            </th>
-            {columnOffsets.map((off) => (
-              <th key={off} className="px-2 py-2 text-right tabular-nums text-zinc-700">
-                M{off}
-              </th>
-            ))}
+    <table className="min-w-[900px] w-full border-collapse text-sm">
+      <thead className="sticky top-0 z-10 border-b border-zinc-200 bg-zinc-50/90">
+        <tr className="text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">
+          <th className="px-5 py-3.5">Cohort (first-order month)</th>
+          <th className="px-5 py-3.5 text-right">Size</th>
+          <th className="px-5 py-3.5 text-right">M+1 active</th>
+          <th className="px-5 py-3.5 text-right">M+3 active</th>
+          <th className="px-5 py-3.5 text-right">M+1 Revenue LTV</th>
+          <th className="px-5 py-3.5 text-right">M+3 Revenue LTV</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.cohortPeriod} className="border-b border-zinc-100 hover:bg-zinc-50/80">
+            <td className="px-5 py-3 font-medium text-zinc-900 tabular-nums">{row.cohortPeriod}</td>
+            <td className="px-5 py-3 text-right tabular-nums text-zinc-800">{row.cohortSize.toLocaleString()}</td>
+            <td className="px-5 py-3 text-right tabular-nums text-zinc-800">
+              <ActiveRateCell value={row.monthPlus1ActiveRate} maturity={row.monthPlus1ActiveMaturity} />
+            </td>
+            <td className="px-5 py-3 text-right tabular-nums text-zinc-800">
+              <ActiveRateCell value={row.monthPlus3ActiveRate} maturity={row.monthPlus3ActiveMaturity} />
+            </td>
+            <td className="px-5 py-3 text-right tabular-nums text-zinc-800">
+              <RevenueLtvCell value={row.monthPlus1RevenueLtv} maturity={row.monthPlus1RevenueLtvMaturity} />
+            </td>
+            <td className="px-5 py-3 text-right tabular-nums text-zinc-800">
+              <RevenueLtvCell value={row.monthPlus3RevenueLtv} maturity={row.monthPlus3RevenueLtvMaturity} />
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.cohortPeriod} className="border-b border-zinc-100 hover:bg-zinc-50/70">
-              <td className="sticky left-0 z-10 whitespace-nowrap border-r border-zinc-100 bg-white px-2.5 py-1.5 pl-3 font-medium tabular-nums text-zinc-900">
-                {row.cohortPeriod}
-              </td>
-              <td className="sticky left-[5.5rem] z-10 whitespace-nowrap border-r border-zinc-200 bg-white px-2 py-1.5 text-right tabular-nums text-zinc-800 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)]">
-                {row.cohortSize.toLocaleString()}
-              </td>
-              {row.cells.map((cell) => (
-                <td
-                  key={cell.offset}
-                  className={`px-2 py-1.5 text-right tabular-nums ${
-                    !cell.available ? "text-zinc-300"
-                    : cell.value == null || Number.isNaN(cell.value) ?
-                      "text-zinc-400"
-                    : "text-zinc-900"
-                  }`}
-                >
-                  {formatMatrixCell(cell)}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function RateCell({ value }: { value: number | null }) {
-  return <span className="tabular-nums">{formatPct(value)}</span>;
-}
-
-function CohortEconomicsTable({ rows }: { rows: CohortMonthTableRowView[] }) {
-  return (
-    <div className="overflow-x-auto rounded-xl border border-zinc-200/90 bg-white shadow-sm ring-1 ring-black/[0.02]">
-      <table className="min-w-[960px] w-full border-collapse text-sm">
-        <thead className="sticky top-0 z-10 border-b border-zinc-200 bg-zinc-50/90">
-          <tr className="text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">
-            <th className="px-5 py-3.5">Cohort (first-order month)</th>
-            <th className="px-5 py-3.5 text-right">Cohort size</th>
-            <th className="px-5 py-3.5 text-right">Orders</th>
-            <th className="px-5 py-3.5 text-right">Net revenue</th>
-            <th className="px-5 py-3.5 text-right">Contribution</th>
-            <th className="px-5 py-3.5 text-right">Latest avg revenue LTV</th>
-            <th className="px-5 py-3.5 text-right">Latest avg contribution LTV</th>
-            <th className="px-5 py-3.5 text-right">Month +1 active</th>
-            <th className="px-5 py-3.5 text-right">Month +2 active</th>
-            <th className="px-5 py-3.5 text-right">Month +3 active</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.cohortPeriod} className="border-b border-zinc-100 hover:bg-zinc-50/80">
-              <td className="px-5 py-3 font-medium text-zinc-900 tabular-nums">{row.cohortPeriod}</td>
-              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">{row.cohortSize.toLocaleString()}</td>
-              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">{row.totalOrders.toLocaleString()}</td>
-              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">{formatMoney(row.netRevenue)}</td>
-              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">{formatMoney(row.contribution)}</td>
-              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">
-                {formatMoney(row.latestAvgNetRevenueLtv)}
-              </td>
-              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">
-                {row.latestAvgContributionLtv != null ? formatMoney(row.latestAvgContributionLtv) : "—"}
-              </td>
-              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">
-                <RateCell value={row.nextMonthActiveRate} />
-              </td>
-              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">
-                <RateCell value={row.monthPlusTwoActiveRate} />
-              </td>
-              <td className="px-5 py-3 text-right tabular-nums text-zinc-800">
-                <RateCell value={row.monthPlusThreeActiveRate} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
 export default function CohortsPage() {
   const selection = useCommandCentreDatasetSelection();
-  const [matrixMetric, setMatrixMetric] = useState<CohortMatrixUiMetric>("retention_rate");
 
   const vm = useMemo(() => {
     if (!selection.metricsAllowed) return null;
     return buildCohortsPageViewModelFromDataset(selection.dataset);
   }, [selection]);
-  const cohortMatrix = useMemo(() => {
-    if (!selection.metricsAllowed) return null;
-    return buildCohortMatrixFromDataset(selection.dataset, { metric: matrixMetric });
-  }, [selection, matrixMetric]);
+
+  const comparableDisplay =
+    vm == null ? "—" : `${vm.summary.completedMonthPlus3CohortCount} / ${vm.summary.totalCohortCount}`;
 
   return (
     <CommandCentrePageFrame
@@ -191,91 +137,70 @@ export default function CohortsPage() {
     >
       {selection.status === "pending" || selection.status === "lost_upload" ? (
         <DatasetSourceUnavailablePanel selection={selection} />
-      ) : vm != null && cohortMatrix != null ? (
+      ) : vm != null ? (
         <>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <Kpi title="Cohort months" value={String(vm.summary.cohortCount)} />
-        <Kpi title="Customers" value={vm.summary.totalCustomers.toLocaleString()} />
-        <Kpi
-          title="Largest cohort"
-          value={`${vm.summary.largestCohort.cohortPeriod}`}
-          sub={`${vm.summary.largestCohort.cohortSize.toLocaleString()} customers`}
-        />
-        <Kpi title="All-time repeat rate" value={formatPct(vm.summary.repeatPurchaseRate)} />
-        <Kpi title="First→second (90d)" value={formatPct(vm.summary.firstToSecondWithin90DaysRate)} />
-        <Kpi title="Aggregate net revenue" value={formatMoney(vm.summary.aggregateNetRevenue)} />
-      </div>
-
-      <div>
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-[0.1em] text-zinc-500">Cohort matrix</h2>
-        <p className="mb-3 max-w-3xl text-sm leading-relaxed text-zinc-700">
-          <strong className="font-medium text-zinc-900">Rows are acquisition cohorts</strong> (first-order calendar month, UTC).{" "}
-          <strong className="font-medium text-zinc-900">Columns show months since first purchase</strong> (M0 = acquisition month, M1 = one month later,
-          …). Blank triangle cells (·) are months not yet observed for that cohort in this dataset slice.{" "}
-          <strong className="font-medium text-zinc-900">Revenue LTV</strong> is cumulative net revenue per cohort customer through each age.{" "}
-          <strong className="font-medium text-zinc-900">Contribution LTV</strong> uses order-level{" "}
-          <code className="rounded border border-zinc-200 bg-zinc-50 px-1 py-0.5 font-mono text-[10px]">contribution_margin</code> or explicit
-          margin assumptions when available.
-        </p>
-
-        {cohortMatrix.contributionLtvCaveat ?
-          <div className="mb-4 rounded-lg border border-amber-200/90 bg-amber-50/80 px-3.5 py-3 text-sm text-amber-950 ring-1 ring-amber-900/10">
-            {cohortMatrix.contributionLtvCaveat}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <MetricStat
+              label="Avg completed M+1 active rate"
+              sub="Completed observations only · unweighted across included cohorts"
+              value={formatPct(vm.summary.avgCompletedMonthPlus1ActiveRate)}
+              metricId="cohort_retention"
+            />
+            <MetricStat
+              label="Avg completed M+3 Revenue LTV"
+              sub="Completed cohorts only · unweighted"
+              value={formatMoney(vm.summary.avgCompletedMonthPlus3RevenueLtv)}
+            />
+            <MetricStat
+              label="Comparable cohorts at M+3"
+              sub="Cohorts with a completed M+3 observation"
+              value={comparableDisplay}
+            />
           </div>
-        : null}
 
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Cell metric</span>
-          <div className="flex flex-wrap gap-1.5">
-            {MATRIX_METRIC_OPTIONS.map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => setMatrixMetric(opt.id)}
-                className={`rounded-md border px-2.5 py-1 text-xs font-semibold transition ${
-                  matrixMetric === opt.id ?
-                    "border-zinc-900 bg-zinc-900 text-white"
-                  : "border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
+          <div className="rounded-lg border border-zinc-200/90 bg-white px-4 py-3.5 text-sm leading-relaxed text-zinc-700 shadow-sm ring-1 ring-black/[0.02]">
+            <p className="font-semibold text-zinc-900">How to read this page</p>
+            <ul className="mt-2 list-disc space-y-1.5 pl-5">
+              <li>
+                Each row is an acquisition cohort (first-order calendar month, UTC). Compare cohorts at the same
+                age — M+1 with M+1, M+3 with M+3 — not latest observed values across different ages.
+              </li>
+              <li>
+                Month+N is a calendar cohort-month offset, not an elapsed-day window. Executive averages include
+                completed observations only.
+              </li>
+              <li>
+                M+1 active and M+3 active count customers with at least one identified order in that calendar month,
+                divided by cohort size. This is not cohort revenue retention.
+              </li>
+              <li>
+                Partial cells show observed values while that month is still in progress — incomplete observation,
+                not weak performance. Unavailable months show an em dash.
+              </li>
+              <li>
+                Revenue LTV deep dives and contribution provenance live on{" "}
+                <span className="font-medium text-zinc-900">LTV</span>; retention journey metrics live on{" "}
+                <span className="font-medium text-zinc-900">Retention</span>.
+              </li>
+            </ul>
           </div>
-        </div>
 
-        <CohortMatrixTable model={cohortMatrix} />
-      </div>
+          <AnalyticalPanel
+            title="Cohort comparison at same age"
+            description="Each row is customers acquired in that first-order month. Active rates and Revenue LTV are read at the same calendar Month+N offset across cohorts. Partial means Month+N has started but has not fully elapsed relative to the observation date."
+          >
+            <CohortComparisonTable rows={vm.cohortRows} />
+          </AnalyticalPanel>
 
-      <div>
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-[0.1em] text-zinc-500">Cohort summary table</h2>
-        <p className="mb-4 text-sm leading-relaxed text-zinc-700">
-          Net revenue and contribution roll up orders from cohort members. Latest average revenue LTV is cumulative{" "}
-          <strong>average net revenue per cohort customer</strong> through each cohort&apos;s latest observed month on the staircase.
-          Month +n active columns are cohort customers with ≥1 order in acquisition month&nbsp;+&nbsp;n (calendar UTC).
-        </p>
-        <CohortEconomicsTable rows={vm.cohortRows} />
-      </div>
+          <DiagnosisContinueSection
+            links={[
+              { href: "/retention", label: "Retention" },
+              { href: "/ltv", label: "LTV" },
+              { href: "/insights", label: "Diagnostic Insights" },
+            ]}
+          />
         </>
       ) : null}
     </CommandCentrePageFrame>
-  );
-}
-
-function Kpi({
-  title,
-  value,
-  sub,
-}: {
-  title: string;
-  value: string;
-  sub?: string;
-}) {
-  return (
-    <div className="rounded-lg border border-zinc-200/90 bg-white p-4 shadow-sm ring-1 ring-black/[0.02]">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">{title}</p>
-      <p className="mt-2 text-xl font-semibold tabular-nums text-zinc-900">{value}</p>
-      {sub ? <p className="mt-1 text-xs text-zinc-600">{sub}</p> : null}
-    </div>
   );
 }

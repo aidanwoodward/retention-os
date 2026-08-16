@@ -48,6 +48,7 @@
     "lib/metrics/acquisition.ts",
     "lib/metrics/acquisition-view-model.ts",
     "lib/metrics/product-quality-view-model.ts",
+    "lib/metrics/product-quality-view-model.test.ts",
     "lib/metrics/dashboard-executive-spine.ts",
     "lib/metrics/dashboard-view-model.ts",
     "lib/metrics/dashboard-view-model.test.ts",

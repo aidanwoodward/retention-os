@@ -1,6 +1,6 @@
-import { DEMO_BRAND_NAME, DEMO_BRAND_TAGLINE } from "../demo";
+﻿import { DEMO_BRAND_NAME, DEMO_BRAND_TAGLINE } from "../demo";
 
-/** Product framing — used in navigation chrome and onboarding copy. */
+/** Product framing â€” used in navigation chrome and onboarding copy. */
 export const MVP_COMMAND_CENTRE_NAME = "Revenue Durability Command Centre" as const;
 
 /** One-word product mark for breadcrumbs, metadata, and sidebar (no space). */
@@ -37,7 +37,7 @@ export interface MvpPageCopy {
   readonly lookingAt: string;
   /** Answers: why does it matter? */
   readonly matters: string;
-  /** Answers: what should I do next? (bullet strings — may reference route names plainly). */
+  /** Answers: what should I do next? (bullet strings â€” may reference route names plainly). */
   readonly nextSteps: readonly string[];
 }
 
@@ -62,14 +62,14 @@ export const MVP_PAGE_COPY: Record<MvpRouteId, MvpPageCopy> = {
     lookingAt:
       "First-to-second conversion within 90 days, all-time repeat, time to a second order, and cohort Month +N active rates.",
     matters:
-      "A 90-day reorder journey and calendar-month cohort activity are different views of the same orders — read both before judging loss.",
+      "A 90-day reorder journey and calendar-month cohort activity are different views of the same orders â€” read both before judging loss.",
     nextSteps: [],
   },
   ltv: {
     title: "LTV ladders",
     hook: "How does customer value build across cohort months?",
     lookingAt:
-      "Cumulative net merchandise LTV and contribution LTV by calendar cohort month (Month +N) — not elapsed-day windows.",
+      "Cumulative net merchandise LTV and contribution LTV by calendar cohort month (Month +N) â€” not elapsed-day windows.",
     matters:
       "Revenue and contribution LTV show how cumulative customer value builds across cohort months, with contribution dependent on available order-level inputs or the saved margin model.",
     nextSteps: [],
@@ -83,8 +83,9 @@ export const MVP_PAGE_COPY: Record<MvpRouteId, MvpPageCopy> = {
   },
   products: {
     title: "First-product customer quality",
-    hook: "Which entry products create repeat, profitable customers — not just first-order volume.",
-    lookingAt: "Customers grouped by first order line item: repeat depth, LTV, and discount or refund drag.",
+    hook: "Which first products create more durable, repeating customers?",
+    lookingAt:
+      "First-product quality compares customers with a reliable single-product first order — repeat, LTV, and drag by entry product. Multi-product and unknown first orders stay visible as coverage residuals, not ranked rows.",
     matters: "Not every hero SKU attracts customers who come back or retain margin.",
     nextSteps: [],
   },
@@ -92,16 +93,16 @@ export const MVP_PAGE_COPY: Record<MvpRouteId, MvpPageCopy> = {
     title: "Diagnostic Insights",
     hook: "Prioritized operator moves from transparent rules on your active data source.",
     lookingAt: "Evidence cards with thresholds, caveats, and recommended actions tied to your metrics.",
-    matters: "Metrics alone do not prescribe focus — this page turns patterns into testable hypotheses.",
+    matters: "Metrics alone do not prescribe focus â€” this page turns patterns into testable hypotheses.",
     nextSteps: [],
   },
   data: {
     title: "Data & sources",
-    hook: "Control what powers every KPI route — upload orders, set assumptions, review quality.",
+    hook: "Control what powers every KPI route â€” upload orders, set assumptions, review quality.",
     lookingAt: `Active source for this tab: ${DEMO_BRAND_NAME} demo until you upload and save a Shopify Orders CSV. After save, all KPI routes use your upload here only.`,
     matters: "You cannot judge customer economics honestly if the data source and assumptions are unclear.",
     nextSteps: [
-      "Explore KPI routes on the Lumin & River demo — fixture spend and margin assumptions are already included.",
+      "Explore KPI routes on the Lumin & River demo â€” fixture spend and margin assumptions are already included.",
       "Upload your Shopify Orders CSV, then add spend or margin assumptions if your file does not include them.",
       "Open Dashboard, then drill into Acquisition, Retention, LTV, and Insights.",
     ],
@@ -112,7 +113,7 @@ export function getMvpPageCopy(routeId: MvpRouteId): MvpPageCopy {
   return MVP_PAGE_COPY[routeId];
 }
 
-/** Command-centre routes: adjust “What you’re looking at” for the active dataset status. */
+/** Command-centre routes: adjust â€œWhat youâ€™re looking atâ€ for the active dataset status. */
 export function getMvpPageCopyForActiveSource(
   routeId: "dashboard" | "cohorts" | "retention" | "ltv" | "acquisition" | "products" | "insights",
   source: "demo" | "uploaded_csv" | "pending" | "lost_upload",
@@ -122,24 +123,24 @@ export function getMvpPageCopyForActiveSource(
     return base;
   }
   if (source === "pending") {
-    return { ...base, lookingAt: "Resolving the active dataset for this browser tab…" };
+    return { ...base, lookingAt: "Resolving the active dataset for this browser tabâ€¦" };
   }
   if (source === "lost_upload") {
     return {
       ...base,
       lookingAt:
-        "Your uploaded session was lost (CSV payloads are tab-scoped). Demo metrics are not shown in place of your data — re-upload on Data or explicitly use demo.",
+        "Your uploaded session was lost (CSV payloads are tab-scoped). Demo metrics are not shown in place of your data â€” re-upload on Data or explicitly use demo.",
     };
   }
   type SourceAwareRoute = "dashboard" | "cohorts" | "retention" | "ltv" | "acquisition" | "products" | "insights";
   const lookingAt: Record<SourceAwareRoute, string> = {
     dashboard: "Headline KPIs, posture, acquisition economics, and product quality from your saved upload (this browser tab only).",
-    cohorts: "Monthly first-order cohorts from your saved upload — net revenue, contribution, and Month +N active rates.",
+    cohorts: "Monthly first-order cohorts from your saved upload â€” net revenue, contribution, and Month +N active rates.",
     retention:
       "First-to-second within 90 days, all-time repeat, and calendar Month +N retention from your saved upload.",
     ltv: "Cumulative net merchandise and contribution LTV by calendar cohort month from your saved upload.",
     acquisition: "CAC, LTV:CAC, and payback from your upload plus marketing spend (add spend on Data if locked).",
-    products: "First-product customer quality from your upload — requires line items with product IDs.",
+    products: "First-product customer quality from your upload â€” requires line items with product IDs.",
     insights: "Diagnostic cards from transparent rules on your saved upload.",
   };
   return { ...base, lookingAt: lookingAt[routeId] };
@@ -167,12 +168,12 @@ export function metricsBannerScopeLine(
 }
 
 export const RULES_ENGINE_INSIGHTS_NOTICE =
-  "Rules-based engine. Cards synthesize evidence using transparent thresholds — not LLMs, chat copilots, or hidden models." as const;
+  "Rules-based engine. Cards synthesize evidence using transparent thresholds â€” not LLMs, chat copilots, or hidden models." as const;
 
 export function insightsDemoNotice(): string {
-  return `${DEMO_DATASET_LABEL} — ${DEMO_BRAND_NAME}. Upload orders on Data to run the same rules on your shop.`;
+  return `${DEMO_DATASET_LABEL} â€” ${DEMO_BRAND_NAME}. Upload orders on Data to run the same rules on your shop.`;
 }
 
 export function dataModeBannerSentence(): string {
-  return `Demo: ${DEMO_BRAND_NAME} — ${DEMO_BRAND_TAGLINE} Switch to your upload here; KPI routes follow this tab only. Live Shopify sync is not in this MVP.`;
+  return `Demo: ${DEMO_BRAND_NAME} â€” ${DEMO_BRAND_TAGLINE} Switch to your upload here; KPI routes follow this tab only. Live Shopify sync is not in this MVP.`;
 }

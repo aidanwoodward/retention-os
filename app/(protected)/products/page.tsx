@@ -33,8 +33,9 @@ export default function ProductsPage() {
           <FirstProductQualityPanel vm={vm} />
           <DiagnosisContinueSection
             links={[
-              { href: "/retention", label: "Retention & repeat" },
-              { href: "/dashboard", label: "Dashboard" },
+              { href: "/retention", label: "Retention" },
+              { href: "/ltv", label: "LTV" },
+              { href: "/insights", label: "Diagnostic Insights" },
             ]}
           />
         </>

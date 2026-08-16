@@ -42,6 +42,8 @@
     "lib/metrics/completed-cohort-retention.test.ts",
     "lib/metrics/retention-view-model.ts",
     "lib/metrics/retention-view-model.test.ts",
+    "lib/metrics/ltv-view-model.ts",
+    "lib/metrics/ltv-view-model.test.ts",
     "lib/metrics/ltv.ts",
     "lib/metrics/acquisition.ts",
     "lib/metrics/acquisition-view-model.ts",

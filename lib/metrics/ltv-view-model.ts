@@ -1,24 +1,39 @@
+import {
+  getMonthlyCohortMaturityStatus,
+  inferConservativeAsOfDateFromDataset,
+  isCompletedMaturityOffsetAvailable,
+  type MaturityStatus,
+} from "../analysis-context";
 import { buildDemoRetentionOSDataset, type RetentionOSDataset } from "../data-source";
 import type { LTVPoint } from "../types";
+import type { MarginAssumptions } from "../types/scenario";
+import { isIdentifiedOrder, type Order } from "../types/order";
+import type { MetricDataQuality } from "./metric-definitions";
 import { calculateCohorts, type CohortSummary } from "./cohorts";
-import { calculateRepeatPurchaseRate } from "./repeat-purchase";
 import { calculateLTVByCohort } from "./ltv";
+import { safeDivide } from "./utils";
+
+export type { MaturityStatus };
+
+/** How contribution dollars enter the canonical LTV staircase for this dataset. */
+export type LtvContributionSourcePath =
+  | "order_level"
+  | "margin_assumption"
+  | "mixed"
+  | "partial_order_level"
+  | "none";
 
 export interface LTVPageSummaryView {
-  totalCohorts: number;
-  totalCustomers: number;
-  /** Mean of each cohort's terminal staircase net revenue LTV (`cumulativeAvgGrossRevenue` in engine). */
-  avgTerminalNetRevenueLtvAcrossCohorts: number | null;
-  /** Mean terminal contribution LTV among cohorts with contribution through terminal horizon. */
-  avgTerminalContributionLtvAcrossCohorts: number | null;
-  bestNetRevenueLtvCohort: { cohortPeriod: string; terminalNetRevenueLtv: number } | null;
-  /**
-   * Cohort with the lowest terminal net revenue LTV when there are ≥2 cohorts and terminals are not all equal.
-   * Null when not meaningful (same cohort as best after tie handling, flat ladder, etc.).
-   */
-  weakestNetRevenueLtvCohort: { cohortPeriod: string; terminalNetRevenueLtv: number } | null;
-  /** Customers with ≥2 orders / all customers (fraction). */
-  repeatPurchaseRate: number;
+  /** Unweighted mean of completed-cohort Month +1 cumulative net revenue LTV. */
+  avgCompletedMonthPlus1NetRevenueLtv: number | null;
+  /** Unweighted mean of completed-cohort Month +1 cumulative contribution LTV. */
+  avgCompletedMonthPlus1ContributionLtv: number | null;
+  /** Unweighted mean of completed-cohort Month +3 cumulative net revenue LTV. */
+  avgCompletedMonthPlus3NetRevenueLtv: number | null;
+  /** Unweighted mean of completed-cohort Month +3 cumulative contribution LTV. */
+  avgCompletedMonthPlus3ContributionLtv: number | null;
+  contributionSourcePath: LtvContributionSourcePath;
+  contributionDataQuality: MetricDataQuality;
 }
 
 export interface LTVCohortTableRowView {
@@ -28,12 +43,19 @@ export interface LTVCohortTableRowView {
   netRevenueLtvMonth1: number | null;
   netRevenueLtvMonth2: number | null;
   netRevenueLtvMonth3: number | null;
-  terminalNetRevenueLtv: number | null;
-  terminalContributionLtv: number | null;
+  latestObservedNetRevenueLtv: number | null;
   contributionLtvMonth0: number | null;
   contributionLtvMonth1: number | null;
   contributionLtvMonth2: number | null;
   contributionLtvMonth3: number | null;
+  latestObservedContributionLtv: number | null;
+  /** Calendar Month+N offset of the latest observed staircase point for this cohort. */
+  latestObservedOffset: number | null;
+  monthPlus0Maturity: MaturityStatus | null;
+  monthPlus1Maturity: MaturityStatus | null;
+  monthPlus2Maturity: MaturityStatus | null;
+  monthPlus3Maturity: MaturityStatus | null;
+  latestObservedMaturity: MaturityStatus | null;
 }
 
 export interface LTVPageViewModel {
@@ -64,56 +86,158 @@ function terminalPoint(curve: readonly LTVPoint[]): LTVPoint | null {
   return curve[curve.length - 1] ?? null;
 }
 
-interface TerminalRollupRow {
-  cohortPeriod: string;
-  terminalNetRevenueLtv: number;
+function maturityAtOffset(
+  cohortPeriod: string,
+  offset: number,
+  asOfDate: string | null,
+): MaturityStatus | null {
+  if (asOfDate == null) {
+    return null;
+  }
+  return getMonthlyCohortMaturityStatus(cohortPeriod, offset, asOfDate);
 }
 
-function pickBest(rows: readonly TerminalRollupRow[]): TerminalRollupRow | null {
-  if (rows.length === 0) {
-    return null;
-  }
-  return rows.reduce<TerminalRollupRow>((best, r) => {
-    if (r.terminalNetRevenueLtv > best.terminalNetRevenueLtv) {
-      return r;
-    }
-    if (r.terminalNetRevenueLtv === best.terminalNetRevenueLtv && r.cohortPeriod.localeCompare(best.cohortPeriod) > 0) {
-      return r;
-    }
-    return best;
-  }, rows[0]!);
+function pointAtOffset(curve: readonly LTVPoint[], offset: number): LTVPoint | null {
+  return curve.find((p) => p.offset === offset) ?? null;
 }
 
-function pickWeakestDistinct(rows: readonly TerminalRollupRow[]): TerminalRollupRow | null {
-  if (rows.length < 2) {
+interface RelevantOrderContributionCoverage {
+  totalRelevantOrders: number;
+  withFiniteOrderLevel: number;
+  withoutFiniteOrderLevel: number;
+}
+
+function scanRelevantOrderContributionCoverage(
+  customers: readonly { id: string }[],
+  orders: readonly Order[],
+): RelevantOrderContributionCoverage {
+  const knownIds = new Set(customers.map((c) => c.id));
+  let totalRelevantOrders = 0;
+  let withFiniteOrderLevel = 0;
+
+  for (const order of orders) {
+    if (!isIdentifiedOrder(order) || !knownIds.has(order.customerId)) {
+      continue;
+    }
+    totalRelevantOrders += 1;
+    if (order.contributionMargin != null && Number.isFinite(order.contributionMargin)) {
+      withFiniteOrderLevel += 1;
+    }
+  }
+
+  return {
+    totalRelevantOrders,
+    withFiniteOrderLevel,
+    withoutFiniteOrderLevel: totalRelevantOrders - withFiniteOrderLevel,
+  };
+}
+
+/**
+ * Mirrors `calculateLTVByCohort` includeContribution gating — presentation must not
+ * claim an active contribution path when the engine omits cumulativeAvgContribution.
+ */
+function hasCanonicalContributionOutput(
+  marginAssumptions: MarginAssumptions | undefined,
+  ltvPoints: readonly LTVPoint[],
+): boolean {
+  if (marginAssumptions != null) {
+    return true;
+  }
+  return ltvPoints.some((p) => p.cumulativeAvgContribution != null);
+}
+
+function classifyContributionSourcePath(
+  dataset: RetentionOSDataset,
+  ltvPoints: readonly LTVPoint[],
+): LtvContributionSourcePath {
+  const { customers, orders, marginAssumptions } = dataset;
+
+  if (!hasCanonicalContributionOutput(marginAssumptions, ltvPoints)) {
+    return "none";
+  }
+
+  const coverage = scanRelevantOrderContributionCoverage(customers, orders);
+  const hasMarginAssumption = marginAssumptions != null;
+
+  if (coverage.totalRelevantOrders === 0) {
+    return hasMarginAssumption ? "margin_assumption" : "none";
+  }
+
+  const allHaveOrderLevel = coverage.withFiniteOrderLevel === coverage.totalRelevantOrders;
+  const noneHaveOrderLevel = coverage.withFiniteOrderLevel === 0;
+
+  if (allHaveOrderLevel) {
+    return "order_level";
+  }
+  if (noneHaveOrderLevel && hasMarginAssumption) {
+    return "margin_assumption";
+  }
+  if (coverage.withFiniteOrderLevel > 0 && coverage.withoutFiniteOrderLevel > 0 && hasMarginAssumption) {
+    return "mixed";
+  }
+  if (coverage.withFiniteOrderLevel > 0 && coverage.withoutFiniteOrderLevel > 0) {
+    return "partial_order_level";
+  }
+
+  return "none";
+}
+
+function contributionDataQualityForPath(path: LtvContributionSourcePath): MetricDataQuality {
+  if (path === "none") {
+    return "unavailable";
+  }
+  return "partial";
+}
+
+/**
+ * Unweighted mean of canonical staircase values at `offset` among cohorts whose Month+N
+ * observation is complete. Missing engine points and missing contribution fields are skipped
+ * (not treated as zero).
+ */
+function averageCompletedLtvAtOffset(
+  cohortPeriods: readonly string[],
+  curvesByCohort: ReadonlyMap<string, LTVPoint[]>,
+  offset: number,
+  asOfDate: string,
+  field: "revenue" | "contribution",
+): number | null {
+  const values: number[] = [];
+  for (const period of cohortPeriods) {
+    if (!isCompletedMaturityOffsetAvailable(period, offset, asOfDate)) {
+      continue;
+    }
+    const point = pointAtOffset(curvesByCohort.get(period) ?? [], offset);
+    if (!point) {
+      continue;
+    }
+    const raw = field === "revenue" ? point.cumulativeAvgGrossRevenue : point.cumulativeAvgContribution;
+    if (raw == null || !Number.isFinite(raw)) {
+      continue;
+    }
+    values.push(raw);
+  }
+  if (values.length === 0) {
     return null;
   }
-  const uniq = new Set(rows.map((r) => r.terminalNetRevenueLtv));
-  if (uniq.size < 2) {
-    return null;
-  }
-  return rows.reduce<TerminalRollupRow>((w, r) => {
-    if (r.terminalNetRevenueLtv < w.terminalNetRevenueLtv) {
-      return r;
-    }
-    if (r.terminalNetRevenueLtv === w.terminalNetRevenueLtv && r.cohortPeriod.localeCompare(w.cohortPeriod) < 0) {
-      return r;
-    }
-    return w;
-  }, rows[0]!);
+  return safeDivide(
+    values.reduce((sum, v) => sum + v, 0),
+    values.length,
+  );
 }
 
 function buildCohortRows(
   cohortSummaries: readonly CohortSummary[],
   curvesByCohort: ReadonlyMap<string, LTVPoint[]>,
+  asOfDate: string | null,
 ): LTVCohortTableRowView[] {
   return cohortSummaries.map((cohort) => {
     const curve = curvesByCohort.get(cohort.cohortPeriod) ?? [];
-    const p0 = curve.find((p) => p.offset === 0) ?? null;
-    const p1 = curve.find((p) => p.offset === 1) ?? null;
-    const p2 = curve.find((p) => p.offset === 2) ?? null;
-    const p3 = curve.find((p) => p.offset === 3) ?? null;
+    const p0 = pointAtOffset(curve, 0);
+    const p1 = pointAtOffset(curve, 1);
+    const p2 = pointAtOffset(curve, 2);
+    const p3 = pointAtOffset(curve, 3);
     const tail = terminalPoint(curve);
+    const latestOffset = tail?.offset ?? null;
 
     return {
       cohortPeriod: cohort.cohortPeriod,
@@ -122,12 +246,19 @@ function buildCohortRows(
       netRevenueLtvMonth1: p1 ? p1.cumulativeAvgGrossRevenue : null,
       netRevenueLtvMonth2: p2 ? p2.cumulativeAvgGrossRevenue : null,
       netRevenueLtvMonth3: p3 ? p3.cumulativeAvgGrossRevenue : null,
-      terminalNetRevenueLtv: tail ? tail.cumulativeAvgGrossRevenue : null,
-      terminalContributionLtv: tail?.cumulativeAvgContribution ?? null,
+      latestObservedNetRevenueLtv: tail ? tail.cumulativeAvgGrossRevenue : null,
       contributionLtvMonth0: p0?.cumulativeAvgContribution ?? null,
       contributionLtvMonth1: p1?.cumulativeAvgContribution ?? null,
       contributionLtvMonth2: p2?.cumulativeAvgContribution ?? null,
       contributionLtvMonth3: p3?.cumulativeAvgContribution ?? null,
+      latestObservedContributionLtv: tail?.cumulativeAvgContribution ?? null,
+      latestObservedOffset: latestOffset,
+      monthPlus0Maturity: maturityAtOffset(cohort.cohortPeriod, 0, asOfDate),
+      monthPlus1Maturity: maturityAtOffset(cohort.cohortPeriod, 1, asOfDate),
+      monthPlus2Maturity: maturityAtOffset(cohort.cohortPeriod, 2, asOfDate),
+      monthPlus3Maturity: maturityAtOffset(cohort.cohortPeriod, 3, asOfDate),
+      latestObservedMaturity:
+        latestOffset == null ? null : maturityAtOffset(cohort.cohortPeriod, latestOffset, asOfDate),
     };
   });
 }
@@ -137,66 +268,34 @@ export function buildLTVPageViewModelFromDataset(dataset: RetentionOSDataset): L
   const { customers, orders, marginAssumptions } = dataset;
 
   const cohortSummaries = calculateCohorts(customers, orders, marginAssumptions);
-  const repeat = calculateRepeatPurchaseRate(customers, orders);
-
   const ltvPoints = calculateLTVByCohort(customers, orders, marginAssumptions);
-
   const curvesByCohort = groupLtvCurveByCohort(ltvPoints);
-
-  const terminals: TerminalRollupRow[] = [];
-  const terminalContribution: number[] = [];
-
-  for (const cohort of cohortSummaries) {
-    const tail = terminalPoint(curvesByCohort.get(cohort.cohortPeriod) ?? []);
-    if (!tail) {
-      continue;
-    }
-    terminals.push({
-      cohortPeriod: cohort.cohortPeriod,
-      terminalNetRevenueLtv: tail.cumulativeAvgGrossRevenue,
-    });
-    if (tail.cumulativeAvgContribution != null) {
-      terminalContribution.push(tail.cumulativeAvgContribution);
-    }
-  }
-
-  const avgTerminalNetRevenueLtvAcrossCohorts =
-    terminals.length === 0 ? null : terminals.reduce((s, x) => s + x.terminalNetRevenueLtv, 0) / terminals.length;
-
-  const avgTerminalContributionLtvAcrossCohorts =
-    terminalContribution.length === 0 ? null : terminalContribution.reduce((a, b) => a + b, 0) / terminalContribution.length;
-
-  const bestPick = pickBest(terminals);
-  const weakestPickRaw = pickWeakestDistinct(terminals);
-
-  const bestNetRevenueLtvCohort = bestPick
-    ? { cohortPeriod: bestPick.cohortPeriod, terminalNetRevenueLtv: bestPick.terminalNetRevenueLtv }
-    : null;
-  let weakestNetRevenueLtvCohort = weakestPickRaw
-    ? { cohortPeriod: weakestPickRaw.cohortPeriod, terminalNetRevenueLtv: weakestPickRaw.terminalNetRevenueLtv }
-    : null;
-
-  if (
-    bestNetRevenueLtvCohort &&
-    weakestNetRevenueLtvCohort &&
-    bestNetRevenueLtvCohort.cohortPeriod === weakestNetRevenueLtvCohort.cohortPeriod
-  ) {
-    weakestNetRevenueLtvCohort = null;
-  }
-
-  const cohortRows = buildCohortRows(cohortSummaries, curvesByCohort);
+  const asOfDate = inferConservativeAsOfDateFromDataset(dataset);
+  const contributionSourcePath = classifyContributionSourcePath(dataset, ltvPoints);
+  const cohortPeriods = cohortSummaries.map((c) => c.cohortPeriod);
 
   return {
     summary: {
-      totalCohorts: cohortSummaries.length,
-      totalCustomers: customers.length,
-      avgTerminalNetRevenueLtvAcrossCohorts,
-      avgTerminalContributionLtvAcrossCohorts,
-      bestNetRevenueLtvCohort,
-      weakestNetRevenueLtvCohort,
-      repeatPurchaseRate: repeat.repeatPurchaseRate,
+      avgCompletedMonthPlus1NetRevenueLtv:
+        asOfDate == null
+          ? null
+          : averageCompletedLtvAtOffset(cohortPeriods, curvesByCohort, 1, asOfDate, "revenue"),
+      avgCompletedMonthPlus1ContributionLtv:
+        asOfDate == null
+          ? null
+          : averageCompletedLtvAtOffset(cohortPeriods, curvesByCohort, 1, asOfDate, "contribution"),
+      avgCompletedMonthPlus3NetRevenueLtv:
+        asOfDate == null
+          ? null
+          : averageCompletedLtvAtOffset(cohortPeriods, curvesByCohort, 3, asOfDate, "revenue"),
+      avgCompletedMonthPlus3ContributionLtv:
+        asOfDate == null
+          ? null
+          : averageCompletedLtvAtOffset(cohortPeriods, curvesByCohort, 3, asOfDate, "contribution"),
+      contributionSourcePath,
+      contributionDataQuality: contributionDataQualityForPath(contributionSourcePath),
     },
-    cohortRows,
+    cohortRows: buildCohortRows(cohortSummaries, curvesByCohort, asOfDate),
   };
 }
 

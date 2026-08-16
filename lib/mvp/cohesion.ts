@@ -77,9 +77,10 @@ export const MVP_PAGE_COPY: Record<MvpRouteId, MvpPageCopy> = {
   },
   acquisition: {
     title: "Acquisition economics",
-    hook: "CAC, LTV:CAC, and payback when marketing spend is attached to your orders.",
-    lookingAt: "Blended CAC, terminal LTV:CAC ratios, and contribution payback from the active orders source.",
-    matters: "Scaling spend without payback visibility invites liquidity risk.",
+    hook: "How much does it cost to acquire customers, and when does contribution recover that spend?",
+    lookingAt:
+      "Monthly CAC by acquisition month and contribution payback when marketing spend is attached to your orders.",
+    matters: "Acquisition cost and contribution recovery timing need clear spend and margin inputs before you scale.",
     nextSteps: [],
   },
   products: {
@@ -141,7 +142,8 @@ export function getMvpPageCopyForActiveSource(
     retention:
       "First-to-second within 90 days, all-time repeat, and calendar Month +N retention from your saved upload.",
     ltv: "Cumulative net merchandise and contribution LTV by calendar cohort month from your saved upload.",
-    acquisition: "CAC, LTV:CAC, and payback from your upload plus marketing spend (add spend on Data if locked).",
+    acquisition:
+      "Monthly CAC and contribution payback from your upload plus marketing spend (add spend on Data if locked).",
     products: "First-product customer quality from your upload â€” requires line items with product IDs.",
     insights: "Diagnostic cards from transparent rules on your saved upload.",
   };
@@ -159,7 +161,7 @@ export function metricsBannerScopeLine(
     case "retention":
       return "Repeat and calendar retention KPIs.";
     case "acquisition":
-      return "CAC, LTV:CAC, and payback.";
+      return "Monthly CAC and contribution payback.";
     case "products":
       return "First-product customer quality.";
     case "insights":

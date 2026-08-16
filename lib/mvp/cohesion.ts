@@ -58,9 +58,11 @@ export const MVP_PAGE_COPY: Record<MvpRouteId, MvpPageCopy> = {
   },
   retention: {
     title: "Retention & repeat behaviour",
-    hook: "Ninety-day reorder pacing and calendar-month retention on the same orders.",
-    lookingAt: "Repeat rate, first-to-second within 90 days, and cohort Month +N active rates.",
-    matters: "Calendar softness can look like churn when ninety-day reordering is still healthy — read both.",
+    hook: "Are customers returning, and how does retention differ across cohorts?",
+    lookingAt:
+      "First-to-second conversion within 90 days, all-time repeat, time to a second order, and cohort Month +N active rates.",
+    matters:
+      "A 90-day reorder journey and calendar-month cohort activity are different views of the same orders — read both before judging loss.",
     nextSteps: [],
   },
   ltv: {
@@ -131,7 +133,8 @@ export function getMvpPageCopyForActiveSource(
   const lookingAt: Record<SourceAwareRoute, string> = {
     dashboard: "Headline KPIs, posture, acquisition economics, and product quality from your saved upload (this browser tab only).",
     cohorts: "Monthly first-order cohorts from your saved upload — net revenue, contribution, and Month +N active rates.",
-    retention: "Repeat rate, first-to-second within 90 days, and calendar retention from your saved upload.",
+    retention:
+      "First-to-second within 90 days, all-time repeat, and calendar Month +N retention from your saved upload.",
     ltv: "Cumulative net revenue and contribution LTV ladders from your saved upload.",
     acquisition: "CAC, LTV:CAC, and payback from your upload plus marketing spend (add spend on Data if locked).",
     products: "First-product customer quality from your upload — requires line items with product IDs.",

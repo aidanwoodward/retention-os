@@ -51,9 +51,10 @@ export const MVP_PAGE_COPY: Record<MvpRouteId, MvpPageCopy> = {
   },
   cohorts: {
     title: "Cohort economics",
-    hook: "Acquisition-month tables showing where net revenue LTV starts to diverge.",
-    lookingAt: "Monthly first-order cohorts with net revenue, contribution, and Month +N active rates.",
-    matters: "Wide spread across acquisition months is a warning sign before you scale paid channels.",
+    hook: "How do acquisition cohorts compare on value and durability at the same age?",
+    lookingAt:
+      "Monthly first-order cohorts compared at the same calendar Month+N — M+1 active rates and Revenue LTV at M+1 and M+3, with maturity honesty.",
+    matters: "Wide spread across acquisition months at the same age is a warning sign before you scale paid channels.",
     nextSteps: [],
   },
   retention: {
@@ -135,7 +136,8 @@ export function getMvpPageCopyForActiveSource(
   type SourceAwareRoute = "dashboard" | "cohorts" | "retention" | "ltv" | "acquisition" | "products" | "insights";
   const lookingAt: Record<SourceAwareRoute, string> = {
     dashboard: "Headline KPIs, posture, acquisition economics, and product quality from your saved upload (this browser tab only).",
-    cohorts: "Monthly first-order cohorts from your saved upload â€” net revenue, contribution, and Month +N active rates.",
+    cohorts:
+      "Monthly first-order cohorts from your saved upload — same-age Month+N active rates and Revenue LTV comparison with maturity honesty.",
     retention:
       "First-to-second within 90 days, all-time repeat, and calendar Month +N retention from your saved upload.",
     ltv: "Cumulative net merchandise and contribution LTV by calendar cohort month from your saved upload.",
@@ -153,7 +155,7 @@ export function metricsBannerScopeLine(
     case "dashboard":
       return "Executive summary for the active source.";
     case "cohorts":
-      return "Acquisition-month cohort tables.";
+      return "Same-age acquisition cohort comparison.";
     case "retention":
       return "Repeat and calendar retention KPIs.";
     case "acquisition":

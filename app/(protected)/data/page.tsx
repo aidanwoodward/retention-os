@@ -1,6 +1,5 @@
 import { buildDemoRetentionOSDataset } from "@/lib/data-source";
-import { DataPageBody } from "@/components/data/DataPageBody";
-import { CommandCentrePageFrame } from "@/components/mvp/CommandCentrePageFrame";
+import { DataPageClient } from "@/components/data/DataPageClient";
 import { DEMO_WINDOW_END } from "@/lib/demo/demo-config";
 import { buildDataPageViewModel } from "@/lib/metrics";
 
@@ -19,8 +18,10 @@ export default function DataPage() {
   const windowEndFormatted = formatIsoDate(DEMO_WINDOW_END);
 
   return (
-    <CommandCentrePageFrame routeId="data" maxWidth="6xl" bannerKind="data" showNextSteps>
-      <DataPageBody vm={vm} windowEndFormatted={windowEndFormatted} demoDatasetSourceLabel={demoDatasetMeta.sourceLabel} />
-    </CommandCentrePageFrame>
+    <DataPageClient
+      vm={vm}
+      windowEndFormatted={windowEndFormatted}
+      demoDatasetSourceLabel={demoDatasetMeta.sourceLabel}
+    />
   );
 }

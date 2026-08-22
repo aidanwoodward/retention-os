@@ -36,23 +36,13 @@ export function AcquisitionDataPreview({ sessionEpoch }: { readonly sessionEpoch
 
   return (
     <div className="space-y-5">
-      <div className="rounded-lg border border-indigo-200/90 bg-indigo-50/40 px-4 py-3 text-sm leading-relaxed text-indigo-950 ring-1 ring-indigo-900/10">
-        <p className="font-semibold">Acquisition preview (Layer 4 onboarding on /data)</p>
-        <ul className="mt-2 list-inside list-disc space-y-1 text-indigo-950/95">
-          <li>
-            Customer/order inputs follow the <span className="font-medium">active command-centre source</span>: {preview.sourceLabel}.
-            {preview.isUploaded ?
-              <> Spend follows your saved <span className="font-medium">% assumption</span> or <span className="font-medium">CSV rows</span> (CSV wins when both exist).</>
-            : <> The demo includes <span className="font-medium">fixture marketing spend</span> and margin assumptions — CAC and payback match the Acquisition page.</>}
-          </li>
-          <li>
-            Open <span className="font-medium">/acquisition</span> for the full KPI workspace on the same resolved session source.
-          </li>
-          <li>
-            These are <span className="font-medium">transparent calculators</span> only — CSV payloads stay session-scoped; durable control records intent only.
-          </li>
-        </ul>
-      </div>
+      <p className="text-sm leading-relaxed text-zinc-600">
+        Uses the <span className="font-medium text-zinc-900">{preview.sourceLabel}</span>
+        {preview.isUploaded ?
+          <> — spend follows your saved % assumption or CSV rows (CSV wins when both exist).</>
+        : <> — fixture marketing spend and margin assumptions are included.</>}
+        Open <span className="font-medium text-zinc-900">/acquisition</span> for the full workspace on the same source.
+      </p>
 
       <AcquisitionEconomicsPanel model={preview.model} variant="preview" spendIsEstimated={preview.spendIsEstimated} />
     </div>

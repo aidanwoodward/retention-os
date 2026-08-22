@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import {
   DEMO_DATASET_LABEL,
-  dataModeBannerSentence,
+  dataModeBannerSentenceForSource,
   getMvpPageCopy,
   getMvpPageCopyForActiveSource,
   insightsDemoNotice,
@@ -78,7 +78,8 @@ export function CommandCentrePageFrame({
     routeId === "ltv" ||
     routeId === "acquisition" ||
     routeId === "products" ||
-    routeId === "insights"
+    routeId === "insights" ||
+    routeId === "data"
       ? getMvpPageCopyForActiveSource(routeId, activeMetricDatasetSource)
       : getMvpPageCopy(routeId);
 
@@ -126,7 +127,7 @@ export function CommandCentrePageFrame({
             <span className="inline-flex shrink-0 rounded-md border border-zinc-300/90 bg-white px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-700">
               Data control
             </span>
-            <span className="text-zinc-600">{dataModeBannerSentence()}</span>
+            <span className="text-zinc-600">{dataModeBannerSentenceForSource(activeMetricDatasetSource)}</span>
           </div>
         : null}
 

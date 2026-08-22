@@ -1,12 +1,12 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { CsvImportPreview } from "@/components/data/CsvImportPreview";
-import { DemoJourneyStrip } from "@/components/data/DemoJourneyStrip";
 import type { DataPageDemoLedgerSnapshot } from "@/components/data/DataPageSourceHero";
 import { DataPageSourceHero } from "@/components/data/DataPageSourceHero";
+import { DataPageAnalysisReadinessPanel } from "@/components/data/DataPageAnalysisReadinessPanel";
 import { DataUploadedMarginAssumptionsSection } from "@/components/data/DataUploadedMarginAssumptionsSection";
 import { DataUploadedMarketingSpendAssumptionSection } from "@/components/data/DataUploadedMarketingSpendAssumptionSection";
 import { AcquisitionDataPreview } from "@/components/data/AcquisitionDataPreview";
@@ -14,11 +14,6 @@ import { MarketingSpendCsvPreview } from "@/components/data/MarketingSpendCsvPre
 import { useDataPageSessionSummary } from "@/components/data/useDataPageSessionSummary";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { MVP_NAV } from "@/lib/mvp/cohesion";
-import {
-  getUploadedMarginAssumptionsSummary,
-  getUploadedMarketingSpendAssumptionSummary,
-  getUploadedMarketingSpendSessionSummary,
-} from "@/lib/data-source";
 import { useCommandCentreDatasetSelection } from "@/lib/data-source/use-command-centre-dataset-selection";
 import type { DataPageViewModel } from "@/lib/metrics";
 
@@ -26,7 +21,11 @@ function formatPct(fraction: number, digits = 0): string {
   return `${(fraction * 100).toFixed(digits)}%`;
 }
 
-function buildDemoSnapshot(vm: DataPageViewModel, windowEndFormatted: string, demoDatasetSourceLabel: string): DataPageDemoLedgerSnapshot {
+function buildDemoSnapshot(
+  vm: DataPageViewModel,
+  windowEndFormatted: string,
+  demoDatasetSourceLabel: string,
+): DataPageDemoLedgerSnapshot {
   return {
     demoBrandName: vm.demoBrandName,
     demoBrandTagline: vm.demoBrandTagline,
@@ -67,20 +66,6 @@ export function DataPageBody({
     setSessionEpoch((e) => e + 1);
   }, [refreshSessionDataset]);
 
-  const hasSpend = useMemo(() => {
-    void sessionEpoch;
-    if (!hasUpload) return false;
-    const assumption = getUploadedMarketingSpendAssumptionSummary();
-    const csvSpend = getUploadedMarketingSpendSessionSummary();
-    return assumption != null || (csvSpend?.rowCount ?? 0) > 0;
-  }, [hasUpload, sessionEpoch]);
-
-  const hasMargin = useMemo(() => {
-    void sessionEpoch;
-    if (!hasUpload) return false;
-    return getUploadedMarginAssumptionsSummary() != null;
-  }, [hasUpload, sessionEpoch]);
-
   const kpiRoutes = MVP_NAV.filter((n) => KPI_ROUTE_IDS.has(n.id));
 
   return (
@@ -92,23 +77,14 @@ export function DataPageBody({
         onUploadCleared={reconcileSessionSlices}
       />
 
-      {hasUpload ?
-        <p className="rounded-lg border border-amber-200/90 bg-amber-50/80 px-3 py-2 text-xs leading-relaxed text-amber-950">
-          <span className="font-semibold">Browser tab only</span> — your upload and assumptions are not saved to the cloud. Closing the tab
-          clears the CSV payload (re-upload required). Revert above to return to demo data.
-        </p>
-      : selection.status === "lost_upload" ?
-        <p className="rounded-lg border border-amber-200/90 bg-amber-50/80 px-3 py-2 text-xs leading-relaxed text-amber-950">
-          <span className="font-semibold">Uploaded session lost</span> — demo metrics are not shown in place of your data. Re-upload below or
-          explicitly use the demo dataset.
-        </p>
-      : null}
+      <DataPageAnalysisReadinessPanel selection={selection} />
 
-      <DemoJourneyStrip hasUpload={hasUpload} hasSpend={hasSpend} hasMargin={hasMargin} />
-
-      <section className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-sm ring-1 ring-black/[0.02] sm:p-6">
+      <section
+        id="orders-upload"
+        className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-sm ring-1 ring-black/[0.02] sm:p-6"
+      >
         <div className="border-b border-zinc-100 pb-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Orders upload</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Upload & import review</p>
           <h2 className="mt-1 text-lg font-semibold text-zinc-900">Shopify Orders CSV</h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">
             Export from Shopify Admin (Orders → Export), upload here, review quality, then save. Saving switches KPI routes on this tab to your data.
@@ -119,25 +95,40 @@ export function DataPageBody({
         </div>
       </section>
 
-      <DataUploadedMarketingSpendAssumptionSection
-        hasUpload={hasUpload}
-        sessionSyncEpoch={sessionEpoch}
-        onSessionAssumptionChange={reconcileSessionSlices}
-      />
+      <div id="marketing-spend-assumption">
+        <DataUploadedMarketingSpendAssumptionSection
+          hasUpload={hasUpload}
+          sessionSyncEpoch={sessionEpoch}
+          onSessionAssumptionChange={reconcileSessionSlices}
+        />
+      </div>
 
-      <DataUploadedMarginAssumptionsSection
-        hasUpload={hasUpload}
-        sessionSyncEpoch={sessionEpoch}
-        onSessionMarginChange={reconcileSessionSlices}
-      />
+      <div id="margin-assumption">
+        <DataUploadedMarginAssumptionsSection
+          hasUpload={hasUpload}
+          sessionSyncEpoch={sessionEpoch}
+          onSessionMarginChange={reconcileSessionSlices}
+        />
+      </div>
+
+      <CollapsibleSection title="Advanced: marketing spend CSV" subtitle="Optional actual spend — overrides the % assumption when saved">
+        <div className="px-5 py-5 sm:px-6">
+          <MarketingSpendCsvPreview sessionSyncEpoch={sessionEpoch} onSessionSpendChange={reconcileSessionSlices} />
+        </div>
+      </CollapsibleSection>
 
       <section className="rounded-xl border border-zinc-200/90 bg-white p-5 shadow-sm ring-1 ring-black/[0.02] sm:p-6">
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-zinc-100 pb-4">
           <div>
-            <h2 className="text-lg font-semibold text-zinc-900">Acquisition preview</h2>
-            <p className="mt-1 text-sm text-zinc-600">Quick check that spend wiring unlocks CAC and payback — same source as the Acquisition page.</p>
+            <h2 className="text-lg font-semibold text-zinc-900">Acquisition sanity check</h2>
+            <p className="mt-1 text-sm text-zinc-600">
+              Quick check that spend wiring unlocks CAC and payback on the same source as the Acquisition page.
+            </p>
           </div>
-          <Link href="/acquisition" className="text-xs font-medium text-zinc-700 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-900">
+          <Link
+            href="/acquisition"
+            className="text-xs font-medium text-zinc-700 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-900"
+          >
             Open Acquisition →
           </Link>
         </div>
@@ -146,14 +137,8 @@ export function DataPageBody({
         </div>
       </section>
 
-      <CollapsibleSection title="Advanced: marketing spend CSV" subtitle="Optional actual spend — overrides the % assumption when saved">
-        <div className="px-5 py-5 sm:px-6">
-          <MarketingSpendCsvPreview sessionSyncEpoch={sessionEpoch} onSessionSpendChange={reconcileSessionSlices} />
-        </div>
-      </CollapsibleSection>
-
       <section className="rounded-xl border border-dashed border-zinc-300/90 bg-zinc-50/80 p-5 sm:p-6">
-        <h2 className="text-sm font-semibold text-zinc-900">Roadmap</h2>
+        <h2 className="text-sm font-semibold text-zinc-900">Future sources</h2>
         <p className="mt-1 text-sm text-zinc-600">Planned capabilities not yet in this release.</p>
         <ul className="mt-4 space-y-2">
           {vm.comingNext.map((item) => (
@@ -170,12 +155,14 @@ export function DataPageBody({
 
       <details className="rounded-xl border border-zinc-200/90 bg-white shadow-sm ring-1 ring-black/[0.02]">
         <summary className="cursor-pointer select-none px-5 py-4 text-sm font-semibold text-zinc-900 sm:px-6">
-          About the demo dataset
+          About the demo dataset (reference)
         </summary>
         <div className="border-t border-zinc-100 px-5 py-4 sm:px-6">
           <p className="text-lg font-semibold text-zinc-900">{vm.demoBrandName}</p>
           <p className="mt-1 text-sm text-zinc-700">{vm.demoBrandTagline}</p>
-          <p className="mt-2 text-xs text-zinc-500">Order window through {windowEndFormatted} (UTC). Counts below always describe the demo baseline.</p>
+          <p className="mt-2 text-xs text-zinc-500">
+            Order window through {windowEndFormatted} (UTC). Counts below describe the demo baseline only — not your upload.
+          </p>
           <dl className="mt-4 grid gap-3 sm:grid-cols-2">
             <Count label="Customers" value={vm.sanity.customerCount.toLocaleString()} />
             <Count label="Orders" value={vm.sanity.orderCount.toLocaleString()} />

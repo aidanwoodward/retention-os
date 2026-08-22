@@ -307,6 +307,9 @@ export function CsvImportPreview({
           onConfirmSave={onSaveSessionDataset}
           onDismissPreview={reset}
           saveError={sessionSaveError}
+          importPresentationContext={{
+            hasSavedMarginAssumptions: getUploadedMarginAssumptionsSummary() != null,
+          }}
         />
       ) : null}
     </div>

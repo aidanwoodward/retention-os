@@ -1,6 +1,8 @@
 "use client";
 
 import type { ImportReviewMetricRow, ImportReviewViewModel } from "@/lib/import/import-review-view-model";
+import { DataTrustLabel } from "@/components/data/DataTrustLabel";
+import { mapImportMetricStatusToPresentationLabel } from "@/lib/mvp/data-readiness-presentation";
 
 function formatIsoDate(iso: string | undefined): string {
   if (!iso) return "-";
@@ -26,27 +28,12 @@ function readinessBadge(readiness: ImportReviewViewModel["readiness"]) {
   );
 }
 
-function metricStatusBadge(status: ImportReviewMetricRow["status"]) {
-  switch (status) {
-    case "unlocked":
-      return (
-        <span className="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-900 ring-1 ring-emerald-200">
-          Unlocked
-        </span>
-      );
-    case "partial":
-      return (
-        <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-950 ring-1 ring-amber-200">
-          Partial
-        </span>
-      );
-    case "locked":
-      return (
-        <span className="inline-flex rounded-full bg-zinc-200/90 px-2 py-0.5 text-[11px] font-semibold text-zinc-800 ring-1 ring-zinc-300">
-          Locked
-        </span>
-      );
-  }
+function metricStatusBadge(
+  row: ImportReviewMetricRow,
+  presentationContext?: { hasSavedMarginAssumptions?: boolean },
+) {
+  const label = mapImportMetricStatusToPresentationLabel(row, presentationContext);
+  return <DataTrustLabel label={label} />;
 }
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
@@ -69,12 +56,14 @@ export function ImportedDatasetReviewPanel({
   onConfirmSave,
   onDismissPreview,
   saveError,
+  importPresentationContext,
 }: {
   readonly viewModel: ImportReviewViewModel;
   readonly fileName: string | null;
   readonly onConfirmSave: () => void;
   readonly onDismissPreview: () => void;
   readonly saveError?: string | null;
+  readonly importPresentationContext?: { hasSavedMarginAssumptions?: boolean };
 }) {
   const unlockedMetrics = viewModel.metrics.filter((m) => m.status === "unlocked");
   const limitedMetrics = viewModel.metrics.filter((m) => m.status !== "unlocked");
@@ -162,7 +151,7 @@ export function ImportedDatasetReviewPanel({
                     <p className="text-sm font-semibold text-zinc-900">{m.label}</p>
                     <p className="mt-1 text-xs leading-relaxed text-zinc-700">{m.detail}</p>
                   </div>
-                  {metricStatusBadge(m.status)}
+                  {metricStatusBadge(m, importPresentationContext)}
                 </li>
               ))}
             </ul>
@@ -181,7 +170,7 @@ export function ImportedDatasetReviewPanel({
                     <p className="text-sm font-semibold text-zinc-900">{m.label}</p>
                     <p className="mt-1 text-xs leading-relaxed text-zinc-700">{m.detail}</p>
                   </div>
-                  {metricStatusBadge(m.status)}
+                  {metricStatusBadge(m, importPresentationContext)}
                 </li>
               ))}
             </ul>

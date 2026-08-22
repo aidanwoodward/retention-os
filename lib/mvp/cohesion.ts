@@ -1,4 +1,4 @@
-﻿import { DEMO_BRAND_NAME, DEMO_BRAND_TAGLINE } from "../demo";
+import { DEMO_BRAND_NAME, DEMO_BRAND_TAGLINE } from "../demo";
 
 /** Product framing â€” used in navigation chrome and onboarding copy. */
 export const MVP_COMMAND_CENTRE_NAME = "Revenue Durability Command Centre" as const;
@@ -100,9 +100,9 @@ export const MVP_PAGE_COPY: Record<MvpRouteId, MvpPageCopy> = {
   },
   data: {
     title: "Data & sources",
-    hook: "Control what powers every KPI route â€” upload orders, set assumptions, review quality.",
+    hook: "What data is RetentionOS using, and what is still needed to trust customer-economics metrics?",
     lookingAt: `Active source for this tab: ${DEMO_BRAND_NAME} demo until you upload and save a Shopify Orders CSV. After save, all KPI routes use your upload here only.`,
-    matters: "You cannot judge customer economics honestly if the data source and assumptions are unclear.",
+    matters: "Customer-economics metrics are only trustworthy when the source, assumptions, and missing inputs are explicit.",
     nextSteps: [
       "Explore KPI routes on the Lumin & River demo â€” fixture spend and margin assumptions are already included.",
       "Upload your Shopify Orders CSV, then add spend or margin assumptions if your file does not include them.",
@@ -117,7 +117,7 @@ export function getMvpPageCopy(routeId: MvpRouteId): MvpPageCopy {
 
 /** Command-centre routes: adjust â€œWhat youâ€™re looking atâ€ for the active dataset status. */
 export function getMvpPageCopyForActiveSource(
-  routeId: "dashboard" | "cohorts" | "retention" | "ltv" | "acquisition" | "products" | "insights",
+  routeId: MvpRouteId,
   source: "demo" | "uploaded_csv" | "pending" | "lost_upload",
 ): MvpPageCopy {
   const base = MVP_PAGE_COPY[routeId];
@@ -125,13 +125,27 @@ export function getMvpPageCopyForActiveSource(
     return base;
   }
   if (source === "pending") {
-    return { ...base, lookingAt: "Resolving the active dataset for this browser tabâ€¦" };
+    return { ...base, lookingAt: "Resolving the active dataset for this browser tab." };
   }
   if (source === "lost_upload") {
+    if (routeId === "data") {
+      return {
+        ...base,
+        lookingAt:
+          "Your uploaded session was lost — CSV payloads stay in this browser tab only. Demo metrics are not shown as a substitute. Re-upload below or switch to demo explicitly.",
+      };
+    }
     return {
       ...base,
       lookingAt:
         "Your uploaded session was lost (CSV payloads are tab-scoped). Demo metrics are not shown in place of your data â€” re-upload on Data or explicitly use demo.",
+    };
+  }
+  if (routeId === "data") {
+    return {
+      ...base,
+      lookingAt:
+        "Your saved Shopify Orders CSV powers KPI routes in this browser tab. Add marketing spend or margin assumptions below if your file lacks them.",
     };
   }
   type SourceAwareRoute = "dashboard" | "cohorts" | "retention" | "ltv" | "acquisition" | "products" | "insights";
@@ -180,4 +194,19 @@ export function insightsDemoNotice(): string {
 
 export function dataModeBannerSentence(): string {
   return `Demo: ${DEMO_BRAND_NAME} â€” ${DEMO_BRAND_TAGLINE} Switch to your upload here; KPI routes follow this tab only. Live Shopify sync is not in this MVP.`;
+}
+
+export function dataModeBannerSentenceForSource(
+  source: "demo" | "uploaded_csv" | "pending" | "lost_upload",
+): string {
+  switch (source) {
+    case "demo":
+      return dataModeBannerSentence();
+    case "uploaded_csv":
+      return "Saved upload active for this tab — KPI routes use your CSV until you revert. Session-only; not stored in the cloud. Live Shopify sync is not in this MVP.";
+    case "lost_upload":
+      return "Uploaded session lost — re-upload your CSV or switch to demo. Demo metrics are not shown as a substitute for your upload.";
+    case "pending":
+      return "Resolving which dataset powers this tab.";
+  }
 }

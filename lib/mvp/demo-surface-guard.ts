@@ -13,8 +13,12 @@ export function getMvpContainmentRedirect(pathname: string): string | null {
     return null;
   }
 
-  if (path === "/settings" || path.startsWith("/settings/")) {
+  if (path === "/settings") {
     return null;
+  }
+
+  if (path.startsWith("/settings/")) {
+    return "/settings";
   }
 
   const mvpExact = new Set([

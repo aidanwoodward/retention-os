@@ -97,6 +97,8 @@
     "lib/demo/**/*.ts",
     "lib/mvp/mvp-nav.test.ts",
     "lib/mvp/cohesion.ts",
+    "lib/mvp/demo-surface-guard.ts",
+    "lib/mvp/demo-surface-guard.test.ts",
     "lib/mvp/data-readiness-presentation.ts",
     "lib/mvp/data-readiness-presentation.test.ts",
     "lib/analysis-context/**/*.ts",

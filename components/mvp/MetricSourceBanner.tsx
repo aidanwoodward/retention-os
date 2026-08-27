@@ -2,6 +2,7 @@
 
 import type { CommandCentreDatasetSelection } from "@/lib/data-source/client-selected-source";
 import { DEMO_BRAND_NAME } from "@/lib/demo";
+import type { DashboardReportingMeta } from "@/lib/mvp/dashboard-presentation-view-model";
 import { metricsBannerScopeLine } from "@/lib/mvp/cohesion";
 
 export type MetricSourceBannerRouteId = "dashboard" | "cohorts" | "retention" | "ltv" | "acquisition" | "products" | "insights";
@@ -14,9 +15,11 @@ const SESSION_PILL = "inline-flex shrink-0 rounded-md border border-amber-200/90
 export function MetricSourceBanner({
   routeId,
   selection,
+  reportingMeta,
 }: {
   routeId: MetricSourceBannerRouteId;
   selection: CommandCentreDatasetSelection;
+  reportingMeta?: DashboardReportingMeta;
 }) {
   const scope = metricsBannerScopeLine(routeId);
 
@@ -43,18 +46,27 @@ export function MetricSourceBanner({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-lg border border-zinc-200/90 bg-zinc-50/70 px-3 py-2 text-sm ring-1 ring-black/[0.02]">
-      <span className={badgeClass}>{badgeLabel}</span>
-      <span className="min-w-0 text-zinc-600">{scope}</span>
-      {showSessionPill ? (
-        <span className={SESSION_PILL} title="CSV payload is session-scoped; not persisted to cloud storage">
-          Browser tab only
-        </span>
-      ) : null}
-      <details className="ml-auto text-xs text-zinc-500">
-        <summary className="cursor-pointer select-none font-medium text-zinc-600 hover:text-zinc-900">About this source</summary>
-        <p className="mt-1.5 max-w-md leading-relaxed text-zinc-600">{provenanceDetail}</p>
-      </details>
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-lg border border-zinc-200/90 bg-zinc-50/70 px-3 py-2 text-sm ring-1 ring-black/[0.02]">
+        <span className={badgeClass}>{badgeLabel}</span>
+        <span className="min-w-0 text-zinc-600">{scope}</span>
+        {showSessionPill ? (
+          <span className={SESSION_PILL} title="CSV payload is session-scoped; not persisted to cloud storage">
+            Browser tab only
+          </span>
+        ) : null}
+        <details className="ml-auto text-xs text-zinc-500">
+          <summary className="cursor-pointer select-none font-medium text-zinc-600 hover:text-zinc-900">About this source</summary>
+          <p className="mt-1.5 max-w-md leading-relaxed text-zinc-600">{provenanceDetail}</p>
+        </details>
+      </div>
+      {reportingMeta ?
+        <p className="px-0.5 text-xs text-zinc-600">
+          <span className="font-medium text-zinc-800">{reportingMeta.reportingScopeLabel}</span>
+          <span className="text-zinc-400"> · </span>
+          {reportingMeta.freshnessLabel}
+        </p>
+      : null}
     </div>
   );
 }
